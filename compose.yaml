@@ -1,0 +1,52 @@
+# StockFlow — application, aux côtés de son instance Supabase dédiée.
+# Exploitation : docs/exploitation.md
+#
+# Rejoint le réseau déjà créé par la stack `stockflow-supabase` pour parler à
+# Kong en interne (http://stockflow-kong:8000). Ce trafic ne quitte jamais la
+# machine et ne dépend d'aucun port publié.
+
+# DOIT être identique au nom du symlink dans ~/stacks/, sinon Dockge affiche la
+# stack en double, dont une « non gérée » (piège vécu sur PC Controller).
+name: stockflow
+
+services:
+  app:
+    build:
+      context: .
+    image: stockflow:local
+    container_name: stockflow
+    restart: unless-stopped
+
+    # Lié au loopback UNIQUEMENT. Docker réécrit iptables indépendamment de
+    # `ufw` : un port publié en 0.0.0.0 contournerait le deny-all de la machine.
+    # Ne jamais retirer le préfixe 127.0.0.1:.
+    ports:
+      - "127.0.0.1:3002:3000"
+
+    # Les trois variables sont lues à l'exécution — rien n'est gravé dans
+    # l'image. SUPABASE_URL y vaut http://stockflow-kong:8000, et non le
+    # 127.0.0.1:8001 du poste de développement.
+    env_file:
+      - .env
+
+    # LE POINT DE CETTE TRANCHE. Le 10/08, le noyau a tué le serveur de
+    # développement (1,25 Go) parce qu'il était le plus gros processus d'une
+    # machine à 5,2 Go. Avec une limite, une fuite tue CE conteneur — que
+    # `restart: unless-stopped` relève aussitôt — au lieu de laisser l'OOM
+    # killer désigner une victime ailleurs.
+    mem_limit: 512m
+
+    networks:
+      - stockflow-supabase_default
+
+    # AutoKuma crée le moniteur à partir de ces labels ; rien à faire dans l'UI.
+    # ⚠️ Un moniteur créé après coup n'hérite d'AUCUNE notification : rouvrir
+    # Settings → Notifications → Ntfy et resauvegarder.
+    labels:
+      - "kuma.stockflow.docker.name=StockFlow"
+      - "kuma.stockflow.docker.docker_container=stockflow"
+      - "kuma.stockflow.docker.docker_host_name=local"
+
+networks:
+  stockflow-supabase_default:
+    external: true

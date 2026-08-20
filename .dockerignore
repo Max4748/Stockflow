@@ -1,0 +1,23 @@
+# Ce qui ne doit pas entrer dans le contexte de build.
+#
+# `.env*` est la ligne qui compte : sans elle, le `COPY . .` de l'étape
+# `builder` embarquerait les trois secrets dans une couche d'image.
+
+node_modules
+.next
+.git
+.env*
+
+# Inutiles à l'exécution : les migrations s'appliquent depuis l'hôte, la
+# documentation et les scripts de test n'ont rien à faire dans une image.
+supabase
+docs
+scripts
+
+*.tsbuildinfo
+npm-debug.log*
+Dockerfile
+compose.yaml
+README.md
+AGENTS.md
+CLAUDE.md
