@@ -1,11 +1,35 @@
 -- ============================================================
 -- StockFlow — 0009_rls_privileges.sql
--- TOUTE la posture de sécurité, en un seul fichier relisible d'un bloc.
+-- Le SOCLE de la posture de sécurité : le modèle de menace et les règles
+-- qui valent pour tout le schéma existant à ce point.
 -- ============================================================
 --
--- Ce fichier répond seul à la question « qui peut faire quoi ». Il vient en
--- DERNIER : la base reste fermée (aucun GRANT à authenticated) pendant toute
--- l'installation du schéma.
+-- CE FICHIER N'EST PLUS LE SEUL, ET NE L'EST PLUS DEPUIS LONGTEMPS.
+--
+-- Il a d'abord porté toute la réponse à « qui peut faire quoi », et son
+-- en-tête l'affirmait encore alors que ce n'était plus vrai : DIX-HUIT
+-- migrations postérieures posent des `grant`, des `create policy` ou un
+-- `enable row level security`, parce que chacune apporte une table ou une
+-- fonction qui n'existait pas ici.
+--
+-- La règle à retenir n'est donc pas « tout est dans 0009 », qui ferait manquer
+-- la moitié du sujet à qui la croit, mais :
+--
+--   TOUTE MIGRATION QUI CRÉE UNE TABLE POSE SA PROPRE RLS ET SES PROPRES
+--   POLICIES, DANS SON PROPRE FICHIER. Une table créée après ce point et
+--   laissée sans RLS serait ouverte à tout détenteur d'un GRANT, sans qu'aucune
+--   erreur ne le signale.
+--
+-- Le filet qui rattrape l'oubli est l'inventaire de `appliquer-migrations.sh`,
+-- ligne « tables SANS RLS (doit valoir 0) », et l'assertion équivalente du
+-- harnais de rejeu. C'est là qu'on vérifie, pas dans ce fichier.
+--
+-- Ce qui reste vrai et propre à 0009 : le modèle de menace ci-dessous, le
+-- socle (`anon` n'a rien, jamais), et les règles portant sur les tables du
+-- schéma initial.
+--
+-- Il vient malgré tout APRÈS les huit premières migrations : la base reste
+-- fermée pendant toute l'installation du schéma de départ.
 --
 -- MODÈLE DE MENACE — la clé anon est publique par construction. Un vendeur
 -- authentifié peut donc attaquer PostgREST directement (curl, console

@@ -430,7 +430,7 @@ pour elle.
 | `0006_demandes`                | création, annulation, traitement des réassorts                            |
 | `0007_dette`                   | créances et versements                                                    |
 | `0008_lectures`                | stock, bilan, journal, audit                                              |
-| `0009_rls_privileges`          | **toute** la posture de sécurité, en un bloc relisible                    |
+| `0009_rls_privileges`          | le **socle** de sécurité : modèle de menace, `anon` fermé, règles du schéma initial |
 | `0010_seed`                    | invitation du compte dev                                                  |
 | `0011_comptes`                 | gestion des comptes, ferme l'escalade de privilèges                       |
 | `0012_correction_ventes`       | fenêtre de correction                                                     |
@@ -464,11 +464,16 @@ Trois points de séquencement non arbitraires :
   définitions.
 - `0003` avant `0004` : le registre référence les quatre tables d'écriture, ses
   clés étrangères et ses `CHECK` multi-colonnes se déclarent d'un bloc.
-- `0009` regroupe la posture de sécurité : la base reste fermée pendant toute
-  l'installation, et ce fichier répond à « qui peut faire quoi ». Les migrations
-  postérieures reposent leur propre `grant execute` juste après la fonction
-  concernée. Une fonction ajoutée après coup sans son grant ne serait appelable
-  par personne.
+- `0009` pose le **socle** de sécurité : la base reste fermée pendant toute
+  l'installation du schéma initial. Ce n'est PAS le seul fichier de sécurité, et
+  le croire fait manquer la moitié du sujet : dix-huit migrations postérieures
+  posent des `grant`, des `create policy` ou un `enable row level security`,
+  chacune pour ce qu'elle apporte. La règle est que **toute migration créant
+  une table pose sa propre RLS dans son propre fichier**, et que toute fonction
+  repose son `grant execute` juste après elle. Une table sans RLS serait ouverte
+  à tout détenteur d'un GRANT sans qu'aucune erreur ne le signale ; une fonction
+  sans grant ne serait appelable par personne. Le filet est l'inventaire de
+  `appliquer-migrations.sh`, ligne « tables SANS RLS (doit valoir 0) ».
 
 ### Changer les colonnes de sortie d'une fonction
 
