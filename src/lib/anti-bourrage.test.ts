@@ -105,6 +105,17 @@ describe("palier 3 — bloquer l'IP", () => {
     assert.equal(fois, 1, "une ligne de journal par blocage, pas par requête");
   });
 
+  it("ne bloque JAMAIS quand l'IP est inconnue", () => {
+    // Sans en-tête de confiance, `ipAppelante()` renvoie null. Le palier 3 ne
+    // doit alors pas s'armer : le contraire reviendrait à bloquer une clé
+    // vide, donc tout le monde d'un coup.
+    let bloque = false;
+    for (let i = 0; i < SEUIL_ADRESSES_DISTINCTES * 3; i++) {
+      bloque ||= enregistrerEchec(["a"], null, `cible${i}@x.z`, T).doitBloquerIp;
+    }
+    assert.equal(bloque, false);
+  });
+
   it("compte les adresses par IP, sans mélanger deux IP", () => {
     for (let i = 0; i < SEUIL_ADRESSES_DISTINCTES - 1; i++)
       enregistrerEchec(["a"], "1.1.1.1", `cible${i}@x.z`, T);

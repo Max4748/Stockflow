@@ -512,6 +512,29 @@ Trois points de séquencement non arbitraires :
   sans grant ne serait appelable par personne. Le filet est l'inventaire de
   `appliquer-migrations.sh`, ligne « tables SANS RLS (doit valoir 0) ».
 
+### Une affirmation de garantie cite son test
+
+Trois fois dans ce projet, un commentaire a promis une propriété de sécurité
+que le code n'avait pas :
+
+| Où | Affirmation | Réalité |
+| --- | --- | --- |
+| `0033` | « le pire est de se bloquer lui-même » | `p_ip` est un paramètre libre : n'importe quelle adresse |
+| `0038` | « deux verrous, et le second est le vrai » | le second était une constante publiée dans le dépôt |
+| `14_reinitialiser.sql` | « le verrou qui compte n'est pas `est_dev()` » | c'est le seul qui compte |
+
+Le point commun n'est pas l'inattention, c'est que **le commentaire décrivait
+l'intention et non le code**. Personne ne l'a relu contre la fonction, parce
+que rien n'y obligeait.
+
+**La règle : une affirmation de garantie de sécurité cite le test qui la
+tient, ou n'est pas écrite.** Le renvoi force la question « ce test
+existe-t-il, et vérifie-t-il bien cela ? » au moment où la phrase est tapée,
+c'est-à-dire au seul moment où elle est facile à poser.
+
+Elle vise les propriétés **portantes**, pas les « jamais » de langue courante :
+annoter les quarante occurrences noierait les trois qui comptent.
+
 ### `supautils` refuse un `delete` sans `where`
 
 L'instance charge `supautils` en `session_preload_libraries`, qui arme

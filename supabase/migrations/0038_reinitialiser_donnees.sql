@@ -27,13 +27,20 @@
 -- seule trace qui restera de ce qui a existé, et elle survit précisément parce
 -- que ce journal n'est pas effacé.
 --
--- DEUX VERROUS, et le second est le vrai :
+-- ⚠️ CE COMMENTAIRE AFFIRMAIT ICI « deux verrous, et le second est le vrai »,
+-- le second étant la phrase 'REINITIALISER'. C'ÉTAIT FAUX : cette phrase est
+-- écrite en clair dans un dépôt public, donc connue de quiconque lit le code,
+-- et identique sur toutes les instances.
 --
---   1. `est_dev()`. Un gérant n'y a pas accès.
---   2. Une phrase de confirmation exacte, exigée EN BASE et non seulement dans
---      l'interface. Un appel direct à la RPC, par curl ou par erreur de
---      manipulation, échoue sans elle. Un bouton se clique par accident, une
---      phrase se tape à dessein.
+-- L'ordre réel :
+--
+--   `est_dev()` est LE verrou d'autorisation, et le seul. Vérifié par
+--   `supabase/tests/14_reinitialiser.sql`, assertion « un gérant est refusé ».
+--
+--   La confirmation n'en est pas un : sa valeur est lisible par qui a déjà
+--   franchi `est_dev()`. C'est un garde-fou contre l'ERREUR DE CONTEXTE, et
+--   depuis la migration 0039 elle vaut le nombre de lignes que CETTE base va
+--   perdre, qui ne se tape pas de mémoire.
 --
 -- Il n'y a PAS de sauvegarde automatique ici : la fonction ne peut pas en
 -- déclencher une. La sauvegarde quotidienne existe par ailleurs

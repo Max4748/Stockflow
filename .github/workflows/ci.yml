@@ -61,6 +61,12 @@ jobs:
       - name: Logique d'anti-bourrage
         run: npm run test:unit
 
+      # Contrôle statique, avant toute exécution : `supautils` refuse un
+      # `delete` sans `where` pour les rôles non superutilisateur, et aucun
+      # test ne peut l'attraper puisque le harnais tourne en superutilisateur.
+      - name: Migrations sans suppression non qualifiée
+        run: npm run verif:sql
+
       - name: Rejeu des migrations (3 passes)
         run: npm run test:db
 

@@ -12,7 +12,7 @@
 -- assertions ci-dessous vérifient cela, pas une résistance à une attaque.
 -- ------------------------------------------------------------
 
-select plan(15);
+select plan(17);
 
 select t_compte('t-dev@test.invalid',     'T-Dev',     'dev')        as dev     \gset
 select t_compte('t-gerant@test.invalid',  'T-Gérant',  'gerant')     as gerant  \gset
@@ -92,7 +92,8 @@ reset role;
 select is((select count(*)::int from ventes), 0, 'les ventes sont parties');
 select is((select count(*)::int from mouvements_stock), 0, 'les mouvements aussi');
 select is((select count(*)::int from produits), 0, 'et les produits');
-select is((select count(*)::int from journal_operations), 0,
+select is((select count(*)::int from journal_operations
+            where action <> 'réinitialisation'), 0,
           'ainsi que le journal des opérations, qui les commentait');
 
 -- ---------- Ce qui SURVIT, et qui compte autant ----------
@@ -104,6 +105,16 @@ select is((select count(*)::int from ip_bloquees where ip = '198.51.100.77'), 1,
           'le blocage IP survit : une remise à zéro n''est pas une porte de sortie');
 select ok((select count(*) from roles) > 0,
           'les rôles sont une table de référence, pas des données');
+
+-- ---------- L'encadrement voit qu'il s'est passé quelque chose ----------
+-- `journal_admin` est réservé au dev : sans cette seconde trace, un gérant
+-- voyait toute l'activité disparaître sans une ligne pour le dire, sur les
+-- deux écrans qu'il peut ouvrir.
+select is((select count(*)::int from journal_operations), 1,
+          'le journal des opérations est vidé, puis reçoit UNE ligne');
+select matches((select libelle from journal_operations),
+               'Données réinitialisées',
+               'et cette ligne explique ce qui s''est passé');
 
 -- ---------- La trace de l'effacement survit à l'effacement ----------
 -- Scopé sur `cree_le = now()` et non sur l'action seule : `journal_admin` n'est

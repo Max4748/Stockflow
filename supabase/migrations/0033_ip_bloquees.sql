@@ -76,11 +76,17 @@ grant execute on function ip_est_bloquee(text) to authenticated, anon;
 -- ------------------------------------------------------------
 -- Poser ou prolonger un blocage automatique.
 --
--- Appelée par la Server Action au franchissement du seuil, donc sans session :
--- aucune garde de rôle n'est possible ici. Ce qui la protège, c'est qu'elle ne
--- sait faire qu'une chose, bornée dans le temps, et que le déclencheur vit
--- côté application. Le pire qu'un appelant puisse en tirer est de se bloquer
--- lui-même.
+-- Appelée par la Server Action au franchissement du seuil, donc sans session.
+--
+-- ⚠️ CE COMMENTAIRE AFFIRMAIT ICI que « le pire qu'un appelant puisse en tirer
+-- est de se bloquer lui-même ». C'ÉTAIT FAUX, et c'est ce raisonnement qui a
+-- fait sauter la garde : l'adresse bloquée est le PARAMÈTRE `p_ip`, sans aucun
+-- rapport avec celle d'où vient l'appel. Accordée à `anon`, la fonction
+-- laissait bloquer n'importe quelle adresse, dev compris, sans recours.
+--
+-- Fermé par la migration 0034, qui la réserve à `service_role`. La garde est
+-- vérifiée par `supabase/tests/12_ip_bloquees.sql`, assertion « un compte
+-- authentifié ne peut pas poser de blocage ».
 -- ------------------------------------------------------------
 create or replace function bloquer_ip(p_ip text, p_motif text default null)
 returns timestamptz

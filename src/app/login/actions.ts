@@ -22,18 +22,27 @@ const attendre = (ms: number) =>
   ms > 0 ? new Promise((r) => setTimeout(r, ms)) : Promise.resolve();
 
 /**
- * L'IP réelle de l'appelant.
+ * L'IP réelle de l'appelant, ou rien.
  *
- * `CF-Connecting-IP` fait foi ICI et nulle part ailleurs : l'application
- * n'écoute que sur `127.0.0.1` derrière `cloudflared`, avec `ufw` en deny-all.
- * Personne d'autre que le tunnel ne peut poser cet en-tête. Contrairement à
- * `x-forwarded-host` (voir env.ts), il n'existe aucune autre source pour cette
- * information : la règle est « ne pas faire confiance sans nécessité », pas
- * « ne jamais faire confiance ».
+ * `CF-Connecting-IP` SEUL, sans repli. Mesuré à travers le tunnel : une requête
+ * qui forge cet en-tête est rejetée en 403 par Cloudflare, alors qu'un
+ * `x-real-ip` forgé passe intact. Le repli était donc une entrée : sur un accès
+ * direct à `127.0.0.1:3002` par tunnel SSH, chemin que documente
+ * exploitation.md, `cf-connecting-ip` est absent et `x-real-ip` devient la
+ * seule source, choisie par l'appelant. Cinq adresses distinctes plus tard,
+ * l'IP de son choix était bloquée : la faille que 0034 ferme côté SQL, qui
+ * rentrait par l'en-tête.
+ *
+ * Sans en-tête de confiance, on renvoie `null` et le palier 3 ne s'arme pas.
+ * Les paliers 1 et 2 continuent de freiner : perdre le blocage d'IP hors du
+ * tunnel coûte moins cher que de laisser choisir qui bloquer.
+ *
+ * Même règle que pour `APP_URL` (voir env.ts) : ne pas faire confiance sans
+ * nécessité. Ici il existe une alternative, se passer du palier.
  */
 async function ipAppelante(): Promise<string | null> {
   const h = await headers();
-  return h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? null;
+  return h.get("cf-connecting-ip");
 }
 
 export async function seConnecter(

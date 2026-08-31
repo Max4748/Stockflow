@@ -75,7 +75,7 @@ diagnostic et sauvegardes : [docs/exploitation.md](docs/exploitation.md).
 ## Vérifier
 
 ```bash
-npm run typecheck && npm run lint && npm run test:db
+npm run typecheck && npm run lint && npm run test:unit && npm run verif:sql && npm run test:db
 ```
 
 Ces trois-là ne demandent rien : `test:db` rejoue les migrations trois fois sur
