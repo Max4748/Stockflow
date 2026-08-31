@@ -17,7 +17,7 @@ Navigateur ──HTTP──▶ Next.js (Server Components + Server Actions)
                    ┌──────┴──────┐
                    ▼             ▼
               PostgREST       GoTrue        Postgres
-              (données)       (auth)        RLS + 72 fonctions
+              (données)       (auth)        RLS + 74 fonctions
 ```
 
 Le navigateur ne connaît que du HTML et les Server Actions. Il n'a **aucune clé

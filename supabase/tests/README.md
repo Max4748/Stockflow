@@ -44,6 +44,8 @@ Ce sont celles qui sont couvertes :
 | `10_ventes_annulees.sql` | une vente annulée reste visible et ne compte plus nulle part, les deux moitiés de la promesse |
 | `11_journal_admin.sql` | chaque geste sur un compte laisse une trace, avec la valeur d'avant, et une action refusée n'en laisse aucune |
 | `12_ip_bloquees.sql` | durée croissante, expiration automatique, et le définitif réservé au dev |
+| `13_journal_operations.sql` | ce qui est effacé laisse une trace, relevée pendant que l'entité existe encore |
+| `14_reinitialiser.sql` | la remise à zéro, et surtout ce qu'elle CONSERVE : comptes, invitations, blocages IP |
 
 Il n'y a **aucun test d'interface**. Le choix est délibéré : les Server Actions
 ne font que relayer, et un test qui clique sur un bouton ne dirait rien de plus

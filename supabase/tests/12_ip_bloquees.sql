@@ -8,10 +8,27 @@
 -- reste un geste humain réservé au dev.
 -- ------------------------------------------------------------
 
-select plan(12);
+select plan(13);
 
 select t_compte('t-dev@test.invalid',    'T-Dev',    'dev')    as dev    \gset
 select t_compte('t-gerant@test.invalid', 'T-Gérant', 'gerant') as gerant \gset
+
+-- ---------- Poser un blocage est réservé au serveur ----------
+-- Le défaut de 0033 : `bloquer_ip` était accordée à `anon` et `authenticated`,
+-- sans garde de rôle, alors que l'adresse bloquée est son PARAMÈTRE. N'importe
+-- quel détenteur de la clé publique pouvait donc bloquer l'IP de son choix, y
+-- compris celle du dev, qui ne pouvait alors plus lever son propre blocage
+-- puisque `lever_blocage_ip` exige une session. Corrigé en 0034.
+--
+-- Les assertions de durée qui suivent tournent en superutilisateur, donc sans
+-- passer par ce droit : elles vérifient le CALCUL, celle-ci vérifie l'ACCÈS.
+select t_agir(:'gerant') as _ \gset
+select throws_ok(
+  $$ select bloquer_ip('198.51.100.9', 'tentative directe') $$,
+  '42501', null,
+  'un compte authentifié ne peut pas poser de blocage : réservé à service_role');
+
+reset role;
 
 -- ---------- La durée croît à chaque récidive ----------
 select is((select bloquer_ip('198.51.100.1', 'essai') - now())::interval,

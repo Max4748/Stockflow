@@ -35,6 +35,15 @@ const TYPES = [
 ];
 
 /**
+ * Les types préfixés `op_` ne sont pas des écritures : ce sont des gestes SUR
+ * une écriture, enregistrés parce que le journal est dérivé de l'état courant
+ * et deviendrait aveugle à ce qui a été supprimé. Ils ne sont pas listés dans
+ * `TYPES` : cinq entrées de plus au filtre pour un usage rare, alors que la
+ * pastille les distingue déjà d'un coup d'œil.
+ */
+const EST_OPERATION = (type: string) => type.startsWith("op_");
+
+/**
  * Libellé de la pastille, quand le type brut ne se lit pas.
  *
  * Séparé de `TYPES` ci-dessus : celui-là nomme un FILTRE, donc au pluriel
@@ -44,6 +53,11 @@ const TYPES = [
  */
 const LIBELLE_TYPE: Record<string, string> = {
   vente_annulee: "annulée",
+  op_annulation: "annulation",
+  op_correction: "correction",
+  op_suppression: "suppression",
+  "op_révocation": "révocation",
+  "op_désactivation": "désactivation",
 };
 
 const VARIANTE: Record<
@@ -105,7 +119,12 @@ export default async function PageComptabilite({
       valeur: (l) => (
         <span className="flex items-center gap-2">
           {date(l.date_compta)}
-          <Badge variant={VARIANTE[l.type] ?? "outline"}>
+          <Badge
+            variant={
+              VARIANTE[l.type] ??
+              (EST_OPERATION(l.type) ? "destructive" : "outline")
+            }
+          >
             {LIBELLE_TYPE[l.type] ?? l.type}
           </Badge>
         </span>

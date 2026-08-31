@@ -9,7 +9,7 @@ Tailwind 4, shadcn/ui, PostgreSQL via Supabase. Projet personnel.
 
 | Décision | Conséquence concrète | Détail |
 | --- | --- | --- |
-| Logique métier en SQL | 16 tables, 72 fonctions, 23 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
+| Logique métier en SQL | 17 tables, 74 fonctions, 24 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
 | Autorisation en base, sur quatre couches | RLS, GRANT/REVOKE, garde en tête de fonction, garde applicative. Le front-end peut disparaître sans ouvrir de faille | [securite.md](docs/securite.md) |
 | Stock dérivé, jamais stocké | Somme d'un registre de mouvements signés : une incohérence devient visible au lieu d'être écrasée | [donnees.md](docs/donnees.md) |
 | Aucune clé Supabase côté navigateur | Variables sans préfixe `NEXT_PUBLIC_`, lues à l'exécution, image Docker sans build-arg | [architecture.md](docs/architecture.md) |
@@ -33,7 +33,7 @@ Les trois valeurs sont lues à l'exécution : en changer ne demande aucun rebuil
 
 **2. Schéma de la base**
 
-Les 34 fichiers de `supabase/migrations/` sont du SQL ordinaire, écrits pour
+Les 39 fichiers de `supabase/migrations/` sont du SQL ordinaire, écrits pour
 être rejoués intégralement, à appliquer dans l'ordre :
 
 ```bash
@@ -95,7 +95,7 @@ commandes à chaque push : la section ci-dessus n'est pas une promesse, c'est ce
 qui tourne.
 
 Les tests sont en **pgTAP**, pas en TypeScript : c'est en SQL que vit la logique
-métier, donc c'est là que porte la couverture. 156 assertions, portant sur les règles
+métier, donc c'est là que porte la couverture. 185 assertions, portant sur les règles
 qu'on ne peut ni annuler ni deviner en lisant l'interface : la
 hiérarchie des rôles, le calcul de la dette, la borne anti-surversement, les
 deux régimes du SAV et la révocation d'un échange.

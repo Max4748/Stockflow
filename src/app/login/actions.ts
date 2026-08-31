@@ -11,6 +11,7 @@ import {
   evaluer,
   oublier,
 } from "@/lib/anti-bourrage";
+import { clientAdmin } from "@/lib/supabase/admin";
 import { creerClient } from "@/lib/supabase/server";
 import type { EtatAction } from "@/lib/types";
 
@@ -100,8 +101,16 @@ export async function seConnecter(
 
     // Une seule écriture par blocage, au franchissement du seuil, et non une
     // par tentative : le journal doit rester lisible.
+    //
+    // `clientAdmin()` et NON le client de session : `bloquer_ip` bloque
+    // l'adresse qu'on lui passe, sans rapport avec celle d'où vient l'appel.
+    // Ouverte à `anon`, elle laissait n'importe quel détenteur de la clé
+    // publique bloquer l'IP de son choix, dev compris, et le dev bloqué ne
+    // pouvait plus lever son propre blocage depuis l'application. Le droit est
+    // désormais réservé à `service_role` (migration 0034), dont la clé ne
+    // quitte pas le serveur.
     if (doitBloquerIp && ip) {
-      await supabase.rpc("bloquer_ip", {
+      await clientAdmin().rpc("bloquer_ip", {
         p_ip: ip,
         p_motif: `${adressesDistinctes} adresses distinctes essayées`,
       });

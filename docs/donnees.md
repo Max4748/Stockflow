@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-16 tables, 4 vues, 72 fonctions, 23 politiques RLS. Le SQL fait référence : les
+17 tables, 4 vues, 74 fonctions, 24 politiques RLS. Le SQL fait référence : les
 migrations sont commentées et se lisent dans l'ordre.
 
 ## Les tables
@@ -388,6 +388,38 @@ figés des autres ventes ne changent pas, c'est tout l'intérêt du figeage. Seu
 le coût moyen _courant_ se recale, donc les ventes à venir. Il reste conservé
 au-delà de la fenêtre, où une annulation est rare et mérite un ralentisseur.
 
+### Ce qui est effacé laisse une trace
+
+Le journal comptable est **dérivé de l'état courant** : il lit `ventes`,
+`restocks`, `versements`, `sav`. Conséquence directe, tout ce qu'une
+suppression retire disparaît aussi du journal. Un achat de 345 € annulé
+changeait les totaux sans laisser la moindre ligne pour l'expliquer.
+
+`journal_operations` (migration `0035`) enregistre le **geste**, pas l'entité :
+qui, quoi, quand, et de quoi il s'agissait. Sept fonctions l'alimentent.
+
+| Fonction | Ce que la trace conserve |
+| --- | --- |
+| `supprimer_restock` | la référence, les unités, le total payé |
+| `modifier_restock` | l'état d'avant, introuvable ailleurs après coup |
+| `supprimer_versement` | le montant, et le vendeur dont la dette remonte |
+| `supprimer_sav` | le motif, que la suppression efface |
+| `revoquer_sav` | le motif du refus, le dossier sortant du journal |
+| `modifier_vente` | les unités, le montant et le client d'avant |
+| `retirer_produit` | le nom, et lequel des deux dénouements a eu lieu |
+
+**Le libellé est rédigé pendant que l'entité existe.** Le reconstruire après le
+`delete` serait impossible, et c'est tout l'objet de la table. C'est aussi la
+propriété la plus facile à casser sans que rien n'échoue : une trace vide
+s'écrit sans erreur.
+
+Une archive par type supprimé aurait demandé sept tables jumelles à tenir à
+jour. Ici on n'archive pas l'entité, on enregistre ce qui a été fait.
+
+**Deux journaux, deux portées.** `journal_admin` est réservé au dev, parce
+qu'il dit qui surveille qui. `journal_operations` regarde tout l'encadrement :
+un achat annulé est une opération comptable, pas une action d'administration.
+
 ### Une vente annulée reste visible
 
 `ventes_annulees` (migration `0029`) archive l'en-tête d'une vente au moment de
@@ -416,7 +448,7 @@ pour elle.
 
 ## Ordre des migrations
 
-34 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
+39 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
 `create table if not exists`, `create or replace`, `drop policy if exists`.
 
 | Fichier                        | Contenu                                                                   |
@@ -455,6 +487,11 @@ pour elle.
 | `0031_journal_admin`           | table et écriture des traces d'administration de comptes |
 | `0032_tracer_comptes`          | les sept fonctions de compte appellent `tracer_admin()` |
 | `0033_ip_bloquees`             | palier 3 de l'anti-bourrage : persistant, durée croissante |
+| `0034_bloquer_ip_privilegie`   | `bloquer_ip` réservée à `service_role` : `anon` pouvait bloquer une IP arbitraire |
+| `0035_journal_operations`      | table des opérations qui effacent une écriture |
+| `0036_tracer_operations`       | sept fonctions destructrices déclarent ce qu'elles effacent |
+| `0037_journal_avec_operations` | le journal comptable les affiche |
+| `0038_reinitialiser_donnees`   | vider l'activité en gardant les comptes, sous phrase de confirmation |
 
 Trois points de séquencement non arbitraires :
 

@@ -5,6 +5,8 @@ import { exigerDev } from "@/lib/auth";
 import { creerClient } from "@/lib/supabase/server";
 import type { Anomalie } from "@/lib/types";
 
+import { BoutonReinitialiser } from "./formulaire";
+
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Intégrité — StockFlow" };
 
@@ -21,8 +23,42 @@ export default async function PageIntegrite() {
   await exigerDev();
   const supabase = await creerClient();
 
-  const { data, error } = await supabase.rpc("verifier_coherence_stock");
-  const anomalies = (data as Anomalie[] | null) ?? [];
+  // `head: true` : seuls les comptages servent, pas les lignes. Ils alimentent
+  // le dialogue de remise à zéro, qui doit annoncer ce qu'il va effacer avec
+  // des nombres réels et non une formule vague.
+  const compter = (table: string) =>
+    supabase.from(table).select("id", { count: "exact", head: true });
+
+  const [rAnomalies, ...comptages] = await Promise.all([
+    supabase.rpc("verifier_coherence_stock"),
+    compter("ventes"),
+    compter("ventes_annulees"),
+    compter("mouvements_stock"),
+    compter("versements"),
+    compter("sav"),
+    compter("demandes_restock"),
+    compter("restocks"),
+    compter("produits"),
+    compter("journal_operations"),
+  ]);
+
+  const anomalies = (rAnomalies.data as Anomalie[] | null) ?? [];
+  const error = rAnomalies.error;
+
+  const LIBELLES = [
+    "Ventes",
+    "Ventes annulées",
+    "Mouvements de stock",
+    "Versements",
+    "Dossiers SAV",
+    "Demandes de réassort",
+    "Achats fournisseur",
+    "Produits",
+    "Journal des opérations",
+  ];
+  const inventaire = comptages
+    .map((r, i) => ({ libelle: LIBELLES[i], lignes: r.count ?? 0 }))
+    .filter((l) => l.lignes > 0);
 
   // Regroupement par type : trente lignes du même symptôme, c'est un seul
   // problème, pas trente.
@@ -33,7 +69,13 @@ export default async function PageIntegrite() {
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-xl font-semibold">Intégrité des données</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold">Intégrité des données</h1>
+        {/* Le geste le plus destructeur de l'application vit sur l'écran le
+            plus technique, réservé au dev, et non près des données qu'il
+            efface : on ne tombe pas dessus en cherchant autre chose. */}
+        <BoutonReinitialiser inventaire={inventaire} />
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
