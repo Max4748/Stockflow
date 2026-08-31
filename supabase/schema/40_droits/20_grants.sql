@@ -23,32 +23,25 @@ revoke temporary on database postgres from public;
 -- qui valent pour tout le schéma existant à ce point.
 -- ============================================================
 --
--- CE FICHIER N'EST PLUS LE SEUL, ET NE L'EST PLUS DEPUIS LONGTEMPS.
+-- CE FICHIER EST LE SEUL, ET IL FAUT QUE ÇA LE RESTE.
 --
--- Il a d'abord porté toute la réponse à « qui peut faire quoi », et son
--- en-tête l'affirmait encore alors que ce n'était plus vrai : DIX-HUIT
--- migrations postérieures posent des `grant`, des `create policy` ou un
--- `enable row level security`, parce que chacune apporte une table ou une
--- fonction qui n'existait pas ici.
+-- Du temps des migrations numérotées, la réponse à « qui peut faire quoi »
+-- était dispersée : dix-huit fichiers posaient des `grant`, des
+-- `create policy` ou un `enable row level security`, chacun pour la table
+-- qu'il venait d'ajouter. L'en-tête du premier affirmait pourtant porter tout
+-- le sujet, ce qui était faux et faisait manquer la moitié du sujet à qui le
+-- croyait.
 --
--- La règle à retenir n'est donc pas « tout est dans un seul fichier », qui ferait manquer
--- la moitié du sujet à qui la croit, mais :
+-- Ici, tous les `grant` et `revoke` du schéma sont réunis, et le
+-- `enable row level security` reste avec sa table en couche 10. La règle :
 --
---   TOUTE MIGRATION QUI CRÉE UNE TABLE POSE SA PROPRE RLS ET SES PROPRES
---   POLICIES, DANS SON PROPRE FICHIER. Une table créée après ce point et
---   laissée sans RLS serait ouverte à tout détenteur d'un GRANT, sans qu'aucune
---   erreur ne le signale.
+--   TOUTE TABLE POSE SA RLS AVEC ELLE, ET SES POLICIES DANS
+--   `40_droits/10_policies.sql`. Une table laissée sans RLS serait ouverte à
+--   tout détenteur d'un GRANT, sans qu'aucune erreur ne le signale.
 --
 -- Le filet qui rattrape l'oubli est l'inventaire de `appliquer-schema.sh`,
--- ligne « tables SANS RLS (doit valoir 0) », et l'assertion équivalente du
--- harnais de rejeu. C'est là qu'on vérifie, pas dans ce fichier.
---
--- Ce qui reste vrai et propre au socle de sécurité : le modèle de menace ci-dessous, le
--- socle (`anon` n'a rien, jamais), et les règles portant sur les tables du
--- schéma initial.
---
--- Il vient malgré tout APRÈS les huit premières migrations : la base reste
--- fermée pendant toute l'installation du schéma de départ.
+-- ligne « tables SANS RLS (doit valoir 0) », l'assertion équivalente du
+-- harnais de rejeu, et l'empreinte de schéma, qui compare les droits eux-mêmes.
 --
 -- MODÈLE DE MENACE — la clé anon est publique par construction. Un vendeur
 -- authentifié peut donc attaquer PostgREST directement (curl, console

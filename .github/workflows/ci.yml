@@ -55,7 +55,7 @@ jobs:
 
       # PGlite, aucun service requis. Placé AVANT les autres : il installe le
       # schéma depuis une base vide et le rejoue trois fois, donc il échoue
-      # vite et pour une raison lisible si une migration n'est pas rejouable.
+      # vite et pour une raison lisible si un fichier n'est pas rejouable.
       # Le seul module dont la logique ne vit pas en SQL. Aucun service, aucune
       # dépendance : node:test est dans Node depuis la 18.
       - name: Logique d'anti-bourrage

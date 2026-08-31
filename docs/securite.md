@@ -514,11 +514,10 @@ toute mise à jour du registre.
 
 ## Résumé : ce qu'il faut vérifier avant de faire confiance à un nouvel écran
 
-- [ ] La table est-elle en RLS activée ? Le fichier de référence reste
-      `supabase/schema/40_droits/`, mais une table créée après lui porte sa propre
-      RLS et ses propres policies dans SA migration (c'est le cas de `sav`).
-      L'inventaire du script de migration affiche « tables SANS RLS », qui doit
-      valoir 0.
+- [ ] La table est-elle en RLS activée ? Le `enable row level security` est
+      posé avec la table, dans `supabase/schema/10_types_et_tables/`, et ses
+      policies dans `40_droits/10_policies.sql`. L'inventaire de
+      `appliquer-schema.sh` affiche « tables SANS RLS », qui doit valoir 0.
 - [ ] Si c'est une écriture : passe-t-elle par une fonction, jamais par
       `.insert()` / `.update()` direct sur une table sensible ?
 - [ ] La fonction vérifie-t-elle le rôle **en première ligne**, avant toute

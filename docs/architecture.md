@@ -115,6 +115,30 @@ src/
     └── gestion/            9 écrans
 ```
 
+Et le SQL, où vit la logique métier. **L'ordre des couches est la seule
+contrainte** : à l'intérieur d'une couche, l'ordre alphabétique suffit.
+
+```
+supabase/
+├── schema/                     chaque objet défini UNE fois
+│   ├── 10_types_et_tables/     types, tables, index, RLS — numérotés selon
+│   │                           les clés étrangères, pas selon le domaine
+│   ├── 20_fonctions/           les 74 fonctions, groupées par domaine
+│   ├── 30_vues_et_triggers/    après 20 : leurs corps citent des fonctions
+│   ├── 40_droits/              policies, grants, commentaires — après 20 :
+│   │                           les 24 policies citent est_admin / est_dev
+│   └── 90_donnees/             amorçage, reprises de données
+├── appliquer-schema.sh         applique schema/*/*.sql dans l'ordre du disque
+├── empreinte-schema.sh         empreinte comparable du schéma obtenu
+├── empreinte-reference.txt     la référence, confrontée par la CI
+└── tests/                      pgTAP + rejeu 3 passes en PGlite
+```
+
+L'empreinte couvre les **droits** (`proacl` / `relacl`) autant que les
+structures. C'est ce qui attrape un `revoke` perdu : sur une base neuve,
+PostgreSQL accorde `execute` à `PUBLIC` sur toute fonction créée, et aucun test
+de comportement ne verrait la différence.
+
 ## Le proxy ne fait qu'une chose
 
 `src/proxy.ts` rafraîchit la session et distingue **public / authentifié**. Il ne

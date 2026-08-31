@@ -4,7 +4,7 @@
 -- ============================================================
 -- Tout le fichier tourne dans UNE transaction annulée à la fin (_fin.sql).
 -- Conséquences voulues :
---   • les tests s'exécutent contre le schéma réel, migrations comprises —
+--   • les tests s'exécutent contre le schéma réel tel qu'il est appliqué —
 --     pas contre une copie qui pourrait diverger ;
 --   • ils ne laissent rien derrière eux, pas même l'extension pgtap. C'est
 --     important : pgtap crée ~1000 fonctions dans `public`, ce qui fausserait

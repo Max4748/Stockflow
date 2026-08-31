@@ -1,7 +1,8 @@
 # Modèle de données et règles comptables
 
 17 tables, 4 vues, 74 fonctions, 24 politiques RLS. Le SQL fait référence : les
-migrations sont commentées et se lisent dans l'ordre.
+fichiers de `supabase/schema/` sont commentés, et chaque objet n'y est défini
+qu'une fois.
 
 ## Les tables
 
@@ -574,20 +575,25 @@ document dont la violation ne casse aucun test.
 ### Changer les colonnes de sortie d'une fonction
 
 `create or replace` **ne peut pas** modifier les paramètres `OUT` d'une fonction
-(« cannot change return type of existing function »). Il faut la droper. Deux
-conséquences, apprises en rejouant les migrations :
-
-1. le `drop` emporte le `grant execute` : la migration qui recrée la fonction
-   doit **reposer le grant** ;
-2. le fichier d'**origine** doit lui aussi gagner un
-   `drop function if exists …(signature)` avant son `create`, sinon le rejeu
-   intégral échoue à ce fichier, la version en base étant déjà la nouvelle.
+(« cannot change return type of existing function »). Il faut la droper : ajouter
+un `drop function if exists …(ancienne signature)` juste avant son
+`create or replace`, dans le fichier de la fonction.
 
 Même piège pour une **vue** : `create or replace view` ne sait qu'ajouter des
 colonnes _en fin de liste_, et refuse d'en renommer une. Une colonne insérée au
-milieu impose un `drop view` dans les deux fichiers.
+milieu impose un `drop view if exists` avant le `create`.
+
+Le découpage en couches a retiré les deux pièges qui rendaient l'opération
+délicate du temps des migrations numérotées :
+
+- le `drop` emporte le `grant execute`, mais la couche `40_droits` repose les
+  82 `grant execute` **après** la couche `20_fonctions` : le droit revient tout
+  seul ;
+- il fallait aussi modifier le fichier d'**origine**, sinon le rejeu intégral
+  échouait là-bas. Il n'y a plus de fichier d'origine : une fonction, un
+  endroit.
 
 Concernés à ce jour : `creances()`, `ma_dette()`, la vue `v_comptes_vendeurs`,
 `revenus_vendeurs()`, `mes_ventes()`, `ventes_vendeur()`, `ventes_savables()`
-et `dossiers_sav()`. Le contrôle qui l'attrape est gratuit : **lancer le script de
-migration deux fois de suite.**
+et `dossiers_sav()`. Le contrôle qui l'attrape est gratuit : **`npm run test:db`**,
+qui installe le schéma sur une base vide puis le rejoue deux fois.

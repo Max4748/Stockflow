@@ -15,7 +15,7 @@
  *            colonnes de sortie ont changé (`create or replace view` ne sait
  *            qu'ajouter des colonnes en fin de liste) ou une fonction dont
  *            le type de retour a bougé.
- *   passe 3  la stabilité. Une migration peut être idempotente une fois sans
+ *   passe 3  la stabilité. Un fichier peut être idempotent une fois sans
  *            l'être deux, typiquement un renommage gardé par un `if exists`
  *            qui redevient vrai après le passage suivant.
  *
@@ -40,7 +40,7 @@ const db = new PGlite();
 //
 // Aucun privilège par défaut n'est accordé, volontairement. Un projet Supabase
 // réel accorde `select` à `authenticated` sur les nouvelles tables ; ne pas le
-// faire ici reproduit le cas le plus strict et vérifie que les migrations
+// faire ici reproduit le cas le plus strict et vérifie que les fichiers
 // posent elles-mêmes tous les GRANT dont l'application a besoin.
 // ---------------------------------------------------------------------------
 await db.exec(`
@@ -58,7 +58,7 @@ await db.exec(`
   create role anon;
   create role service_role;
 
-  -- auth.uid() lit le même GUC que l'instance réelle : les migrations
+  -- auth.uid() lit le même GUC que l'instance réelle : les fichiers
   -- utilisent request.jwt.claims, pas une variable inventée pour le test.
   create or replace function auth.uid() returns uuid language sql stable as $fn$
     select nullif(
@@ -121,7 +121,7 @@ for (let passe = 1; passe <= PASSES; passe++) {
 // ---------------------------------------------------------------------------
 // Inventaire : le même que celui d'appliquer-schema.sh, pour que les deux
 // chemins racontent la même chose. Une divergence signalerait un objet créé
-// par l'instance Supabase plutôt que par une migration.
+// par l'instance Supabase plutôt que par le schéma.
 // ---------------------------------------------------------------------------
 const { rows } = await db.query(`
   select

@@ -36,7 +36,7 @@ comment on table ip_bloquees is
   'Palier 3 de l''anti-bourrage. jusqu_a NULL = blocage définitif, posé à la main.';
 
 -- Le commentaire de la fonction porte la règle là où on la lit : dans
--- `\df+ bloquer_ip`, pas seulement dans un fichier de migration.
+-- `\df+ bloquer_ip`, pas seulement dans un fichier du dépôt.
 comment on function bloquer_ip(text, text) is
   'Palier 3 de l''anti-bourrage. Réservée à service_role : le paramètre p_ip est choisi par l''appelant, l''ouvrir à anon permettait de bloquer une adresse arbitraire, dev compris.';
 

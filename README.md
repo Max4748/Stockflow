@@ -83,8 +83,9 @@ diagnostic et sauvegardes : [docs/exploitation.md](docs/exploitation.md).
 npm run typecheck && npm run lint && npm run test:unit && npm run verif:sql && npm run test:db
 ```
 
-Ces trois-là ne demandent rien : `test:db` rejoue les migrations trois fois sur
-un Postgres compilé en WebAssembly, sans Docker ni instance Supabase.
+Ces trois-là ne demandent rien : `test:db` installe le schéma sur une base vide
+puis le rejoue deux fois, sur un Postgres compilé en WebAssembly — sans Docker
+ni instance Supabase.
 
 Les règles métier, elles, ont besoin d'un vrai moteur. Un fichier le fournit :
 
@@ -109,9 +110,10 @@ base de test à maintenir. Détail : [supabase/tests/](supabase/tests/README.md)
 
 Deux contrôles complètent le typage :
 `verifier_coherence_stock()` vérifie les trois invariants qu'aucune contrainte
-SQL ne peut porter (écran Gestion → Intégrité), et **rejouer le script de
-migration deux fois de suite** attrape les changements de signature qu'un seul
-passage laisse filer.
+SQL ne peut porter (écran Gestion → Intégrité), et **l'empreinte de schéma**
+refuse tout écart entre la base obtenue et `supabase/empreinte-reference.txt` —
+y compris un `grant` ou un `revoke` perdu, qu'aucun test de comportement ne
+verrait.
 
 ## Construit dans cet ordre
 

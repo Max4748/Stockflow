@@ -14,7 +14,7 @@
 --
 -- Écrit comme un `retour` motivé, jamais comme une correction silencieuse :
 -- le registre doit pouvoir expliquer d'où vient chaque unité, y compris
--- celles remises en place par une migration.
+-- celles remises en place par ce correctif.
 --
 -- Rejouable : la seconde exécution ne trouve plus rien à rapatrier, le
 -- `where` ne remontant que les détenteurs au solde non nul.

@@ -7,7 +7,7 @@
 --
 -- Un enum aurait suffi pour deux rôles, mais une valeur d'enum Postgres ne se
 -- supprime pas : renommer ou retirer un niveau devient impossible. Avec une
--- table, ajouter un quatrième niveau demain ne coûte plus une migration.
+-- table, ajouter un quatrième niveau demain ne coûte plus un changement de schéma.
 --
 -- `niveau` porte la hiérarchie, et c'est ce qui rend les contrôles triviaux :
 -- on ne gère jamais qu'un niveau STRICTEMENT inférieur au sien.

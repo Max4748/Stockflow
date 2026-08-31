@@ -18,7 +18,7 @@ export DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres
 
 Les deux scripts partagent `supabase/_connexion.sh`, qui résout la cible :
 `DATABASE_URL` si elle est posée, la stack Supabase sinon. Une seule
-définition, pour que les migrations et les tests visent toujours le même
+définition, pour que le schéma et les tests visent toujours le même
 moteur.
 
 Sortie au format TAP, code de sortie non nul dès qu'une assertion échoue ou
@@ -55,7 +55,7 @@ que les assertions ci-dessus, pour dix fois le coût d'entretien.
 
 Chaque fichier est exécuté dans **une transaction annulée à la fin**. Il n'y a
 donc ni base de test, ni jeu de données figé à maintenir : les tests tournent
-contre le schéma réel, migrations comprises, et ne laissent rien derrière eux,
+contre le schéma réel tel qu'il est appliqué, et ne laissent rien derrière eux,
 pas même l'extension pgtap, qui est créée puis annulée à chaque passe.
 
 Deux conséquences à connaître avant d'écrire un test :
