@@ -33,14 +33,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 #   Error: Failed to collect page data for /changer-mot-de-passe
 #     [cause]: Variable d'environnement manquante : SUPABASE_URL.
 #
-# (Vérifié en retirant ces trois lignes : le build échoue bien ainsi.)
+# (Vérifié en retirant ces quatre lignes : le build échoue bien ainsi.)
 #
 # Elles ne franchissent pas la frontière d'étape : le `runner` ci-dessous
 # repart d'un FROM neuf. Rien de ceci n'existe dans l'image finale, et aucune
 # de ces valeurs n'est un secret de toute façon.
 ENV SUPABASE_URL=http://placeholder.invalid \
     SUPABASE_ANON_KEY=valeur-de-build \
-    SUPABASE_SERVICE_ROLE_KEY=valeur-de-build
+    SUPABASE_SERVICE_ROLE_KEY=valeur-de-build \
+    APP_URL=http://placeholder.invalid
 
 RUN npm run build
 
