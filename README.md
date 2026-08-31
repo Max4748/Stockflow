@@ -29,7 +29,7 @@ avez l'URL, la clé anon et la clé service_role.
 cp .env.example .env.local
 ```
 
-Les trois valeurs sont lues à l'exécution : en changer ne demande aucun rebuild.
+Les quatre valeurs sont lues à l'exécution : en changer ne demande aucun rebuild.
 
 **2. Schéma de la base**
 
@@ -101,7 +101,7 @@ commandes à chaque push : la section ci-dessus n'est pas une promesse, c'est ce
 qui tourne.
 
 Les tests sont en **pgTAP**, pas en TypeScript : c'est en SQL que vit la logique
-métier, donc c'est là que porte la couverture. 185 assertions, portant sur les règles
+métier, donc c'est là que porte la couverture. 194 assertions, portant sur les règles
 qu'on ne peut ni annuler ni deviner en lisant l'interface : la
 hiérarchie des rôles, le calcul de la dette, la borne anti-surversement, les
 deux régimes du SAV et la révocation d'un échange.
@@ -120,7 +120,7 @@ verrait.
 | Étape | Contenu |
 |---|---|
 | Socle | Authentification, espace **vendeur** |
-| Gestion | Espace **gestion** (9 écrans), niveaux de permission, correction des ventes, réassort depuis l'écran Stock |
+| Gestion | Espace **gestion** (12 écrans), niveaux de permission, correction des ventes, réassort depuis l'écran Stock |
 | Confort | Thème clair / sombre. Bascule d'espace et transfert direct de stock, pour un gérant qui vend aussi |
 | SAV | D'abord rattaché à la vente côté gestion, puis déclaré par le vendeur : échange immédiat ou remboursement arbitré, avec son propre écran et une pastille de nouveauté |
 | Déploiement | Image standalone, limite mémoire, redémarrage automatique |

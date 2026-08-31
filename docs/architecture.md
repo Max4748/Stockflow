@@ -60,7 +60,7 @@ lues à l'exécution, jamais inlinées dans le bundle.
 | Pas de temps réel par websocket   | assumé : le service `realtime` n'est pas démarré                             |
 
 La containerisation est venue encaisser ce choix. Le [Dockerfile](../Dockerfile)
-n'a **aucun build-arg** : les trois variables sont fournies par Compose à
+n'a **aucun build-arg** : les quatre variables sont fournies par Compose à
 l'exécution, et le passage du poste de développement
 (`http://127.0.0.1:8001`) au conteneur (`http://stockflow-kong:8000`) s'est fait
 en changeant une ligne de `.env`, sans reconstruire quoi que ce soit.
@@ -100,7 +100,7 @@ src/
 ├── proxy.ts                convention Next 16 (ex-middleware.ts) : rafraîchit
 │                           la session, cloisonne public / authentifié
 ├── lib/
-│   ├── env.ts              valide les 3 variables au chargement
+│   ├── env.ts              valide les 4 variables au chargement
 │   ├── supabase/server.ts  client de session, soumis à la RLS
 │   ├── supabase/admin.ts   ⚠️ clé service_role, voir securite.md
 │   ├── auth.ts             exigerProfil / exigerAdmin / exigerDev
@@ -111,8 +111,8 @@ src/
 │                           navigations, thème
 └── app/
     ├── login/ changer-mot-de-passe/ en-attente/
-    ├── vendeur/            4 écrans + correction de vente
-    └── gestion/            9 écrans
+    ├── vendeur/            5 écrans + correction de vente
+    └── gestion/            12 écrans + fiche vendeur
 ```
 
 Et le SQL, où vit la logique métier. **L'ordre des couches est la seule
