@@ -1,5 +1,8 @@
 # Tests SQL
 
+La logique d'anti-bourrage est le seul module métier qui ne vit pas en SQL :
+elle a ses propres tests, `npm run test:unit`, sans dépendance ajoutée.
+
 ```bash
 ./supabase/tests/lancer.sh        # tout
 ./supabase/tests/lancer.sh 03     # un fichier
@@ -39,6 +42,8 @@ Ce sont celles qui sont couvertes :
 | `08_stock_lie.sql` | gérant lié à l'entrepôt : ses ventes y puisent, et le stock total de la maison ne bouge que de ce qui est vendu |
 | `09_restock.sql` | correction et annulation d'un achat, et les deux raisons distinctes qui les ferment : stock sorti, coût figé |
 | `10_ventes_annulees.sql` | une vente annulée reste visible et ne compte plus nulle part, les deux moitiés de la promesse |
+| `11_journal_admin.sql` | chaque geste sur un compte laisse une trace, avec la valeur d'avant, et une action refusée n'en laisse aucune |
+| `12_ip_bloquees.sql` | durée croissante, expiration automatique, et le définitif réservé au dev |
 
 Il n'y a **aucun test d'interface**. Le choix est délibéré : les Server Actions
 ne font que relayer, et un test qui clique sur un bouton ne dirait rien de plus

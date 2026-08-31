@@ -216,6 +216,86 @@ l'application, GoTrue, et le gabarit de courriel.
 réinitialisation : c'est le rôle du délai progressif décrit plus bas, et du
 fait que la réponse est identique que l'adresse existe ou non.
 
+## Freiner les tentatives de connexion
+
+Trois paliers, deux en mémoire et un en base. La règle qui les gouverne est
+dans `src/lib/anti-bourrage.ts`, sans dépendance à HTTP ni à la base, donc
+testable directement (`npm run test:unit`).
+
+| Palier | Déclencheur | Effet | Où il vit |
+| --- | --- | --- | --- |
+| Ralentir | échecs sur un même appareil ou une même adresse | délai croissant, plafonné à 4 s | mémoire |
+| Refuser | 8 échecs sur la même clé dans 15 minutes | rejet sans interroger GoTrue | mémoire |
+| Bloquer l'IP | **5 adresses e-mail distinctes** depuis la même IP | rejet, durée croissante | table `ip_bloquees` |
+
+### Pourquoi le palier 3 compte des adresses, et non des échecs
+
+Bloquer une IP bloque **tout le monde derrière elle**. Les vendeurs sont sur
+téléphone, donc derrière le NAT d'un opérateur : des milliers d'abonnés
+partagent une adresse publique. Compter les échecs mettrait un vendeur dehors
+parce qu'un inconnu du même opérateur a tapé à côté.
+
+Compter les **adresses essayées** est la signature du bourrage d'identifiants,
+et un utilisateur légitime ne peut pas la produire : il n'en a qu'une. Se
+tromper cinquante fois sur la sienne ne déclenche jamais le palier 3.
+
+### Pourquoi aucun blocage automatique n'est définitif
+
+Une IP n'est pas une identité. Les adresses résidentielles changent au
+redémarrage de la box, celles des opérateurs mobiles tournent en permanence.
+Celle qui attaque aujourd'hui appartiendra à quelqu'un d'autre dans trois
+semaines : un blocage définitif accumulerait des interdictions sur des adresses
+redevenues légitimes, et la panne arriverait des mois plus tard, sans que
+personne fasse le lien.
+
+La durée croît donc à chaque récidive, de 15 minutes à 7 jours. Une adresse
+réellement hostile finit à sept jours renouvelés, ce qui équivaut à un blocage ;
+une adresse recyclée se libère seule.
+
+Le définitif existe, mais comme **geste humain** : `bloquer_ip_definitivement()`
+est réservée au dev, exige un motif, et se défait d'un bouton.
+
+### `CF-Connecting-IP` fait foi ici, et nulle part ailleurs
+
+L'application n'écoute que sur `127.0.0.1` derrière `cloudflared`, avec `ufw`
+en deny-all : personne d'autre que le tunnel ne peut poser cet en-tête.
+
+Ce n'est pas en contradiction avec `APP_URL` plus haut. On y refuse
+`x-forwarded-host` parce qu'on n'en a **pas besoin** : l'application connaît sa
+propre adresse. Pour l'IP de l'appelant il n'existe aucune autre source. La
+règle est « ne pas faire confiance sans nécessité », pas « ne jamais faire
+confiance ».
+
+### Ce que ça ne couvre pas
+
+Les paliers 1 et 2 disparaissent au redémarrage du conteneur. Sans conséquence :
+ils ne font que ralentir, et un attaquant ne provoque pas de redémarrage. Le
+palier 3, lui, est en base et survit aux déploiements.
+
+Rien de tout cela ne protège un appel direct à GoTrue. C'est borné par le fait
+que Kong n'est pas publié, la même borne que pour la 2FA.
+
+## Journal d'administration
+
+Les sept fonctions qui touchent un compte écrivent une ligne dans
+`journal_admin` : qui, sur qui, quelle action, et la valeur **avant**. La
+lecture est réservée au dev, la liste disant qui surveille qui.
+
+Deux propriétés, et elles se tiennent :
+
+- l'écriture est **dans la même transaction** que l'action. Une action refusée
+  n'écrit donc rien, et une trace qui échoue annule l'action. Une trace « au
+  mieux » est une trace absente le jour où elle compte ;
+- la valeur d'avant est relevée **avant** l'`update`, sinon elle n'existe plus.
+
+Ce n'est pas un trigger sur `profils`, délibérément : un trigger verrait le
+changement mais pas l'**intention**, ni les actions qui n'écrivent pas dans
+`profils`, comme l'invitation.
+
+`tracer_admin()` n'est accessible à personne : elle n'est appelée que depuis
+d'autres fonctions `security definer`. L'exposer permettrait de forger une
+trace.
+
 ## Double authentification (TOTP)
 
 Facultative, activable par n'importe quel compte d'encadrement depuis

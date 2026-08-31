@@ -11,6 +11,11 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // `node --test --experimental-strip-types` exige l'extension explicite
+    // dans les imports : c'est lui qui exécute les fichiers *.test.ts, sans
+    // passer par un empaqueteur. `noEmit` est déjà posé, la condition de
+    // TypeScript est donc remplie.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

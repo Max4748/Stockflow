@@ -65,6 +65,7 @@ const GROUPES: { titre: string; niveauMinimum?: number; entrees: Entree[] }[] =
       niveauMinimum: 3,
       entrees: [
         { href: "/gestion/comptes", libelle: "Comptes gérants" },
+        { href: "/gestion/journal-admin", libelle: "Journal admin" },
         { href: "/gestion/integrite", libelle: "Intégrité" },
       ],
     },

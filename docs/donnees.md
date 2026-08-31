@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-14 tables, 4 vues, 65 fonctions, 21 politiques RLS. Le SQL fait référence : les
+16 tables, 4 vues, 72 fonctions, 23 politiques RLS. Le SQL fait référence : les
 migrations sont commentées et se lisent dans l'ordre.
 
 ## Les tables
@@ -416,7 +416,7 @@ pour elle.
 
 ## Ordre des migrations
 
-30 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
+34 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
 `create table if not exists`, `create or replace`, `drop policy if exists`.
 
 | Fichier                        | Contenu                                                                   |
@@ -451,6 +451,10 @@ pour elle.
 | `0027_annulation_vente_liee`   | annuler la vente d'un gérant lié rend l'unité à l'entrepôt, et rapatrie celles restées échouées |
 | `0028_journal_motifs`          | le journal affiche le motif d'un transfert ou d'un retour au lieu d'un libellé générique |
 | `0029_ventes_annulees`         | une vente annulée passe en archive : toujours visible, plus jamais comptée |
+| `0030_prix_vente_positif`      | une vente à 0 € n'est pas une vente : la contrainte passe à `> 0` |
+| `0031_journal_admin`           | table et écriture des traces d'administration de comptes |
+| `0032_tracer_comptes`          | les sept fonctions de compte appellent `tracer_admin()` |
+| `0033_ip_bloquees`             | palier 3 de l'anti-bourrage : persistant, durée croissante |
 
 Trois points de séquencement non arbitraires :
 

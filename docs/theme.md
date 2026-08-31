@@ -114,6 +114,51 @@ assombrit discrètement la page ; sur fond sombre, du noir à 10 % sur un fond
 déjà quasi noir ne se voit pas : un dialogue aurait flotté sans séparation
 visuelle du contenu. Corrigé en `bg-black/10 dark:bg-black/60`.
 
+## Palette claire : un blanc cassé, pas un blanc pur
+
+Le fond valait `oklch(1)`, comme les cartes et les popovers. Les trois
+surfaces confondues, une carte ne se détachait de la page que par sa bordure,
+et l'ensemble était dur à l'œil sur un écran lumineux.
+
+Le fond descend à `oklch(0.98)`, soit `#f8f8f8`. Cartes et popovers **restent
+blancs** : c'est ce qui les fait ressortir, exactement comme le thème sombre
+les pose plus clairs que son fond.
+
+| Surface | Sombre | Clair |
+| --- | --- | --- |
+| Fond | `0.185` | `0.98` |
+| Carte | `0.235` | `1` |
+| Popover | `0.25` | `1` |
+| `--muted` | `0.3` | `0.97` |
+
+Les deux thèmes étagent désormais leurs surfaces dans le même sens, en
+s'éloignant du fond.
+
+### Deux valeurs recalculées, dont une qui était déjà fausse
+
+Assombrir le fond réduit le contraste de tout ce qui s'y pose. Les deux seuils
+que ce document invoque ont donc été recalculés sur les **trois** surfaces, et
+non sur le fond seul.
+
+| Variable | Avant | Après | Fond | Carte | `--muted` | Seuil |
+| --- | --- | --- | --- | --- | --- | --- |
+| `--bordure-interactive` | `0.66` | **`0.645`** | 3,11 | 3,30 | 3,02 | 3:1 |
+| `--muted-foreground` | `0.556` | **`0.545`** | 4,68 | 4,96 | 4,54 | 4,5:1 |
+
+**La contrainte vient de `--muted`, pas de la carte ni du fond.** Un texte
+sombre atteint son plus faible contraste sur la surface la plus SOMBRE des
+trois, c'est-à-dire `--muted` à `0.97`. Raisonner sur la carte, la plus claire,
+donne des chiffres flatteurs et faux.
+
+Conséquence utile : **ces deux valeurs ne dépendent pas du fond.** `--muted`
+ne bouge pas avec lui, donc ajuster la clarté de la page ne redemande aucun
+calcul tant qu'on reste au-dessus de `0.97`. C'est aussi ce qui fixe le
+plancher : sous `0.97`, les zones muettes se confondraient avec la page.
+
+C'est ce calcul qui a révélé que `--muted-foreground` tombait déjà à **4,34:1
+sur `--muted`**, sous le seuil, et **avant** ce changement de fond. Le fond
+plus sombre n'a pas créé ce défaut, il a obligé à le regarder.
+
 ## Palette sombre : adoucie, pas le défaut shadcn
 
 Le fond par défaut de shadcn (`oklch(0.145)`) est quasi noir, agressif sur écran

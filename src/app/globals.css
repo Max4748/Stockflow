@@ -66,7 +66,16 @@
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
 
-  --background: oklch(1 0 0);
+  /* Blanc CASSÉ, pas blanc pur.
+     Le thème sombre étage déjà ses surfaces : fond 0.185, carte 0.235,
+     popover 0.25. Le thème clair les avait toutes à 1, donc une carte ne se
+     détachait de la page que par sa bordure. Descendre le fond à 0.985 rend
+     l'étagement symétrique et fatigue moins l'œil sur un écran lumineux.
+     Les cartes et les popovers RESTENT blancs : c'est ce qui les fait
+     ressortir, comme en sombre où ils sont plus clairs que le fond.
+     Plancher à 0.97, qui est --muted : en dessous, les zones muettes se
+     confondraient avec la page. */
+  --background: oklch(0.98 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -77,7 +86,12 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* 0.545 et non 0.556 : le seuil de 4,5:1 se mesure contre la surface la
+     plus SOMBRE sur laquelle ce texte se pose, c'est-à-dire --muted (0.97) et
+     non la carte. L'ancienne valeur y tombait à 4,34:1, sous le seuil, et ce
+     depuis avant l'assombrissement du fond. Recalculé sur les trois
+     surfaces : fond 4,68 · carte 4,96 · muted 4,54. */
+  --muted-foreground: oklch(0.545 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -88,7 +102,10 @@
      3,1:1 sur fond blanc, au-dessus du seuil de 3:1 que demande WCAG 1.4.11
      pour délimiter un composant d'interface. --border n'atteint que 1,26:1,
      ce qui le rend inutilisable pour un bouton. */
-  --bordure-interactive: oklch(0.66 0 0);
+  /* 0.645 et non 0.66 : l'ancienne valeur tombait à 2,85:1 sur --muted, sous
+     le seuil de 3:1 de WCAG 1.4.11.
+     Recalculé : fond 3,11 · carte 3,30 · muted 3,02. */
+  --bordure-interactive: oklch(0.645 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
