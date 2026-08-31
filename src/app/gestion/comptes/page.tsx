@@ -7,7 +7,11 @@ import { date } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
 import type { Creance } from "@/lib/types";
 
-import { FormulaireCreationGerant, LigneRole } from "./formulaire";
+import {
+  BoutonStockLie,
+  FormulaireCreationGerant,
+  LigneRole,
+} from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Comptes gérants — StockFlow" };
@@ -20,6 +24,7 @@ type CompteEncadrement = {
   niveau: number;
   actif: boolean;
   mdp_provisoire: boolean;
+  stock_lie_entrepot: boolean;
   cree_le: string;
 };
 
@@ -50,6 +55,9 @@ export default async function PageComptes() {
           {!c.actif && <Badge variant="destructive">désactivé</Badge>}
           {c.mdp_provisoire && (
             <Badge variant="secondary">mot de passe provisoire</Badge>
+          )}
+          {c.stock_lie_entrepot && (
+            <Badge variant="outline">vend depuis l&apos;entrepôt</Badge>
           )}
         </span>
       ),
@@ -108,11 +116,21 @@ export default async function PageComptes() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Le réglage « entrepôt » est ici et non dans la carte de
+              rétrogradation : il concerne TOUT l'encadrement, dev compris,
+              et c'est même le dev qui héberge l'entrepôt le plus souvent. */}
           <Tableau
             colonnes={colonnes}
             lignes={comptes}
             cle={(c) => c.id}
             vide="Aucun compte d'encadrement."
+            action={(c) => (
+              <BoutonStockLie
+                compteId={c.id}
+                nom={c.nom}
+                lie={c.stock_lie_entrepot}
+              />
+            )}
           />
           <Alert>
             <AlertDescription className="text-xs">

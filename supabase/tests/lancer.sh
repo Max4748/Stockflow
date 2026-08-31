@@ -6,21 +6,23 @@
 #   ./supabase/tests/lancer.sh              # tout
 #   ./supabase/tests/lancer.sh 03           # les fichiers dont le nom contient 03
 #
-# STACK pointe le dossier de l'instance Supabase (celui du docker-compose.yml).
+# DEUX MOTEURS POSSIBLES, et c'est ce qui rend ces tests jouables ailleurs que
+# sur la machine de l'auteur :
+#
+#   DATABASE_URL  un Postgres joignable, quel qu'il soit. C'est ce qu'emploient
+#                 la CI et `compose.test.yaml`, et le seul chemin qui ne
+#                 suppose rien de l'installation locale.
+#   STACK         à défaut, le dossier de l'instance Supabase de l'auteur,
+#                 pilotée par docker compose. Reste le chemin le plus court en
+#                 développement, mais il n'est plus obligatoire.
 set -euo pipefail
 
-STACK="${STACK:-$HOME/stockflow-supabase}"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FILTRE="${1:-}"
 
-cd "$STACK"
-
-if ! docker compose ps --status running --quiet db >/dev/null 2>&1; then
-  echo "La stack n'est pas démarrée. Lancer : cd $STACK && docker compose up -d" >&2
-  exit 1
-fi
-
-psql() { docker compose exec -T db psql -U postgres -d postgres "$@"; }
+# Une seule définition de « comment joindre la base », partagée avec
+# appliquer-migrations.sh.
+. "$DIR/../_connexion.sh"
 
 total=0; echecs=0; fichiers=0
 

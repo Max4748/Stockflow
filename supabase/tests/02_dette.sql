@@ -10,7 +10,7 @@
 --      commission — le vendeur la garde, la maison assume la perte.
 -- ------------------------------------------------------------
 
-select plan(9);
+select plan(11);
 
 select t_compte('t-dev@test.invalid',     'T-Dev',     'dev')        as dev     \gset
 select t_compte('t-vendeur@test.invalid', 'T-Vendeur', 'vendeur', 5) as vendeur \gset
@@ -74,6 +74,24 @@ select revoquer_sav(:'sav', 'Test : arbitrage inverse') as _ \gset
 reset role;
 select is(t_du(:'vendeur'), 50.00::numeric,
           'révoquer un remboursement validé rend la dette initiale');
+
+-- ---------- Une vente à 0 € n'est pas une vente ----------
+-- Le champ de prix laissé vide donnait `Number("") === 0`, qui franchissait
+-- le contrôle applicatif ET l'ancienne contrainte `>= 0`. Le chiffre
+-- d'affaires restait nul mais la commission était figée : la dette passait
+-- négative, la maison devait de l'argent pour une vente sans recette.
+select t_agir(:'vendeur') as _ \gset
+
+select throws_ok(
+  format($$ select enregistrer_vente(jsonb_build_array(
+    jsonb_build_object('produit_id', %L, 'quantite', 1, 'prix_vente_unitaire', 0))) $$,
+    :'produit'),
+  '23514', null,
+  'une vente à 0 € est refusée par la base, pas seulement par le formulaire');
+
+reset role;
+select is(t_du(:'vendeur'), 50.00::numeric,
+          'et le refus n''a pas entamé la dette : aucune ligne écrite');
 
 -- ---------- Un vendeur sans vente n'a pas de dette ----------
 select is(t_du(:'autre'), 0.00::numeric,

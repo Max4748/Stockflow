@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Réinitialisation du mot de passe</title>
+  </head>
+  <!--
+    Gabarit GoTrue pour la réinitialisation de mot de passe.
+
+    Source de vérité : ce fichier. La copie servie à GoTrue vit dans
+    ~/stockflow-supabase/volumes/templates/ et se recopie après toute
+    modification (voir docs/exploitation.md).
+
+    Contraintes propres au courriel, à respecter en cas de modification :
+      - mise en page en <table>, jamais flexbox ni grid, qu'Outlook ignore ;
+      - styles en ligne uniquement, plusieurs clients suppriment les <style> ;
+      - aucune image externe, souvent bloquée par défaut : l'identité tient au
+        texte et aux couleurs de fond ;
+      - le lien est répété en clair sous le bouton, au cas où celui-ci ne
+        s'affiche pas.
+
+    NE PAS employer {{ .ConfirmationURL }} ici.
+
+    Cette variable pointe vers /auth/v1/verify (GoTrue), qui vérifie le jeton
+    puis renvoie la session dans le FRAGMENT de l'URL (#access_token=...). Un
+    fragment n'est jamais transmis au serveur : le route handler
+    /auth/callback ne recevrait rien et rejetterait le lien comme invalide.
+    L'URL est donc construite à la main avec {{ .TokenHash }}, pour atterrir
+    directement sur /auth/callback, qui appelle verifyOtp() côté serveur et
+    pose la session en cookies.
+  -->
+  <body style="margin:0; padding:0; background-color:#f4f4f5;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5; padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px; background-color:#ffffff; border-radius:12px; border:1px solid #e4e4e7;">
+
+            <tr>
+              <td style="padding:28px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                <p style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#71717a;">StockFlow</p>
+                <h1 style="margin:12px 0 0 0; font-size:20px; line-height:1.3; color:#18181b;">Réinitialisation du mot de passe</h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:16px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:15px; line-height:1.6; color:#3f3f46;">
+                <p style="margin:0;">
+                  Une réinitialisation a été demandée pour ce compte. Le bouton
+                  ci-dessous ouvre la page où choisir un nouveau mot de passe.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td align="center" style="padding:24px 32px 0 32px;">
+                <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/changer-mot-de-passe"
+                   style="display:inline-block; padding:12px 28px; background-color:#18181b; color:#ffffff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:15px; font-weight:600; text-decoration:none; border-radius:8px;">
+                  Choisir un nouveau mot de passe
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:24px 32px 0 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:12px; line-height:1.6; color:#71717a;">
+                <p style="margin:0;">Si le bouton ne fonctionne pas, copier cette adresse dans le navigateur :</p>
+                <p style="margin:8px 0 0 0; word-break:break-all;">
+                  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/changer-mot-de-passe" style="color:#2563eb; text-decoration:underline;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=recovery&amp;next=/changer-mot-de-passe</a>
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:24px 32px 28px 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:12px; line-height:1.6; color:#a1a1aa; border-top:1px solid #f4f4f5;">
+                <p style="margin:16px 0 0 0;">
+                  Ce lien est valable <strong style="color:#71717a;">une heure</strong> et ne sert qu'une fois.
+                  Si cette demande ne vient pas de vous, ignorer ce message : le mot de passe actuel reste inchangé.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

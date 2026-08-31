@@ -14,7 +14,13 @@ import { env } from "@/lib/env";
  * donnerait l'illusion d'une barrière que les Server Actions contourneraient.
  */
 
-const CHEMINS_PUBLICS = ["/login"];
+/**
+ * Chemins joignables sans session.
+ *
+ * `/auth` couvre le route handler des liens de courriel : c'est lui qui
+ * ÉTABLIT la session, il ne peut donc pas exiger d'en avoir déjà une.
+ */
+const CHEMINS_PUBLICS = ["/login", "/mot-de-passe-oublie", "/auth"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -70,7 +76,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // `manifest.webmanifest` et `sw.js` sont exclus au même titre que
+  // `favicon.ico` : le navigateur les demande SANS session, depuis l'écran de
+  // connexion, pour proposer l'installation. Les laisser passer par le proxy
+  // les faisait rediriger vers /login, et l'application n'était jamais
+  // installable. Ni l'un ni l'autre ne porte de donnée : le manifeste ne
+  // contient qu'un nom et des chemins d'icônes, le service worker ne met en
+  // cache que ces icônes.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

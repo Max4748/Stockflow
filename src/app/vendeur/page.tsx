@@ -235,7 +235,11 @@ export default async function PageVendeur() {
                   la carte qui le motive. Quand une demande est déjà en attente,
                   il n'y a rien à ouvrir (une seule à la fois) — on renvoie donc
                   vers l'écran qui montre où elle en est. */}
-              <div className="pt-2">
+              {/* Rien à proposer pour un compte lié à l'entrepôt : la carte
+                  « Stock à surveiller » reste utile, elle lui dit quoi
+                  racheter, mais le geste est l'achat fournisseur, pas une
+                  demande à soi-même. */}
+              <div className={profil.stock_lie_entrepot ? "hidden" : "pt-2"}>
                 {demandeEnAttente ? (
                   <Link
                     href="/vendeur/restock"

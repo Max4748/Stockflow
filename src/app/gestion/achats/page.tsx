@@ -6,7 +6,12 @@ import { date, euros, eurosPrecis } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
 import type { Produit, Restock } from "@/lib/types";
 
-import { FormulaireAchat } from "./formulaire";
+import {
+  BoutonSupprimerAchat,
+  DialogueCorrigerAchat,
+  FormulaireAchat,
+  type SaisieAchat,
+} from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Restock — StockFlow" };
@@ -51,7 +56,7 @@ export default async function PageAchats() {
   await exigerAdmin();
   const supabase = await creerClient();
 
-  const [rProduits, rAchats] = await Promise.all([
+  const [rProduits, rAchats, rLignes] = await Promise.all([
     supabase.from("produits").select("*").eq("actif", true).order("nom"),
     supabase
       .from("restocks")
@@ -59,11 +64,37 @@ export default async function PageAchats() {
       .order("date", { ascending: false })
       .order("cree_le", { ascending: false })
       .limit(50),
+    // Les lignes servent UNIQUEMENT à pré-remplir le formulaire de
+    // correction. Une seule requête pour les 50 achats affichés, plutôt qu'une
+    // par ligne ouverte : c'est le même volume et ça évite un aller-retour au
+    // moment où le dialogue s'ouvre.
+    supabase.from("restock_lignes").select("restock_id, produit_id, quantite"),
   ]);
 
   const produits = (rProduits.data as Produit[] | null) ?? [];
   const achats = (rAchats.data as Restock[] | null) ?? [];
+  const lignes =
+    (rLignes.data as
+      | { restock_id: string; produit_id: string; quantite: number }[]
+      | null) ?? [];
   const erreur = rProduits.error ?? rAchats.error;
+
+  const saisies = new Map<string, SaisieAchat>(
+    achats.map((a) => [
+      a.id,
+      {
+        quantites: Object.fromEntries(
+          lignes
+            .filter((l) => l.restock_id === a.id)
+            .map((l) => [l.produit_id, String(l.quantite)]),
+        ),
+        prixBase: String(a.prix_achat_base),
+        fraisPort: String(a.frais_port),
+        reference: a.reference ?? "",
+        date: a.date,
+      },
+    ]),
+  );
 
   return (
     <div className="w-full space-y-6">
@@ -88,6 +119,16 @@ export default async function PageAchats() {
             lignes={achats}
             cle={(l) => l.id}
             vide="Aucun achat enregistré."
+            action={(a) => (
+              <span className="flex shrink-0 gap-2">
+                <DialogueCorrigerAchat
+                  produits={produits}
+                  achat={a}
+                  saisie={saisies.get(a.id)!}
+                />
+                <BoutonSupprimerAchat achat={a} />
+              </span>
+            )}
           />
         </CardContent>
       </Card>

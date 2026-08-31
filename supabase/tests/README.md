@@ -5,6 +5,19 @@
 ./supabase/tests/lancer.sh 03     # un fichier
 ```
 
+Sans instance Supabase sous la main, un Postgres jetable suffit :
+
+```bash
+docker compose -f compose.test.yaml up -d --wait
+export DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres
+./supabase/appliquer-migrations.sh && ./supabase/tests/lancer.sh
+```
+
+Les deux scripts partagent `supabase/_connexion.sh`, qui résout la cible :
+`DATABASE_URL` si elle est posée, la stack Supabase sinon. Une seule
+définition, pour que les migrations et les tests visent toujours le même
+moteur.
+
 Sortie au format TAP, code de sortie non nul dès qu'une assertion échoue ou
 qu'une erreur SQL survient.
 
@@ -20,6 +33,12 @@ Ce sont celles qui sont couvertes :
 | `02_dette.sql` | commission figée à la vente, SAV compté seulement une fois validé, remboursement intégral qui laisse un solde négatif |
 | `03_versements.sql` | borne anti-surversement, et son échappatoire explicite |
 | `04_sav.sql` | échange validé d'office / remboursement arbitré, et la révocation qui rend l'unité à son détenteur |
+| `05_produits.sql` | retrait d'un produit : supprimé s'il est vierge, désactivé s'il a un historique, jamais de comptabilité perdue |
+| `06_invitations.sql` | retrait d'une invitation en attente, et l'asymétrie assumée avec la création : retirer n'élève personne |
+| `07_comptes.sql` | retrait d'un compte, y compris le cas des dix clés étrangères dont six ne sont pas en `restrict` |
+| `08_stock_lie.sql` | gérant lié à l'entrepôt : ses ventes y puisent, et le stock total de la maison ne bouge que de ce qui est vendu |
+| `09_restock.sql` | correction et annulation d'un achat, et les deux raisons distinctes qui les ferment : stock sorti, coût figé |
+| `10_ventes_annulees.sql` | une vente annulée reste visible et ne compte plus nulle part, les deux moitiés de la promesse |
 
 Il n'y a **aucun test d'interface**. Le choix est délibéré : les Server Actions
 ne font que relayer, et un test qui clique sur un bouton ne dirait rien de plus

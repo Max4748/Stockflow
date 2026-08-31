@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { exigerProfil } from "@/lib/auth";
 import { euros } from "@/lib/format";
@@ -25,10 +26,17 @@ function lireLignesVente(formData: FormData): LigneVenteSaisie[] {
   const lignes: LigneVenteSaisie[] = [];
   for (let i = 0; i < produits.length; i++) {
     const q = Number(quantites[i]);
-    const p = Number(prix[i]);
+    // `Number("")` vaut 0, et non NaN : sans ce test sur la chaîne, un champ
+    // de prix laissé vide passait pour une vente à 0 €. Le chiffre d'affaires
+    // était nul, mais la commission restait due — la dette du vendeur
+    // devenait négative et la maison lui devait de l'argent.
+    const brut = (prix[i] ?? "").trim();
+    const p = brut === "" ? NaN : Number(brut);
     // Une ligne laissée vide dans le formulaire est simplement ignorée.
     if (!produits[i] || !Number.isFinite(q) || q <= 0) continue;
-    if (!Number.isFinite(p) || p < 0) continue;
+    // `<= 0` et non `< 0` : donner la marchandise est un geste commercial, pas
+    // une vente, et rien ne le distinguerait ensuite d'une erreur de saisie.
+    if (!Number.isFinite(p) || p <= 0) continue;
     lignes.push({
       produit_id: produits[i],
       quantite: Math.trunc(q),
@@ -307,8 +315,17 @@ export async function annulerMaVente(
   if (error) return { erreur: error.message };
 
   revalidatePath("/vendeur", "layout");
-  return {
-    succes: "Vente annulée, stock remis dans le vôtre.",
-    jeton: crypto.randomUUID(),
-  };
+
+  // Cette action est déclenchée depuis la fiche de la vente, et elle vient de
+  // la supprimer : sans redirection, la page se re-rend sur un identifiant qui
+  // n'existe plus et tombe sur son propre `notFound()`.
+  //
+  // C'est la règle générale, pour toute action future : une action qui détruit
+  // l'entité de la page d'où elle part doit rediriger. Le message passe en
+  // paramètre d'URL, une redirection interrompant l'action avant que son état
+  // de retour n'atteigne le client.
+  redirect(
+    "/vendeur/vente?annulee=" +
+      encodeURIComponent("Vente annulée, stock remis dans le vôtre."),
+  );
 }

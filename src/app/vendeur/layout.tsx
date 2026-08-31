@@ -36,7 +36,12 @@ export default async function LayoutVendeur({
     // largeur maximale mais le nombre de colonnes, qui augmente avec l'espace
     // disponible (voir les grilles de chaque page).
     <div className="flex min-h-dvh w-full flex-col">
-      <header className="flex items-center justify-between gap-4 border-b px-4 py-3 md:px-6 lg:px-8">
+      {/* `sticky` : sur une page longue (le stock, les ventes récentes),
+          un en-tête qui défile oblige à remonter pour naviguer. La barre
+          d'onglets du bas, elle, est `fixed` et reste toujours là : sans
+          ceci, la navigation n'était atteignable en permanence que sur
+          téléphone, et pas au bureau. */}
+      <header className="bg-background/95 sticky top-0 z-20 flex items-center justify-between gap-4 border-b px-4 py-3 backdrop-blur md:px-6 lg:px-8">
         <div className="min-w-0">
           <Link href="/vendeur" className="block truncate font-semibold">
             StockFlow
@@ -45,7 +50,7 @@ export default async function LayoutVendeur({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <NavigationBureau compteurs={compteurs} />
+          <NavigationBureau compteurs={compteurs} stockLie={profil.stock_lie_entrepot} />
           {/* Le chemin de retour n'existe que pour l'encadrement : un vendeur
               n'a pas d'autre espace, lui montrer le bouton serait une promesse
               qu'exigerAdmin() refuserait. */}
@@ -65,7 +70,7 @@ export default async function LayoutVendeur({
         {children}
       </main>
 
-      <NavigationMobile compteurs={compteurs} />
+      <NavigationMobile compteurs={compteurs} stockLie={profil.stock_lie_entrepot} />
     </div>
   );
 }

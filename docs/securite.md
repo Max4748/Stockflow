@@ -73,12 +73,13 @@ Server Action qui touche une donnée, plutôt que posée une seule fois au
 layout : un layout ne protège que le _rendu_ d'une page, jamais l'appel direct
 d'une Server Action, qui reste une URL comme une autre.
 
-**Trois actions n'appellent aucun `exiger*`, et c'est voulu**. Ce sont celles
+**Quatre actions n'appellent aucun `exiger*`, et c'est voulu**. Ce sont celles
 qui vivent avant l'autorisation :
 
 | Action | Pourquoi |
 | --- | --- |
 | `seConnecter`, `seDeconnecter` | par définition sans session à exiger |
+| `demanderReinitialisation` | même chose : celui qui la demande n'a pas de session, c'est tout le problème |
 | `changerMotDePasse` | `exigerProfil()` **redirige vers `/changer-mot-de-passe`** quand `doit_changer_mdp` est levé : l'appeler ici ferait boucler la redirection sur elle-même |
 
 `changerMotDePasse` n'est pas pour autant ouverte. Elle porte sa garde en clair,
@@ -140,6 +141,133 @@ Testé après coup en rejouant exactement le `PATCH` initial : `permission denie
 for table profils`. Et le champ `role` d'un formulaire, trafiqué côté client
 pour demander `dev`, est rejeté **en base** avec le message ci-dessus, jamais
 un succès silencieux.
+
+## Réinitialisation du mot de passe
+
+Ouverte à tous les comptes. Elle ajoute la première route publique du projet
+après `/login` : `CHEMINS_PUBLICS` (`src/proxy.ts`) admet désormais
+`/mot-de-passe-oublie` et `/auth`. Le second ne peut pas exiger de session,
+puisque c'est lui qui l'établit.
+
+**La réponse est identique que l'adresse existe ou non.**
+
+```ts
+if (error) console.error("[reinitialisation] envoi impossible :", error.message);
+return { envoye: true };
+```
+
+Sans cela, ce formulaire deviendrait un moyen d'énumérer les comptes : un
+vendeur saurait quelles adresses sont enregistrées. L'échec est journalisé côté
+serveur, pour rester diagnosticable, et jamais renvoyé à l'appelant. C'est la
+même règle que le message de `seConnecter`, qui ne distingue pas non plus le
+mot de passe faux du compte inconnu.
+
+**Le paramètre `next` n'accepte qu'un chemin interne.**
+
+```ts
+suiteBrute.startsWith("/") && !suiteBrute.startsWith("//")
+  ? suiteBrute
+  : "/changer-mot-de-passe";
+```
+
+`//ailleurs.example` est une URL absolue pour un navigateur. Sans le second
+test, ce lien servirait de redirection ouverte depuis un domaine de confiance,
+dans un courriel que l'utilisateur a de bonnes raisons de croire légitime.
+
+**Le lien vaut une heure et ne sert qu'une fois** (`GOTRUE_MAILER_OTP_EXP`).
+Expiré, consommé ou tronqué, il renvoie tous les cas sur le même message :
+distinguer « expiré » de « inconnu » renseignerait sur la validité d'un jeton.
+
+**Aucun secret ne traverse le dépôt.** Les cinq variables `SMTP_*` vivent dans
+le `.env` de la stack Supabase, hors de ce dépôt et hors de l'image
+applicative. Le gabarit `supabase/templates/recovery.html` ne contient que du
+texte et des variables GoTrue.
+
+## L'origine publique ne vient jamais d'un en-tête
+
+Les liens envoyés par courriel, invitation comme réinitialisation, ont besoin
+de l'adresse publique de l'application. Elle était reconstruite à trois
+endroits depuis `x-forwarded-host` et `x-forwarded-proto`.
+
+**Ces en-têtes sont posés par le client autant que par le proxy.** Un appelant
+pouvait donc demander une réinitialisation en les forgeant, et recevoir un
+courriel légitime, signé du bon domaine, dont le lien pointait vers une adresse
+qu'il contrôle. Le jeton partait avec.
+
+L'origine vient désormais de `APP_URL`, validée au chargement comme les trois
+autres variables. L'application connaît sa propre adresse : la lire ailleurs
+que dans sa configuration était gratuit.
+
+### La seconde barrière, côté GoTrue
+
+`ADDITIONAL_REDIRECT_URLS` (exposée à GoTrue sous le nom
+`GOTRUE_URI_ALLOW_LIST`) énumère les destinations que le service accepte pour
+un `redirectTo`. Vide, **elle rejette la redirection sans rien journaliser** et
+renvoie l'utilisateur à la racine du site : un lien qui « ne marche pas » sans
+message, c'est presque toujours elle.
+
+Elle doit valoir `<origine publique>/**`, et rester cohérente avec `SITE_URL`
+et `APP_URL`. Les trois désignent la même chose vue de trois endroits :
+l'application, GoTrue, et le gabarit de courriel.
+
+### Ce que ça ne couvre pas
+
+`APP_URL` ferme le détournement du lien. Elle ne dit rien de qui demande la
+réinitialisation : c'est le rôle du délai progressif décrit plus bas, et du
+fait que la réponse est identique que l'adresse existe ou non.
+
+## Double authentification (TOTP)
+
+Facultative, activable par n'importe quel compte d'encadrement depuis
+Gestion → Compte → Sécurité. Elle n'est **jamais imposée** : tant qu'aucun
+facteur n'est vérifié, Supabase laisse `nextLevel` à `aal1` et rien ne change
+pour personne. Dès qu'un facteur est vérifié, `nextLevel` passe à `aal2` et le
+code devient exigé à chaque connexion, **pour ce compte seulement**.
+
+Le contrôle vit dans `exigerAdmin()` (`src/lib/auth.ts`), pas dans le proxy :
+
+```ts
+if (data?.nextLevel === "aal2" && data.currentLevel !== "aal2") {
+  redirect("/verification");
+}
+```
+
+Même raison que pour le rôle. Un proxy ne protège que le rendu d'une page ;
+une Server Action reste une URL qu'on appelle directement. C'est la garde
+rappelée dans chaque action qui tient, et `exigerDev()` en hérite puisqu'il
+passe par `exigerAdmin()`.
+
+**Trois écrans appellent `exigerAdminSansFacteur()`, et c'est voulu** : la
+saisie du code, l'enrôlement, et leurs Server Actions vivent tous dans une
+session encore en `aal1`. Les faire passer par `exigerAdmin()` ferait boucler
+la redirection vers `/verification` sur elle-même. Même mécanique que
+`changerMotDePasse` plus haut.
+
+### Ce que la 2FA ne couvre pas
+
+| Chemin | Couvert ? |
+| --- | --- |
+| Écrans et Server Actions de gestion | oui, par `exigerAdmin()` |
+| Espace vendeur d'un gérant | non : `exigerProfil()` ne regarde pas le niveau d'assurance. Il n'y voit que ses propres ventes, et toute action de gestion repasse par `exigerAdmin()` |
+| PostgREST appelé directement avec un jeton `aal1` | **non** : `est_admin()` lit le rôle, pas le niveau d'assurance |
+
+La dernière ligne est la vraie borne. Un mot de passe volé donne un jeton
+`aal1` qui reste admin aux yeux du SQL. Ce qui la rend tenable, c'est que
+Supabase n'est joignable ni depuis le navigateur ni depuis internet : seule
+l'application est exposée, et elle passe toujours par `exigerAdmin()`. Le jour
+où Kong serait publié, cette ligne deviendrait une faille et il faudrait porter
+le contrôle en SQL, sur le claim `aal` du jeton.
+
+### Perte de l'authentificateur
+
+L'écran de vérification ne propose que la déconnexion : sans le code, le compte
+n'atteint plus l'espace de gestion. Le déblocage demande un accès au serveur :
+un gérant qui n'en a pas dépend du dev.
+
+```sql
+delete from auth.mfa_factors
+ where user_id = (select id from auth.users where email = 'adresse@exemple.fr');
+```
 
 ## Le cookie de bascule d'espace ne porte aucune autorisation
 
@@ -261,11 +389,16 @@ grep -rn 'clientAdmin()\.' src/
 
 ## Mots de passe provisoires
 
-Aucun SMTP n'est configuré sur le serveur. Un mot de passe provisoire est
-**généré aléatoirement et affiché une seule fois**, jamais stocké, jamais
-envoyé par courriel. Le transmettre de la main à la main. Le compte porte
-`doit_changer_mdp = true`, qui force son remplacement à la prochaine connexion
-avant tout accès (`exigerProfil()` redirige vers `/changer-mot-de-passe`).
+Un compte créé depuis l'application naît **sans mot de passe** :
+`inviteUserByEmail` envoie un lien, et le titulaire choisit le sien. Personne
+d'autre ne le connaît, à aucun instant, et rien n'est à transmettre de la main
+à la main.
+
+Le repli, quand le courriel n'arrive pas, est un mot de passe provisoire
+**généré aléatoirement et affiché une seule fois**, jamais stocké : c'est la
+réinitialisation depuis la fiche du vendeur. Dans les deux cas le compte porte
+`doit_changer_mdp = true`, qui force le choix d'un mot de passe propre avant
+tout accès (`exigerProfil()` redirige vers `/changer-mot-de-passe`).
 
 ## `v_lignes_vente` : piège de maintenance documenté dans le SQL
 

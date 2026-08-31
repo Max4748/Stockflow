@@ -30,7 +30,52 @@ Deux blocs restent volontairement bornés parce qu'ils sont du **texte à lire**
 pas des données à parcourir : la zone « Précision » du réassort et la carte
 « Demande en cours » (`max-w-2xl`).
 
-## Navigation : deux formes, une seule liste
+## Navigation : deux formes, et pourquoi elles ne fusionneront pas
+
+La question revient : pourquoi l'espace vendeur bascule ses onglets du haut
+vers le bas, quand la gestion passe d'une barre latérale à un tiroir ? Ce
+n'est pas un accident de style, et uniformiser dégraderait l'un des deux.
+
+| | Vendeur | Gestion |
+| --- | --- | --- |
+| Entrées | 5, à plat | 10, en 5 groupes |
+| Posture | debout, une main, face au client | assis, souris, à lire des tableaux |
+| Étroit | barre d'onglets fixée en bas | tiroir derrière une icône |
+| Large | en ligne dans l'en-tête | barre latérale collante |
+
+**Une barre du bas pour la gestion est arithmétiquement impossible.** Dix
+entrées sur un écran de 375 px font 37 px chacune, sous le minimum tactile de
+44 px, et il faudrait y écrire « Comptabilité » et « Comptes gérants ». Le
+vendeur en a cinq, à ~75 px : c'est ce qui rend sa barre lisible. Et les cinq
+groupes de la gestion ne sont pas décoratifs, ce sont eux qui rendent dix
+entrées navigables.
+
+**Un tiroir pour le vendeur coûterait un geste de plus à chaque navigation**,
+exactement là où le temps compte : debout, en train d'enregistrer une vente.
+
+Ce qui est unifié, en revanche, et doit le rester :
+
+- **la navigation est atteignable en permanence dans les quatre rendus.** Les
+  deux en-têtes sont `sticky`, la barre latérale l'est aussi, la barre
+  d'onglets est `fixed`. Avant, chaque espace n'était joignable en permanence
+  que dans un de ses deux formats, et c'étaient les formats opposés : au
+  bureau le gérant naviguait depuis n'importe où et le vendeur devait remonter
+  en haut de page, sur téléphone c'était l'inverse. Invisible tant qu'aucune
+  page n'est longue ;
+- **les hauteurs d'entrée sont dictées par le doigt ou la souris**, pas par
+  l'espace : 56 px dans la barre du bas, 44 px dans le tiroir, 36 px dans les
+  deux rendus à la souris. Deux valeurs pour la souris seraient gratuites ;
+- **le type `Compteurs` vit dans `lib/types.ts`**, pas dans l'un des deux
+  composants de navigation. Il y était propriété de l'un et dépendance de
+  l'autre.
+
+**Une seule chose diverge volontairement : l'état actif.** Fond plein partout,
+sauf dans la barre d'onglets du bas, qui emploie une bordure haute. Un aplat
+dans une barre de 56 px est lourd, et l'indicateur en bordure est la convention
+des barres d'onglets sur téléphone. C'est écrit ici pour que ça ne se fasse pas
+« corriger » au hasard.
+
+## Les deux formes en détail
 
 **Espace vendeur** (`navigation-vendeur.tsx`) : 5 entrées, barre d'onglets fixée
 en bas sur mobile (zone du pouce, cibles de 56 px), en ligne dans l'en-tête à
@@ -48,9 +93,13 @@ s'éteindrait sur une information jamais reçue. L'effet est conditionné à
 `actif={nonVus > 0}` : rien à éteindre, aucun appel, donc aucune boucle avec le
 `revalidatePath` que l'action déclenche pour rafraîchir le compteur du layout.
 
-**Espace gestion** (`navigation-admin.tsx`) : 9 sections groupées (Pilotage /
-Stock / Comptabilité / Technique), barre latérale à partir de `lg`, tiroir en
-dessous. Le groupe **Technique** (Intégrité, Comptes gérants) n'est rendu que si
+**Espace gestion** (`navigation-admin.tsx`) : 10 sections groupées (Pilotage /
+Stock / Comptabilité / Technique / Compte), barre latérale à partir de `lg`,
+tiroir en dessous, ouvert par une icône seule. Pas le mot « Menu » : l'en-tête
+porte déjà le titre, le rôle, la bascule d'espace, le thème et la déconnexion.
+Le bouton fait 40 px et non les 32 px de la variante `icon` par défaut, parce
+qu'il est le SEUL point de navigation sous `lg`, et son `aria-label` annonce le
+nombre de décisions en attente. Le groupe **Technique** (Intégrité, Comptes gérants) n'est rendu que si
 `niveau >= 3` ; ce filtrage **n'est pas une mesure de sécurité**, chaque page
 qu'il masque appelle `exigerDev()` et chaque fonction SQL vérifie le rôle en
 base ; il évite seulement de montrer à un gérant des écrans qui le

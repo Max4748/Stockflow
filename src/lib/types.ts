@@ -37,6 +37,12 @@ export type Profil = {
   actif: boolean;
   doit_changer_mdp: boolean;
   /**
+   * Vrai quand l'entrepôt EST le stock de ce compte : ses ventes y puisent
+   * directement, sans transfert préalable. Réservé à l'encadrement, et
+   * garanti par une contrainte de table (migration 0025).
+   */
+  stock_lie_entrepot: boolean;
+  /**
    * Dernière ouverture de l'écran SAV. Sert UNIQUEMENT à la pastille de
    * nouveauté — jamais à une décision d'autorisation.
    */
@@ -304,6 +310,12 @@ export type MaVente = {
   sav_unites: number;
   sav_rembourse: number;
   sav_en_attente: number;
+  /**
+   * Horodatage de l'annulation, `null` pour une vente vivante. La vente
+   * annulée est lue depuis `ventes_annulees` : elle ne compte plus dans aucun
+   * agrégat, et reste affichée pour que le geste soit vérifiable.
+   */
+  annulee_le: string | null;
 };
 
 /** rpc('ventes_vendeur') — les ventes d'un vendeur vues par l'encadrement. */
@@ -317,6 +329,12 @@ export type VenteVendeur = {
   sav_unites: number;
   sav_rembourse: number;
   sav_en_attente: number;
+  /**
+   * Horodatage de l'annulation, `null` pour une vente vivante. La vente
+   * annulée est lue depuis `ventes_annulees` : elle ne compte plus dans aucun
+   * agrégat, et reste affichée pour que le geste soit vérifiable.
+   */
+  annulee_le: string | null;
 };
 
 /**
@@ -403,3 +421,14 @@ export function borneVue(dossiers: DossierSav[]): string | null {
   }
   return max;
 }
+
+/**
+ * Compteurs de pastille, par chemin de navigation.
+ *
+ * Un dictionnaire plutôt qu'une prop par compteur : chaque nouvelle file
+ * d'attente ajouterait sinon une prop à traverser trois composants. Le même
+ * type sert aux deux espaces, d'où sa place ici plutôt que dans l'un des deux
+ * composants de navigation — il y était propriété de l'un et dépendance de
+ * l'autre.
+ */
+export type Compteurs = Record<string, number>;

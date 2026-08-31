@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { EtatActionSecret } from "@/lib/types";
+import type { EtatAction, EtatActionSecret } from "@/lib/types";
 
-import { creerVendeur } from "../actions";
+import { annulerInvitation, creerVendeur } from "../actions";
 
 /**
  * Création d'un compte vendeur.
@@ -91,15 +91,18 @@ export function FormulaireCreationVendeur() {
           </Alert>
         )}
 
-        {/* Le secret reste DANS le dialogue, au-dessus des boutons : le fermer
-            est le geste qui le fait disparaître, et c'est délibéré. */}
-        {etat.motDePasse && (
-          <div className="sm:col-span-2">
-            <MotDePasseProvisoire
-              email={etat.email}
-              motDePasse={etat.motDePasse}
-            />
-          </div>
+        {/* Plus de mot de passe à afficher ici : le compte est créé par
+            invitation, et c'est le vendeur qui choisira le sien depuis le lien
+            reçu. Il reste à confirmer À QUELLE adresse il est parti, seule
+            information que le gérant doive vérifier avant de fermer. */}
+        {etat.email && !etat.motDePasse && (
+          <Alert className="sm:col-span-2">
+            <AlertDescription>
+              Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
+              valable une heure. Sans réception, la fiche du vendeur permet de
+              lui attribuer un mot de passe provisoire.
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
@@ -114,8 +117,12 @@ export function FormulaireCreationVendeur() {
 }
 
 /**
- * Le mot de passe provisoire n'est ni envoyé (aucun SMTP sur la machine) ni
- * stocké : il est affiché UNE fois. Perdu = réinitialisé depuis la fiche.
+ * Mot de passe provisoire, affiché UNE fois et jamais stocké.
+ *
+ * Ce n'est plus le chemin normal : la création d'un compte envoie désormais un
+ * lien d'invitation, et le vendeur choisit lui-même son mot de passe. Ce
+ * composant sert au SEUL cas restant, la réinitialisation depuis la fiche
+ * quand le courriel n'arrive pas. C'est le filet, pas la route.
  */
 export function MotDePasseProvisoire({
   email,
@@ -155,5 +162,40 @@ export function MotDePasseProvisoire({
         </p>
       </AlertDescription>
     </Alert>
+  );
+}
+
+/**
+ * Retire une invitation restée sans compte.
+ *
+ * Un simple bouton dans l'avertissement, sans dialogue de confirmation : rien
+ * n'est détruit qui ne se refasse en trois clics avec « Créer un compte
+ * vendeur », et l'avertissement lui-même explique déjà ce qu'est cette
+ * invitation. Un dialogue par-dessus n'ajouterait qu'une étape.
+ */
+export function BoutonAnnulerInvitation({ email }: { email: string }) {
+  const [etat, action, enCours] = useActionState<EtatAction, FormData>(
+    annulerInvitation,
+    {},
+  );
+
+  useEffect(() => {
+    if (etat.succes) toast.success(etat.succes);
+    if (etat.erreur) toast.error(etat.erreur);
+  }, [etat.succes, etat.erreur, etat.jeton]);
+
+  return (
+    <form action={action} className="inline">
+      <input type="hidden" name="email" value={email} />
+      <Button
+        type="submit"
+        variant="ghost"
+        size="sm"
+        className="h-auto px-2 py-0.5 text-xs"
+        disabled={enCours}
+      >
+        {enCours ? "Retrait…" : "Retirer"}
+      </Button>
+    </form>
   );
 }

@@ -34,7 +34,10 @@ const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
     principale: true,
     valeur: (l) => (
       <span className="flex items-center gap-2">
-        {date(l.date)}
+        <span className={l.annulee_le ? "line-through" : ""}>
+          {date(l.date)}
+        </span>
+        {l.annulee_le && <Badge variant="destructive">annulée</Badge>}
         {/* La vente n'est jamais réécrite par un SAV : c'est ce badge, et lui
             seul, qui répond à « cette vente a-t-elle posé problème ? ». */}
         {l.sav_unites > 0 && (

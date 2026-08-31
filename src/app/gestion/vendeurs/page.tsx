@@ -11,7 +11,10 @@ import { creerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { Creance, Invitation } from "@/lib/types";
 
-import { FormulaireCreationVendeur } from "./formulaire";
+import {
+  BoutonAnnulerInvitation,
+  FormulaireCreationVendeur,
+} from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendeurs — StockFlow" };
@@ -84,8 +87,15 @@ const COLONNES: Colonne<Creance>[] = [
   },
 ];
 
-export default async function PageVendeurs() {
+export default async function PageVendeurs({
+  searchParams,
+}: {
+  searchParams: Promise<{ retire?: string }>;
+}) {
   await exigerAdmin();
+  // `?retire=` : posé par `retirerCompte` quand le compte a été SUPPRIMÉ, donc
+  // quand la redirection depuis sa fiche a empêché le toast d'arriver.
+  const { retire } = await searchParams;
   const supabase = await creerClient();
 
   const [rCreances, rInvitations] = await Promise.all([
@@ -108,6 +118,12 @@ export default async function PageVendeurs() {
         <FormulaireCreationVendeur />
       </div>
 
+      {retire && (
+        <Alert>
+          <AlertDescription>{retire}</AlertDescription>
+        </Alert>
+      )}
+
       {erreur && (
         <Alert variant="destructive">
           <AlertDescription>{erreur.message}</AlertDescription>
@@ -124,8 +140,11 @@ export default async function PageVendeurs() {
             </p>
             <ul className="list-inside list-disc text-sm">
               {invitations.map((i) => (
-                <li key={i.email}>
-                  {i.email} ({i.nom}, {euros(i.commission_unitaire)}/unité)
+                <li key={i.email} className="flex items-center gap-2">
+                  <span>
+                    {i.email} ({i.nom}, {euros(i.commission_unitaire)}/unité)
+                  </span>
+                  <BoutonAnnulerInvitation email={i.email} />
                 </li>
               ))}
             </ul>

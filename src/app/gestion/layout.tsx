@@ -54,7 +54,10 @@ export default async function LayoutAdmin({
       <BarreLaterale compteurs={compteurs} niveau={niveau} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-4 border-b px-4 py-3 md:px-6">
+        {/* `sticky`, comme la barre latérale qui l'est déjà : en dessous
+            de `lg` c'est le bouton Menu de cet en-tête qui EST la
+            navigation, et il défilait hors de vue sur une page longue. */}
+        <header className="bg-background/95 sticky top-0 z-20 flex items-center justify-between gap-4 border-b px-4 py-3 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <TiroirNavigation compteurs={compteurs} niveau={niveau} />
             <div className="min-w-0">

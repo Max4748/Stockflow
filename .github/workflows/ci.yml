@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+
+    # Même image qu'en production : les tests s'exécutent sur le moteur exact
+    # du serveur, extensions comprises. pgTAP y est déjà présent, rien à
+    # installer. Un Postgres générique aurait pu diverger sans qu'on le voie.
+    services:
+      db:
+        image: supabase/postgres:17.6.1.136
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://postgres:test@127.0.0.1:5432/postgres
+      # `next build` évalue src/lib/env.ts en collectant la configuration des
+      # pages statiques : sans ces quatre variables, il échoue avant de
+      # compiler quoi que ce soit. Valeurs de façade, jamais utilisées pour
+      # joindre quoi que ce soit — aucune page n'appelle Supabase au build,
+      # toutes les routes métier étant `force-dynamic`.
+      SUPABASE_URL: http://127.0.0.1:8001
+      SUPABASE_ANON_KEY: ci-sans-effet
+      SUPABASE_SERVICE_ROLE_KEY: ci-sans-effet
+      APP_URL: http://127.0.0.1:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typage
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # PGlite, aucun service requis. Placé AVANT les autres : il installe le
+      # schéma depuis une base vide et le rejoue trois fois, donc il échoue
+      # vite et pour une raison lisible si une migration n'est pas rejouable.
+      - name: Rejeu des migrations (3 passes)
+        run: npm run test:db
+
+      - name: Schéma sur le Postgres de service
+        run: ./supabase/appliquer-migrations.sh
+
+      - name: Règles métier (pgTAP)
+        run: npm run test:sql
+
+      # En dernier : c'est le plus lent, et il n'apprend rien de plus qu'une
+      # erreur que le typage aurait déjà signalée, sauf pour les modules
+      # "use server", dont seul `next build` valide les exports.
+      - name: Build
+        run: npx next build

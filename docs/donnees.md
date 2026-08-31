@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-13 tables, 4 vues, 57 fonctions, 20 politiques RLS. Le SQL fait référence : les
+14 tables, 4 vues, 65 fonctions, 21 politiques RLS. Le SQL fait référence : les
 migrations sont commentées et se lisent dans l'ordre.
 
 ## Les tables
@@ -253,6 +253,55 @@ profils` existe, mais la policy `profils_admin_all` réserve l'écriture aux
 gérants. La fonction n'écrit que `sav_vu_le`, et que sur la ligne de l'appelant.
 Cette colonne ne sert **jamais** à une décision d'autorisation.
 
+### Quand l'entrepôt est chez le gérant
+
+`profils.stock_lie_entrepot` (migration `0025`) déclare qu'un compte
+d'encadrement **est** l'entrepôt. Cas réel : le stock est physiquement chez le
+gérant, et lui faire transférer de la marchandise vers lui-même avant chaque
+vente décrivait un déplacement qui n'existait pas.
+
+Le drapeau est **par compte**, pas global : un second gérant qui vend sur le
+terrain reçoit du stock comme un vendeur. Une contrainte de table le réserve à
+l'encadrement, et `changer_role` le baisse en cas de rétrogradation, faute de
+quoi celle-ci échouerait sur un message de contrainte illisible.
+
+Il ne change que deux choses :
+
+| Fonction | Ce qui change |
+| --- | --- |
+| `stock_disponible()` | lit l'entrepôt au lieu du stock détenu, via `source_stock()` |
+| `enregistrer_vente()` | prend dans l'entrepôt ce qui manque au vendeur |
+
+**Le transfert est écrit, pas contourné.** La contrainte `mvt_coherence`
+impose depuis `0004` qu'une vente sorte d'un détenteur nommé. L'assouplir pour
+ce cas aurait affaibli un invariant qui tient pour tout le monde, afin
+d'épargner deux lignes au registre. La vente écrit donc elle-même les deux
+jambes du transfert, puis la sortie. Le geste disparaît de l'écran du gérant,
+il reste dans le journal, où il décrit ce qui s'est réellement passé : la
+marchandise a quitté l'entrepôt, puis le client l'a emportée.
+
+L'ordre de verrouillage est celui de `transferer_stock` : entrepôt d'abord,
+détenteur ensuite. En dévier produirait des interblocages intermittents entre
+une vente et un transfert simultanés.
+
+**L'annulation d'une vente doit rendre l'unité à l'entrepôt** (`0027`). Le
+`on delete cascade` d'`origine_vente_id` n'efface que la sortie de vente : les
+deux jambes du transfert portent un `groupe_id`, pas une origine de vente, et
+survivent. Sans retour explicite, les unités restaient chez le gérant, où
+elles sont invisibles et invendables puisque `stock_disponible()` lui montre
+l'entrepôt. Le total de la maison restait juste, donc
+`verifier_coherence_stock()` ne signalait rien : c'est le genre de défaut
+qu'aucun invariant global n'attrape.
+
+Le retour est **écrit et motivé**, pas obtenu en supprimant le transfert.
+Rattacher ses jambes à `origine_vente_id` les aurait fait tomber en cascade
+sans une ligne de code, mais le registre n'aurait plus rien montré, et une
+annulation est justement le moment où l'on veut lire ce qui s'est passé.
+
+Ce que le drapeau ne change **pas** : le SAV (`declarer_sav` a son propre
+`p_depuis_entrepot` depuis `0015`), la dette (elle vaut déjà 0 pour un
+non-vendeur), et l'attribution des ventes, qui restent les siennes.
+
 ### Comment le gérant apprend qu'il s'est passé quelque chose
 
 Le même mécanisme, symétrique, ajouté en `0019`. Il manquait, et c'est ce qui
@@ -339,9 +388,35 @@ figés des autres ventes ne changent pas, c'est tout l'intérêt du figeage. Seu
 le coût moyen _courant_ se recale, donc les ventes à venir. Il reste conservé
 au-delà de la fenêtre, où une annulation est rare et mérite un ralentisseur.
 
+### Une vente annulée reste visible
+
+`ventes_annulees` (migration `0029`) archive l'en-tête d'une vente au moment de
+son annulation. Les deux listes de ventes et les deux journaux la réaffichent,
+barrée et taguée ; aucun agrégat ne la voit plus.
+
+**Une archive, et non un drapeau `annulee_le` laissé dans `ventes`.** C'est le
+choix qui structure tout le reste. Vingt-et-une fonctions et deux vues lisent
+`ventes` ou `vente_lignes` : le chiffre d'affaires, les commissions, la dette,
+le bilan, les revenus par vendeur, et surtout `cout_moyen_pondere()`, qui déduit
+les unités sorties. Un drapeau aurait demandé d'ajouter « et non annulée » aux
+vingt-et-une, et en oublier une seule aurait faussé une dette ou une marge
+**sans rien signaler**.
+
+L'archive déplace le coût sur la LECTURE, où une omission se voit tout de suite
+(la vente manque à l'écran), au lieu de la comptabilité, où elle ne se voit
+jamais. Quatre fonctions de lecture ont été étendues, contre vingt-et-une à
+auditer.
+
+Seul l'**en-tête** est archivé : les deux listes n'affichent jamais le détail
+des lignes. Archiver ce qui n'est jamais lu serait de la dette sans usage.
+
+Conséquence à connaître : une vente annulée ne peut plus porter de SAV ni être
+corrigée, ses lignes ayant disparu. C'est voulu, et `corrigeable` vaut faux
+pour elle.
+
 ## Ordre des migrations
 
-22 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
+30 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
 `create table if not exists`, `create or replace`, `drop policy if exists`.
 
 | Fichier                        | Contenu                                                                   |
@@ -368,6 +443,14 @@ au-delà de la fenêtre, où une annulation est rare et mérite un ralentisseur.
 | `0019_sav_revocation`          | pastille SAV côté gestion, révocation d'un dossier validé sans l'effacer  |
 | `0020_index_origines`          | index sur les clés d'origine de `mouvements_stock` (cascades et suppressions ciblées) |
 | `0021_sav_vu_borne`            | les pastilles SAV enregistrent « vu jusqu'à », pas « vu maintenant » |
+| `0022_retirer_produit`         | retrait d'un produit : supprimé s'il n'a jamais servi, désactivé sinon |
+| `0023_annuler_invitation`      | retrait d'une invitation non consommée ; `0010` cesse aussi de ressusciter celle d'amorçage |
+| `0024_retirer_compte`          | retrait d'un compte : supprimé s'il n'a laissé aucune trace, désactivé sinon |
+| `0025_stock_lie_entrepot`      | un gérant dont l'entrepôt EST le stock : ses ventes y puisent, le transfert est écrit par la vente |
+| `0026_corriger_restock`        | corriger ou annuler un achat fournisseur, sous le même garde-fou qu'une vente |
+| `0027_annulation_vente_liee`   | annuler la vente d'un gérant lié rend l'unité à l'entrepôt, et rapatrie celles restées échouées |
+| `0028_journal_motifs`          | le journal affiche le motif d'un transfert ou d'un retour au lieu d'un libellé générique |
+| `0029_ventes_annulees`         | une vente annulée passe en archive : toujours visible, plus jamais comptée |
 
 Trois points de séquencement non arbitraires :
 

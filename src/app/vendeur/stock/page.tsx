@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon stock — StockFlow" };
 
 export default async function PageStock() {
-  await exigerProfil();
+  const profil = await exigerProfil();
   const supabase = await creerClient();
 
   // stock_disponible() ne renvoie que le stock DÉTENU par l'appelant, et
@@ -80,15 +80,20 @@ export default async function PageStock() {
         </ul>
       )}
 
-      <Link
-        href="/vendeur/restock"
-        className={cn(
-          buttonVariants({ variant: "outline" }),
-          "h-11 w-full md:w-auto md:px-8",
-        )}
-      >
-        Demander un réassort
-      </Link>
+      {/* Masqué pour un compte lié à l'entrepôt : il se demanderait du stock
+          à lui-même, et l'onglet Réassort a déjà disparu de sa navigation.
+          Son geste à lui est l'achat fournisseur, côté gestion. */}
+      {!profil.stock_lie_entrepot && (
+        <Link
+          href="/vendeur/restock"
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-11 w-full md:w-auto md:px-8",
+          )}
+        >
+          Demander un réassort
+        </Link>
+      )}
     </div>
   );
 }

@@ -16,8 +16,15 @@ import { FormulaireVente } from "./formulaire";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes ventes — StockFlow" };
 
-export default async function PageVente() {
-  await exigerProfil();
+export default async function PageVente({
+  searchParams,
+}: {
+  searchParams: Promise<{ annulee?: string }>;
+}) {
+  const profil = await exigerProfil();
+  // Posé par `annulerMaVente`, qui redirige ici après avoir supprimé la vente
+  // depuis sa fiche : la redirection empêche le toast d'arriver.
+  const { annulee } = await searchParams;
   const supabase = await creerClient();
 
   const [rStock, rProduits, rVentes, rSavables] = await Promise.all([
@@ -75,11 +82,23 @@ export default async function PageVente() {
         </Alert>
       )}
 
+      {/* Deux messages, parce que le geste à faire n'est pas le même. Un
+          vendeur demande du stock à son gérant ; un compte lié à l'entrepôt
+          EST celui qui approvisionne, et son onglet Réassort est masqué. Lui
+          dire de « faire une demande » l'enverrait vers une page qui n'existe
+          plus pour lui, pour demander à lui-même. */}
+      {annulee && (
+        <Alert>
+          <AlertDescription>{annulee}</AlertDescription>
+        </Alert>
+      )}
+
       {vendables.length === 0 && (
         <Alert>
           <AlertDescription>
-            Aucun stock disponible. Faire une demande de réassort auprès de
-            l&apos;administrateur avant de pouvoir vendre.
+            {profil.stock_lie_entrepot
+              ? "L'entrepôt est vide. Enregistrer un achat fournisseur depuis Gestion → Restock avant de pouvoir vendre."
+              : "Aucun stock disponible. Faire une demande de réassort auprès de l'administrateur avant de pouvoir vendre."}
           </AlertDescription>
         </Alert>
       )}
@@ -94,7 +113,9 @@ export default async function PageVente() {
             <p className="text-muted-foreground mt-1 text-sm">
               {vendables.length > 0
                 ? "La première apparaîtra ici, modifiable pendant 48 h."
-                : "Il faut d'abord recevoir du stock."}
+                : profil.stock_lie_entrepot
+                  ? "L'entrepôt est vide : il faut d'abord un achat fournisseur."
+                  : "Il faut d'abord recevoir du stock."}
             </p>
           </CardContent>
         </Card>
@@ -121,7 +142,17 @@ export default async function PageVente() {
                 >
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 truncate text-sm font-medium">
-                      {v.client} · {euros(v.montant_total)}
+                      <span className={v.annulee_le ? "line-through" : ""}>
+                        {v.client} · {euros(v.montant_total)}
+                      </span>
+                      {/* Barrée ET taguée : le barré seul se confond avec un
+                          style, le tag seul ne dit pas que le montant ne
+                          compte plus. */}
+                      {v.annulee_le && (
+                        <Badge variant="destructive" className="shrink-0">
+                          annulée
+                        </Badge>
+                      )}
                       {/* Le vendeur doit pouvoir relier un SAV à sa dette :
                           un remboursement l'a fait baisser sans versement. */}
                       {v.sav_unites > 0 && (
@@ -143,7 +174,11 @@ export default async function PageVente() {
                         ` · ${euros(v.sav_rembourse)} remboursés`}
                     </p>
                   </div>
-                  {v.corrigeable ? (
+                  {v.annulee_le ? (
+                    <Badge variant="outline" className="shrink-0">
+                      {dateHeure(v.annulee_le)}
+                    </Badge>
+                  ) : v.corrigeable ? (
                     <Link
                       href={`/vendeur/vente/${v.id}`}
                       className={cn(

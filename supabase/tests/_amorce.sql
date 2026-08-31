@@ -55,6 +55,19 @@ end $$;
 create or replace function t_agir(p_id uuid) returns void
 language plpgsql as $$
 begin
+  -- LES DEUX FORMES, et il faut les deux.
+  --
+  -- `auth.uid()` n'a pas la même définition partout : celle de GoTrue lit
+  -- d'abord `request.jwt.claim.sub` (singulier, héritée) puis retombe sur le
+  -- JSON `request.jwt.claims`, tandis que celle embarquée dans l'image
+  -- `supabase/postgres` ne lit QUE la première. Ne poser que le JSON faisait
+  -- passer toute la suite sur la stack de développement et échouer sur un
+  -- Postgres jetable, avec un `niveau_courant()` à 0 pour seul indice.
+  --
+  -- Poser les deux ne suppose rien de la définition installée, et c'est aussi
+  -- ce que fait une vraie session authentifiée.
+  perform set_config('request.jwt.claim.sub', p_id::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
   perform set_config('request.jwt.claims',
                      json_build_object('sub', p_id, 'role', 'authenticated')::text,
                      true);

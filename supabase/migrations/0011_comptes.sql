@@ -227,6 +227,14 @@ end $$;
 -- Comptes visibles par un dev (gérants et dev). Fermé aux gérants : ils n'ont
 -- pas à voir la liste des comptes de niveau supérieur ou égal au leur.
 -- ------------------------------------------------------------
+-- `drop` avant le `create` : 0025 ajoute une colonne de sortie à cette
+-- fonction, et `create or replace` ne sait pas changer un type de retour. Sans
+-- ce drop ICI, le rejeu échoue à ce fichier dès la 2ᵉ passe, la version en base
+-- étant déjà la nouvelle. C'est la règle des deux fichiers, documentée dans
+-- donnees.md : le fichier d'origine doit tomber en même temps que celui qui le
+-- surcharge.
+drop function if exists comptes_encadrement();
+
 create or replace function comptes_encadrement()
 returns table (
   id       uuid,

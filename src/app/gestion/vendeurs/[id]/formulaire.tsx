@@ -23,6 +23,7 @@ import type { EtatAction, EtatActionSecret, Profil } from "@/lib/types";
 
 import {
   basculerActivation,
+  retirerCompte,
   encaisserVersement,
   modifierVendeur,
   reinitialiserMotDePasse,
@@ -304,16 +305,33 @@ function BoutonReinitialiserMotDePasse({ vendeurId }: { vendeurId: string }) {
 // Activation — dialogue propre, jamais imbriqué dans les paramètres
 // ---------------------------------------------------------------------------
 
+/**
+ * Réactiver, ou retirer.
+ *
+ * Deux actions distinctes, pas une bascule : réactiver est toujours le même
+ * geste, alors que retirer a deux dénouements que `retirer_compte()` choisit
+ * en base — suppression si le compte n'a laissé aucune trace, désactivation
+ * sinon. L'interface ne décide de rien et affiche le message tel quel.
+ */
 function BoutonActivation({ profil }: { profil: Profil }) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(
     basculerActivation,
     {},
   );
+  const [etatRetrait, actionRetrait, retraitEnCours] = useActionState<
+    EtatAction,
+    FormData
+  >(retirerCompte, {});
 
   useEffect(() => {
     if (etat.succes) toast.success(etat.succes);
     if (etat.erreur) toast.error(etat.erreur);
   }, [etat.succes, etat.erreur, etat.jeton]);
+
+  useEffect(() => {
+    if (etatRetrait.succes) toast.success(etatRetrait.succes);
+    if (etatRetrait.erreur) toast.error(etatRetrait.erreur);
+  }, [etatRetrait.succes, etatRetrait.erreur, etatRetrait.jeton]);
 
   if (!profil.actif) {
     return (
@@ -333,37 +351,83 @@ function BoutonActivation({ profil }: { profil: Profil }) {
   }
 
   return (
-    <Dialog key={etat.jeton ?? "initial"}>
+    // Les deux jetons concaténés : `??` garderait le premier posé, et la
+    // seconde action ne fermerait plus le dialogue.
+    <Dialog key={`${etat.jeton ?? ""}-${etatRetrait.jeton ?? ""}`}>
       <DialogTrigger
         render={
           <Button variant="destructive" className="h-11 w-full sm:w-auto">
-            Désactiver
+            Retirer
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Désactiver {profil.nom} ?</DialogTitle>
+          <DialogTitle>Retirer {profil.nom} ?</DialogTitle>
           <DialogDescription>
-            Il perdra immédiatement tout accès, y compris s&apos;il est
-            connecté. Son historique, son stock détenu et sa dette sont
-            conservés — la désactivation est réversible.
-            <br />
-            <br />
-            La suppression d&apos;un compte n&apos;est pas proposée : elle
-            échouerait dès qu&apos;un vendeur a un historique comptable, protégé
-            en base.
+            Dans les deux cas il perd immédiatement tout accès, y compris
+            s&apos;il est connecté.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Chaque issue porte SON bouton, plutôt que trois boutons alignés en
+            pied : le dialogue est à `sm:max-w-sm` et le troisième débordait.
+            Rapprocher le geste de son explication vaut mieux qu'une rangée où
+            il faut relier chaque libellé au paragraphe correspondant.
+
+            « Retirer » décide seul, ce qui est juste une fois que le compte a
+            servi. Mais un compte créé EN AVANCE n'a aucune trace : le retrait
+            le supprimerait, alors que le garder fermé jusqu'au premier jour
+            est précisément ce qu'on veut. D'où la première issue, qui ne
+            supprime jamais. */}
+        <div className="space-y-3 text-sm">
+          <div className="rounded-lg border p-3">
+            <p className="font-medium">Désactiver seulement</p>
+            <p className="text-muted-foreground mt-1 mb-3 text-xs">
+              Le compte est conservé et reste réactivable. C&apos;est ce
+              qu&apos;il faut pour un compte ouvert en avance, ou pour une
+              absence temporaire.
+            </p>
+            <form action={action}>
+              <input type="hidden" name="vendeur_id" value={profil.id} />
+              <input type="hidden" name="actif" value="0" />
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                disabled={enCours}
+              >
+                {enCours ? "Désactivation…" : "Désactiver"}
+              </Button>
+            </form>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <p className="font-medium">Retirer le compte</p>
+            <p className="text-muted-foreground mt-1 mb-3 text-xs">
+              Supprimé s&apos;il n&apos;a laissé <strong>aucune trace</strong>,
+              ni vente, ni mouvement de stock, ni versement, ni demande.
+              Désactivé sinon : historique, stock détenu et dette restent
+              intacts.
+            </p>
+            <form action={actionRetrait}>
+              <input type="hidden" name="vendeur_id" value={profil.id} />
+              <Button
+                type="submit"
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                disabled={retraitEnCours}
+              >
+                {retraitEnCours ? "Retrait…" : "Retirer"}
+              </Button>
+            </form>
+          </div>
+        </div>
+
         <DialogFooter>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
-          <form action={action}>
-            <input type="hidden" name="vendeur_id" value={profil.id} />
-            <input type="hidden" name="actif" value="0" />
-            <Button type="submit" variant="destructive" disabled={enCours}>
-              {enCours ? "Désactivation…" : "Désactiver"}
-            </Button>
-          </form>
         </DialogFooter>
       </DialogContent>
     </Dialog>

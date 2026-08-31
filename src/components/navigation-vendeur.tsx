@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import type { Compteurs } from "@/components/navigation-admin";
+import type { Compteurs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ONGLETS = [
@@ -14,6 +14,22 @@ const ONGLETS = [
   { href: "/vendeur/restock", libelle: "Réassort" },
   { href: "/vendeur/sav", libelle: "SAV" },
 ];
+
+/**
+ * Un compte lié à l'entrepôt ne demande pas de réassort : il se l'accorderait
+ * à lui-même. L'entrée disparaît de sa navigation.
+ *
+ * Ce n'est PAS une mesure de sécurité, comme le filtrage par niveau côté
+ * gestion : la page reste joignable en tapant l'URL, et c'est très bien.
+ * `creer_demande_restock` n'a aucune raison de la refuser, une demande sans
+ * objet ne casse rien. On évite seulement de proposer un geste qui n'a pas de
+ * sens.
+ */
+function onglets(stockLie: boolean) {
+  return stockLie
+    ? ONGLETS.filter((o) => o.href !== "/vendeur/restock")
+    : ONGLETS;
+}
 
 function estActif(chemin: string, href: string) {
   // "/vendeur" ne doit pas s'allumer sur toutes ses sous-routes.
@@ -25,15 +41,22 @@ function estActif(chemin: string, href: string) {
  * partir de `md` : sur un écran large, une barre collée en bas de fenêtre est
  * loin du contenu et n'a pas de sens à la souris.
  */
-export function NavigationMobile({ compteurs }: { compteurs: Compteurs }) {
+export function NavigationMobile({
+  compteurs,
+  stockLie = false,
+}: {
+  compteurs: Compteurs;
+  stockLie?: boolean;
+}) {
   const chemin = usePathname();
+  const liste = onglets(stockLie);
 
   return (
     // Pleine largeur : le conteneur de page n'a plus de plafond, une barre
     // centrée à 672 px serait décalée par rapport au contenu entre 672 et
     // 768 px de large.
     <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-10 flex w-full border-t backdrop-blur md:hidden">
-      {ONGLETS.map((onglet) => {
+      {liste.map((onglet) => {
         const actif = estActif(chemin, onglet.href);
         const compteur = compteurs[onglet.href] ?? 0;
         return (
@@ -60,12 +83,19 @@ export function NavigationMobile({ compteurs }: { compteurs: Compteurs }) {
 }
 
 /** Navigation en ligne dans l'en-tête, à partir de `md` seulement. */
-export function NavigationBureau({ compteurs }: { compteurs: Compteurs }) {
+export function NavigationBureau({
+  compteurs,
+  stockLie = false,
+}: {
+  compteurs: Compteurs;
+  stockLie?: boolean;
+}) {
   const chemin = usePathname();
+  const liste = onglets(stockLie);
 
   return (
     <nav className="hidden items-center gap-1 md:flex">
-      {ONGLETS.map((onglet) => {
+      {liste.map((onglet) => {
         const actif = estActif(chemin, onglet.href);
         const compteur = compteurs[onglet.href] ?? 0;
         return (
@@ -74,7 +104,10 @@ export function NavigationBureau({ compteurs }: { compteurs: Compteurs }) {
             href={onglet.href}
             aria-current={actif ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              // `min-h-9` : même hauteur que les entrées de la barre latérale
+              // de gestion. Ce sont deux cibles à la souris, dans deux espaces
+              // de la même application ; rien ne justifiait deux valeurs.
+              "flex min-h-9 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors",
               actif
                 ? "bg-muted text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50",

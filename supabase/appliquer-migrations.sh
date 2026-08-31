@@ -4,17 +4,12 @@
 # à jour est sans effet (hormis des NOTICE « does not exist, skipping »).
 set -euo pipefail
 
-STACK="${STACK:-$HOME/stockflow-supabase}"
-MIG="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/migrations"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MIG="$DIR/migrations"
 
-cd "$STACK"
-
-if ! docker compose ps --status running --quiet db >/dev/null 2>&1; then
-  echo "La stack n'est pas démarrée. Lancer : cd $STACK && docker compose up -d" >&2
-  exit 1
-fi
-
-psql() { docker compose exec -T db psql -U postgres -d postgres "$@"; }
+# Une seule définition de « comment joindre la base », partagée avec
+# tests/lancer.sh : DATABASE_URL si elle est posée, la stack Supabase sinon.
+. "$DIR/_connexion.sh"
 
 for f in "$MIG"/*.sql; do
   printf '  %-32s' "$(basename "$f")"

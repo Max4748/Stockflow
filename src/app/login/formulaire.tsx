@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,7 +12,11 @@ import type { EtatAction } from "@/lib/types";
 
 import { seConnecter } from "./actions";
 
-export function FormulaireConnexion() {
+export function FormulaireConnexion({
+  avertissement,
+}: {
+  avertissement?: string;
+}) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(
     seConnecter,
     {},
@@ -20,6 +25,14 @@ export function FormulaireConnexion() {
   return (
     <Card>
       <CardContent className="pt-6">
+        {/* Hors du <form> : il survit à une soumission, alors qu'`etat.erreur`
+            est remis à zéro à chaque tentative. */}
+        {avertissement && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{avertissement}</AlertDescription>
+          </Alert>
+        )}
+
         <form action={action} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Adresse e-mail</Label>
@@ -55,6 +68,15 @@ export function FormulaireConnexion() {
           <Button type="submit" className="w-full" disabled={enCours}>
             {enCours ? "Connexion…" : "Se connecter"}
           </Button>
+
+          <p className="text-muted-foreground text-center text-xs">
+            <Link
+              href="/mot-de-passe-oublie"
+              className="hover:text-foreground underline"
+            >
+              Mot de passe oublié ?
+            </Link>
+          </p>
         </form>
       </CardContent>
     </Card>

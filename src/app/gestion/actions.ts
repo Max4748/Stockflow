@@ -3,8 +3,10 @@
 import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { exigerAdmin, exigerDev } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { clientAdmin } from "@/lib/supabase/admin";
 import { creerClient } from "@/lib/supabase/server";
 import type { EtatAction, EtatActionSecret } from "@/lib/types";
@@ -154,6 +156,35 @@ export async function enregistrerProduit(
   };
 }
 
+/**
+ * Retire un produit du catalogue.
+ *
+ * Seule opération produit à passer par une RPC. La création et la modification
+ * écrivent en direct, parce qu'un produit ne porte aucun invariant comptable ;
+ * le retrait, lui, en toucherait un.
+ *
+ * `retirer_produit()` (migration 0022) choisit le dénouement : suppression si
+ * le produit n'a jamais servi, désactivation sinon. Elle renvoie le message à
+ * afficher, qui est déjà rédigé pour un humain et dit LEQUEL des deux a eu
+ * lieu. L'interface n'a rien à décider ni à reformuler.
+ */
+export async function retirerProduit(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { erreur: "Produit manquant." };
+
+  const supabase = await creerClient();
+  const { data, error } = await supabase.rpc("retirer_produit", { p_id: id });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return { succes: (data as string) ?? "Produit retiré.", jeton: jeton() };
+}
+
 // ---------------------------------------------------------------------------
 // Achats fournisseur
 // ---------------------------------------------------------------------------
@@ -196,6 +227,83 @@ export async function enregistrerAchat(
   const unites = lignes.reduce((s, l) => s + l.quantite, 0);
   return {
     succes: `Achat enregistré : ${unites} unité(s) entrées en entrepôt.`,
+    jeton: jeton(),
+  };
+}
+
+/**
+ * Corrige un achat déjà saisi.
+ *
+ * `modifier_restock` (migration 0026) défait puis refait les lignes en
+ * conservant l'en-tête, et refuse dès que l'achat a produit des effets :
+ * unités déjà sorties de l'entrepôt, ou vente postérieure ayant figé un coût
+ * qui en dépend. Le message oriente vers l'ajustement de stock motivé.
+ */
+export async function modifierAchat(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("restock_id") ?? "");
+  if (!id) return { erreur: "Achat introuvable." };
+
+  const lignes = lireLignes(formData);
+  if (lignes.length === 0) {
+    return { erreur: "Indiquer au moins un produit et une quantité." };
+  }
+
+  const prixBase = Number(formData.get("prix_base"));
+  const fraisPort = Number(formData.get("frais_port") ?? 0);
+  const reference = String(formData.get("reference") ?? "").trim();
+  const date = String(formData.get("date") ?? "").trim();
+
+  if (!Number.isFinite(prixBase) || prixBase < 0) {
+    return { erreur: "Montant de la commande invalide." };
+  }
+  if (!Number.isFinite(fraisPort) || fraisPort < 0) {
+    return { erreur: "Frais de port invalides." };
+  }
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("modifier_restock", {
+    p_restock_id: id,
+    p_lignes: lignes,
+    p_prix_base: prixBase,
+    p_frais_port: fraisPort,
+    p_reference: reference || null,
+    ...(date ? { p_date: date } : {}),
+  });
+
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  const unites = lignes.reduce((s, l) => s + l.quantite, 0);
+  return {
+    succes: `Achat corrigé : ${unites} unité(s) en entrepôt pour cette commande.`,
+    jeton: jeton(),
+  };
+}
+
+/** Annule un achat. Mêmes refus que la correction, mêmes messages. */
+export async function supprimerAchat(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("restock_id") ?? "");
+  if (!id) return { erreur: "Achat introuvable." };
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("supprimer_restock", {
+    p_restock_id: id,
+  });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return {
+    succes: "Achat annulé, les unités sont ressorties de l'entrepôt.",
     jeton: jeton(),
   };
 }
@@ -611,6 +719,7 @@ function motDePasseProvisoire(): string {
   return randomBytes(9).toString("base64url");
 }
 
+
 export async function creerVendeur(
   _etat: EtatActionSecret,
   formData: FormData,
@@ -651,14 +760,23 @@ export async function creerVendeur(
 
   if (erreurInvitation) return { erreur: erreurInvitation.message };
 
-  // ÉTAPE 2 — le compte. clientAdmin() porte la clé service_role : c'est le
-  // SEUL usage légitime, `auth.admin.*` n'étant pas accessible autrement.
-  const motDePasse = motDePasseProvisoire();
-  const { error: erreurCompte } = await clientAdmin().auth.admin.createUser({
+  // ÉTAPE 2 — le compte, ET le courriel d'invitation, en un seul appel.
+  //
+  // `inviteUserByEmail` plutôt que `createUser` : il crée le compte SANS mot de
+  // passe et envoie le lien. Personne n'a donc à transmettre un mot de passe
+  // provisoire de la main à la main, ni à le stocker le temps du trajet. Le
+  // vendeur choisit le sien, et il est le seul à le connaître.
+  //
+  // Le trigger d'inscription se déclenche exactement pareil : c'est une
+  // insertion dans `auth.users`, et il y lit l'invitation posée à l'étape 1
+  // pour poser le rôle. Rien à changer côté base.
+  //
+  // clientAdmin() porte la clé service_role : c'est le SEUL usage légitime,
+  // `auth.admin.*` n'étant pas accessible autrement.
+  const { error: erreurCompte } = await clientAdmin().auth.admin.inviteUserByEmail(
     email,
-    password: motDePasse,
-    email_confirm: true,
-  });
+    { redirectTo: `${env.APP_URL}/auth/callback?next=/changer-mot-de-passe` },
+  );
 
   if (erreurCompte) {
     // Les deux étapes ne sont PAS atomiques. L'invitation subsiste, inoffensive
@@ -673,9 +791,8 @@ export async function creerVendeur(
 
   rafraichir();
   return {
-    succes: `Compte créé pour ${nom}.`,
+    succes: `Compte créé pour ${nom}. Un lien vient d'être envoyé à ${email}.`,
     email,
-    motDePasse,
     jeton: jeton(),
   };
 }
@@ -767,13 +884,63 @@ export async function basculerActivation(
 
   rafraichir();
   return {
-    // La suppression n'est pas proposée : `on delete restrict` la ferait
-    // échouer dès qu'un vendeur a un historique comptable.
     succes: actif
       ? "Compte réactivé."
       : "Compte désactivé : plus aucun accès, historique conservé.",
     jeton: jeton(),
   };
+}
+
+/**
+ * Retire un compte du dispositif.
+ *
+ * `retirer_compte()` (migration 0024) choisit le dénouement : suppression si le
+ * compte n'a laissé aucune trace, désactivation sinon. Elle renvoie le message
+ * à afficher, qui dit LEQUEL des deux a eu lieu.
+ *
+ * Le pendant exact de `retirerProduit`, et pour la même raison : celui qui
+ * clique veut que le compte cesse de servir, pas arbitrer entre deux mots dont
+ * un seul est applicable à ce cas précis.
+ */
+export async function retirerCompte(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("vendeur_id") ?? "");
+  if (!id) return { erreur: "Compte introuvable." };
+
+  const supabase = await creerClient();
+  const { data, error } = await supabase.rpc("retirer_compte", { p_id: id });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+
+  // Supprimé, ou seulement désactivé ? C'est `retirer_compte()` qui choisit,
+  // selon l'historique, et l'appelant ne peut pas le savoir d'avance. Or cette
+  // action est déclenchée depuis la fiche du compte : si le profil a disparu,
+  // la fiche se re-rend sur un identifiant qui n'existe plus et tombe sur son
+  // propre `notFound()`.
+  //
+  // La lecture est possible : la policy `profils_select` autorise un admin à
+  // lire n'importe quel profil.
+  const { data: reste } = await supabase
+    .from("profils")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!reste) {
+    // Le message part en paramètre plutôt qu'en `succes` : une redirection
+    // interrompt l'action, l'état de retour n'atteindrait jamais le client et
+    // le toast serait perdu. Même procédé que `/login?erreur=lien-invalide`.
+    redirect(
+      `/gestion/vendeurs?retire=${encodeURIComponent((data as string) ?? "Compte supprimé.")}`,
+    );
+  }
+
+  return { succes: (data as string) ?? "Compte retiré.", jeton: jeton() };
 }
 
 // ---------------------------------------------------------------------------
@@ -814,6 +981,72 @@ export async function changerRole(
       role === "gerant"
         ? "Compte promu gérant : accès complet à la gestion."
         : "Compte rétrogradé vendeur.",
+    jeton: jeton(),
+  };
+}
+
+/**
+ * Retire une invitation qui n'a jamais servi.
+ *
+ * Garde volontairement plus faible que celle de la création : `inviter_*`
+ * exige un niveau strictement supérieur à la cible, `annuler_invitation` se
+ * contente d'`est_admin()`. Reprendre la règle de création rendrait
+ * l'invitation `dev` de l'amorçage indestructible. Voir la migration 0023.
+ */
+export async function annulerInvitation(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { erreur: "Adresse manquante." };
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("annuler_invitation", {
+    p_email: email,
+  });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return { succes: "Invitation retirée.", jeton: jeton() };
+}
+
+/**
+ * Déclare que l'entrepôt EST le stock de ce compte.
+ *
+ * Le cas : l'entrepôt est physiquement chez le gérant. Sans ce réglage il
+ * devait se transférer du stock à lui-même avant chaque vente, une écriture
+ * qui ne décrivait aucun déplacement.
+ *
+ * Le contrôle est en base (`changer_stock_lie`, migration 0025) : un vendeur
+ * est refusé, et un gérant ne règle pas un dev. Se régler soi-même est en
+ * revanche légitime, contrairement au rôle ou à l'activation — le gérant qui
+ * héberge l'entrepôt est le mieux placé pour le déclarer, et le réglage ne lui
+ * ouvre aucun droit qu'il n'a pas déjà.
+ */
+export async function changerStockLie(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("compte_id") ?? "");
+  const lie = formData.get("lie") === "1";
+  if (!id) return { erreur: "Compte introuvable." };
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("changer_stock_lie", {
+    p_id: id,
+    p_lie: lie,
+  });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return {
+    succes: lie
+      ? "Ses ventes puisent désormais directement dans l'entrepôt."
+      : "Il doit de nouveau recevoir du stock avant de vendre.",
     jeton: jeton(),
   };
 }

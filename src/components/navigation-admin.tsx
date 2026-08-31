@@ -1,5 +1,6 @@
 "use client";
 
+import { MenuIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,12 +14,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import type { Compteurs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Navigation de l'espace admin : 8 sections, contre 4 côté vendeur. D'où la
- * barre latérale plutôt qu'une barre en haut — les libellés restent lisibles,
- * et ajouter une section ne serre rien.
+ * Navigation de l'espace admin : neuf entrées, contre cinq côté vendeur. D'où
+ * la barre latérale plutôt qu'une barre en haut : les libellés restent
+ * lisibles, et ajouter une entrée ne serre rien.
  *
  * Une seule définition des sections, deux rendus :
  *   - `lg` et au-delà : colonne fixe à gauche ;
@@ -26,14 +28,6 @@ import { cn } from "@/lib/utils";
  */
 
 type Entree = { href: string; libelle: string };
-
-/**
- * Compteurs affichés en pastille, par chemin.
- *
- * Un dictionnaire plutôt qu'une prop par compteur : chaque nouvelle file
- * d'attente ajouterait sinon une prop à traverser trois composants.
- */
-export type Compteurs = Record<string, number>;
 
 /**
  * `niveauMinimum` : le groupe n'apparaît qu'au-delà. Le groupe Technique est à
@@ -74,6 +68,13 @@ const GROUPES: { titre: string; niveauMinimum?: number; entrees: Entree[] }[] =
         { href: "/gestion/integrite", libelle: "Intégrité" },
       ],
     },
+    // Sans `niveauMinimum` : la double authentification concerne le compte de
+    // celui qui la lit, pas le métier. Un gérant en a autant besoin qu'un dev,
+    // davantage même — c'est lui qui voit les marges au quotidien.
+    {
+      titre: "Compte",
+      entrees: [{ href: "/gestion/securite", libelle: "Sécurité" }],
+    },
   ];
 
 function estActif(chemin: string, href: string) {
@@ -101,7 +102,11 @@ function Liens({
     <nav className="space-y-6">
       {groupes.map((groupe) => (
         <div key={groupe.titre}>
-          <p className="text-muted-foreground px-3 pb-1 text-xs font-medium tracking-wide uppercase">
+          {/* `pb-1.5` : le titre doit coller à SES entrées. C'est le rapport
+              entre les trois espacements qui fait lire un groupe, pas leur
+              valeur absolue — titre le plus serré, entrées entre elles au
+              milieu, groupes le plus large. */}
+          <p className="text-muted-foreground px-3 pb-1.5 text-xs font-medium tracking-wide uppercase">
             {groupe.titre}
           </p>
           <ul className="space-y-0.5">
@@ -119,8 +124,13 @@ function Liens({
                     onClick={onNavigate}
                     aria-current={actif ? "page" : undefined}
                     className={cn(
-                      // min-h-11 : cible tactile confortable dans le tiroir.
-                      "flex min-h-11 items-center justify-between gap-2 rounded-md px-3 text-sm font-medium transition-colors",
+                      // `min-h-11` (44 px) est une cible tactile, nécessaire
+                      // dans le tiroir, qui n'existe qu'en dessous de `lg`.
+                      // La barre latérale, elle, ne se voit qu'à partir de
+                      // `lg` et se pilote à la souris : 44 px y écartaient
+                      // tellement les entrées qu'un groupe ne se distinguait
+                      // plus du groupe suivant.
+                      "flex min-h-11 items-center justify-between gap-2 rounded-md px-3 text-sm font-medium transition-colors lg:min-h-9",
                       actif
                         ? "bg-muted text-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
@@ -177,12 +187,40 @@ export function TiroirNavigation({
 
   return (
     <Sheet open={ouvert} onOpenChange={setOuvert}>
+      {/* Icône seule, pas le mot « Menu » : le bouton vit dans un en-tête déjà
+          chargé (titre, rôle, bascule d'espace, thème, déconnexion) et un
+          libellé de plus y ajoutait de la largeur sans rien apprendre. Le
+          `aria-label` porte l'information pour les lecteurs d'écran, qui la
+          perdraient sinon.
+
+          La pastille reste : sans elle, rien ne signalerait une décision en
+          attente sur un écran où la barre latérale est masquée. Positionnée en
+          absolu sur le coin, elle ne déforme plus le bouton. */}
       <SheetTrigger
         render={
-          <Button variant="outline" size="sm" className="lg:hidden">
-            Menu
+          <Button
+            // `ghost` et non `outline` : le bouton de thème voisin est en
+            // ghost, et deux traitements différents dans le même en-tête se
+            // voyaient. L'icône se suffit, le cadre n'ajoutait rien.
+            variant="ghost"
+            size="icon"
+            aria-label={
+              total > 0
+                ? `Ouvrir le menu, ${total} en attente`
+                : "Ouvrir le menu"
+            }
+            // `size-10` et non le `size-8` par défaut de la variante `icon` :
+            // ce bouton est le SEUL point de navigation en dessous de `lg`, et
+            // 32 px est sous le minimum tactile. Le bouton de thème voisin peut
+            // rester petit, le manquer ne coûte qu'un second essai.
+            className="relative size-10 lg:hidden"
+          >
+            <MenuIcon className="size-5" />
             {total > 0 && (
-              <Badge variant="destructive" className="ml-1">
+              <Badge
+                variant="destructive"
+                className="absolute -top-1.5 -right-1.5 min-w-5 justify-center px-1 tabular-nums"
+              >
                 {total}
               </Badge>
             )}

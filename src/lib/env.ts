@@ -26,4 +26,17 @@ export const env = {
   SUPABASE_URL: requis("SUPABASE_URL"),
   SUPABASE_ANON_KEY: requis("SUPABASE_ANON_KEY"),
   SUPABASE_SERVICE_ROLE_KEY: requis("SUPABASE_SERVICE_ROLE_KEY"),
+  /**
+   * Origine publique de l'application, sans barre finale.
+   *
+   * Elle NE se déduit PAS des en-têtes de la requête. `x-forwarded-host` est
+   * posé par le client autant que par le proxy : un lien de réinitialisation
+   * construit dessus pouvait être détourné vers un domaine choisi par
+   * l'appelant, dans un courriel que le destinataire a toute raison de croire
+   * légitime.
+   *
+   * L'application connaît sa propre adresse : la lire ailleurs que dans sa
+   * configuration était gratuit.
+   */
+  APP_URL: requis("APP_URL").replace(/\/+$/, ""),
 } as const;

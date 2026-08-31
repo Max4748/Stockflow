@@ -9,7 +9,7 @@ Tailwind 4, shadcn/ui, PostgreSQL via Supabase. Projet personnel.
 
 | Décision | Conséquence concrète | Détail |
 | --- | --- | --- |
-| Logique métier en SQL | 13 tables, 57 fonctions, 20 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
+| Logique métier en SQL | 14 tables, 65 fonctions, 21 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
 | Autorisation en base, sur quatre couches | RLS, GRANT/REVOKE, garde en tête de fonction, garde applicative. Le front-end peut disparaître sans ouvrir de faille | [securite.md](docs/securite.md) |
 | Stock dérivé, jamais stocké | Somme d'un registre de mouvements signés : une incohérence devient visible au lieu d'être écrasée | [donnees.md](docs/donnees.md) |
 | Aucune clé Supabase côté navigateur | Variables sans préfixe `NEXT_PUBLIC_`, lues à l'exécution, image Docker sans build-arg | [architecture.md](docs/architecture.md) |
@@ -33,7 +33,7 @@ Les trois valeurs sont lues à l'exécution : en changer ne demande aucun rebuil
 
 **2. Schéma de la base**
 
-Les 22 fichiers de `supabase/migrations/` sont du SQL ordinaire, écrits pour
+Les 30 fichiers de `supabase/migrations/` sont du SQL ordinaire, écrits pour
 être rejoués intégralement, à appliquer dans l'ordre :
 
 ```bash
@@ -75,12 +75,27 @@ diagnostic et sauvegardes : [docs/exploitation.md](docs/exploitation.md).
 ## Vérifier
 
 ```bash
-npx tsc --noEmit && npx eslint src
-./supabase/tests/lancer.sh
+npm run typecheck && npm run lint && npm run test:db
 ```
 
+Ces trois-là ne demandent rien : `test:db` rejoue les migrations trois fois sur
+un Postgres compilé en WebAssembly, sans Docker ni instance Supabase.
+
+Les règles métier, elles, ont besoin d'un vrai moteur. Un fichier le fournit :
+
+```bash
+docker compose -f compose.test.yaml up -d --wait
+export DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres
+./supabase/appliquer-migrations.sh && npm run test:sql
+```
+
+C'est la même image qu'en production, donc les tests s'exécutent sur le moteur
+exact du serveur. [La CI](.github/workflows/ci.yml) enchaîne exactement ces
+commandes à chaque push : la section ci-dessus n'est pas une promesse, c'est ce
+qui tourne.
+
 Les tests sont en **pgTAP**, pas en TypeScript : c'est en SQL que vit la logique
-métier, donc c'est là que porte la couverture. 50 assertions, portant sur les règles
+métier, donc c'est là que porte la couverture. 129 assertions, portant sur les règles
 qu'on ne peut ni annuler ni deviner en lisant l'interface : la
 hiérarchie des rôles, le calcul de la dette, la borne anti-surversement, les
 deux régimes du SAV et la révocation d'un échange.

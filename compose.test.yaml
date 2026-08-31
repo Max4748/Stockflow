@@ -1,0 +1,32 @@
+# Postgres jetable pour la suite pgTAP, sans Supabase.
+#
+#   docker compose -f compose.test.yaml up -d --wait
+#   DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres ./supabase/tests/lancer.sh
+#   docker compose -f compose.test.yaml down -v
+#
+# Raison d'être : `lancer.sh` visait la stack Supabase de l'auteur, ce qui
+# rendait les tests injouables par quiconque d'autre, CI comprise. Ce fichier
+# ne contient QUE ce dont ils ont besoin.
+#
+# MÊME IMAGE QU'EN PRODUCTION, et c'est délibéré. pgTAP y est déjà disponible,
+# donc rien à installer au démarrage ; et surtout les tests s'exécutent sur le
+# moteur exact du serveur, extensions et réglages compris. Un Postgres
+# générique aurait pu diverger sans qu'on le voie.
+#
+# Le schéma `auth`, les rôles et `auth.uid()` sont posés par
+# `supabase/tests/_amorce.sql`, déjà écrit pour ça.
+#
+# Port 5433 : 5432 est souvent pris, et l'instance Supabase de l'auteur tourne
+# déjà sur la machine.
+services:
+  db:
+    image: supabase/postgres:17.6.1.136
+    environment:
+      POSTGRES_PASSWORD: test
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

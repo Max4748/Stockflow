@@ -25,6 +25,7 @@ const PAR_PAGE = 50;
 const TYPES = [
   { valeur: "", libelle: "Tous les types" },
   { valeur: "vente", libelle: "Ventes" },
+  { valeur: "vente_annulee", libelle: "Ventes annulées" },
   { valeur: "achat", libelle: "Achats" },
   { valeur: "transfert", libelle: "Transferts" },
   { valeur: "retour", libelle: "Retours" },
@@ -33,11 +34,24 @@ const TYPES = [
   { valeur: "versement", libelle: "Versements" },
 ];
 
+/**
+ * Libellé de la pastille, quand le type brut ne se lit pas.
+ *
+ * Séparé de `TYPES` ci-dessus : celui-là nomme un FILTRE, donc au pluriel
+ * (« Ventes annulées »), et une pastille qualifie UNE ligne, donc au
+ * singulier. Les confondre donnerait « Ventes annulées » sur une seule vente.
+ * Les types d'un seul mot se suffisent et n'ont pas d'entrée ici.
+ */
+const LIBELLE_TYPE: Record<string, string> = {
+  vente_annulee: "annulée",
+};
+
 const VARIANTE: Record<
   string,
   "default" | "secondary" | "outline" | "destructive"
 > = {
   vente: "default",
+  vente_annulee: "destructive",
   achat: "secondary",
   versement: "secondary",
   // Une défaillance est une mauvaise nouvelle : elle doit se repérer d'un
@@ -91,7 +105,9 @@ export default async function PageComptabilite({
       valeur: (l) => (
         <span className="flex items-center gap-2">
           {date(l.date_compta)}
-          <Badge variant={VARIANTE[l.type] ?? "outline"}>{l.type}</Badge>
+          <Badge variant={VARIANTE[l.type] ?? "outline"}>
+            {LIBELLE_TYPE[l.type] ?? l.type}
+          </Badge>
         </span>
       ),
     },

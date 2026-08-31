@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { aujourdHui, euros, eurosPrecis } from "@/lib/format";
-import type { EtatAction, Produit } from "@/lib/types";
+import { aujourdHui, date, euros, eurosPrecis } from "@/lib/format";
+import type { EtatAction, Produit, Restock } from "@/lib/types";
 
-import { enregistrerAchat } from "../actions";
+import {
+  enregistrerAchat,
+  modifierAchat,
+  supprimerAchat,
+} from "../actions";
 
 /**
  * Saisie d'un achat fournisseur — les unités entrent en entrepôt.
@@ -71,18 +75,37 @@ export function FormulaireAchat({ produits }: { produits: Produit[] }) {
   );
 }
 
+/**
+ * `initial` sert à la CORRECTION d'un achat : les mêmes champs, pré-remplis.
+ * Deux formulaires distincts auraient divergé au premier ajout de champ, et
+ * c'est l'aperçu du coût de revient qui en aurait souffert en premier.
+ */
+export type SaisieAchat = {
+  quantites: Record<string, string>;
+  prixBase: string;
+  fraisPort: string;
+  reference: string;
+  date: string;
+};
+
 function ChampsAchat({
   produits,
   erreur,
   enCours,
+  initial,
+  libelleValider,
 }: {
   produits: Produit[];
   erreur?: string;
   enCours: boolean;
+  initial?: SaisieAchat;
+  libelleValider?: string;
 }) {
-  const [quantites, setQuantites] = useState<Record<string, string>>({});
-  const [prixBase, setPrixBase] = useState("");
-  const [fraisPort, setFraisPort] = useState("0");
+  const [quantites, setQuantites] = useState<Record<string, string>>(
+    initial?.quantites ?? {},
+  );
+  const [prixBase, setPrixBase] = useState(initial?.prixBase ?? "");
+  const [fraisPort, setFraisPort] = useState(initial?.fraisPort ?? "0");
 
   const unites = Object.values(quantites).reduce(
     (s, v) => s + (Number(v) || 0),
@@ -179,6 +202,7 @@ function ChampsAchat({
           <Input
             id="reference"
             name="reference"
+            defaultValue={initial?.reference ?? ""}
             placeholder="CMD-2026-014"
             className="h-11 text-base"
           />
@@ -190,7 +214,7 @@ function ChampsAchat({
             id="date"
             name="date"
             type="date"
-            defaultValue={aujourdHui()}
+            defaultValue={initial?.date ?? aujourdHui()}
             className="h-11 text-base"
           />
           <p className="text-muted-foreground text-xs">
@@ -231,10 +255,98 @@ function ChampsAchat({
               ? "Enregistrement…"
               : unites === 0
                 ? "Saisir une quantité"
-                : "Enregistrer l'achat"}
+                : (libelleValider ?? "Enregistrer l'achat")}
           </Button>
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Corriger un achat déjà saisi.
+ *
+ * Le même formulaire que la création, pré-rempli. La correction n'est pas
+ * toujours possible : `modifier_restock` (0026) refuse dès que l'achat a
+ * produit des effets, et son message dit lequel. Ce refus n'est PAS anticipé
+ * ici — le savoir demanderait de recompter le stock et les ventes côté
+ * client, donc d'entretenir une seconde vérité qui mentirait la première.
+ */
+export function DialogueCorrigerAchat({
+  produits,
+  achat,
+  saisie,
+}: {
+  produits: Produit[];
+  achat: Restock;
+  saisie: SaisieAchat;
+}) {
+  const [etat, action, enCours] = useActionState<EtatAction, FormData>(
+    modifierAchat,
+    {},
+  );
+
+  useEffect(() => {
+    if (etat.succes) toast.success(etat.succes);
+  }, [etat.succes, etat.jeton]);
+
+  return (
+    <DialogueAction
+      libelle="Corriger"
+      tailleBouton="sm"
+      taille="large"
+      titre={`Corriger l'achat du ${date(achat.date)}`}
+      description="Les anciennes lignes sont défaites et refaites. Impossible dès que les unités ont quitté l'entrepôt, ou qu'une vente postérieure a figé un coût qui en dépend."
+      jeton={etat.jeton}
+    >
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="restock_id" value={achat.id} />
+        <ChampsAchat
+          produits={produits}
+          erreur={etat.erreur}
+          enCours={enCours}
+          initial={saisie}
+          libelleValider="Enregistrer la correction"
+        />
+      </form>
+    </DialogueAction>
+  );
+}
+
+/** Annuler un achat. Mêmes refus que la correction. */
+export function BoutonSupprimerAchat({ achat }: { achat: Restock }) {
+  const [etat, action, enCours] = useActionState<EtatAction, FormData>(
+    supprimerAchat,
+    {},
+  );
+
+  useEffect(() => {
+    if (etat.succes) toast.success(etat.succes);
+    if (etat.erreur) toast.error(etat.erreur);
+  }, [etat.succes, etat.erreur, etat.jeton]);
+
+  return (
+    <DialogueAction
+      libelle="Annuler"
+      tailleBouton="sm"
+      titre={`Annuler l'achat du ${date(achat.date)} ?`}
+      description="Les unités ressortent de l'entrepôt et le coût moyen pondéré se recale. Refusé si elles ont déjà été distribuées ou vendues."
+      jeton={etat.jeton}
+    >
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="restock_id" value={achat.id} />
+        {etat.erreur && (
+          <Alert variant="destructive">
+            <AlertDescription>{etat.erreur}</AlertDescription>
+          </Alert>
+        )}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogClose render={<Button variant="outline">Retour</Button>} />
+          <Button type="submit" variant="destructive" disabled={enCours}>
+            {enCours ? "Annulation…" : "Annuler l'achat"}
+          </Button>
+        </div>
+      </form>
+    </DialogueAction>
   );
 }

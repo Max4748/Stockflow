@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { EtatAction, EtatActionSecret } from "@/lib/types";
 
-import { changerRole, creerVendeur } from "../actions";
+import { changerRole, changerStockLie, creerVendeur } from "../actions";
 import { MotDePasseProvisoire } from "../vendeurs/formulaire";
 
 /**
@@ -154,6 +154,69 @@ export function LigneRole({
           <form action={action}>
             <input type="hidden" name="compte_id" value={compteId} />
             <input type="hidden" name="role" value={cible} />
+            <Button type="submit" disabled={enCours}>
+              {enCours ? "Modification…" : "Confirmer"}
+            </Button>
+          </form>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Déclare que l'entrepôt est le stock de ce compte.
+ *
+ * Un bouton et non une case à cocher : une case suggère un enregistrement à
+ * venir, alors que l'effet est immédiat. Le libellé dit ce qui va se passer,
+ * pas l'état courant, celui-ci étant déjà porté par la pastille de la ligne.
+ */
+export function BoutonStockLie({
+  compteId,
+  nom,
+  lie,
+}: {
+  compteId: string;
+  nom: string;
+  lie: boolean;
+}) {
+  const [etat, action, enCours] = useActionState<EtatAction, FormData>(
+    changerStockLie,
+    {},
+  );
+
+  useEffect(() => {
+    if (etat.succes) toast.success(etat.succes);
+    if (etat.erreur) toast.error(etat.erreur);
+  }, [etat.succes, etat.erreur, etat.jeton]);
+
+  return (
+    <Dialog key={etat.jeton ?? "initial"}>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm" className="w-full md:w-auto">
+            {lie ? "Délier de l'entrepôt" : "Lier à l'entrepôt"}
+          </Button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {lie
+              ? `Délier ${nom} de l'entrepôt ?`
+              : `L'entrepôt est-il chez ${nom} ?`}
+          </DialogTitle>
+          <DialogDescription>
+            {lie
+              ? "Il devra de nouveau recevoir du stock avant de pouvoir vendre, comme un vendeur sur le terrain."
+              : "Ses ventes puiseront directement dans l'entrepôt, sans qu'il ait à se transférer du stock au préalable. Le transfert reste écrit dans le journal, il disparaît seulement de son écran. À n'activer que pour qui détient physiquement l'entrepôt."}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline">Annuler</Button>} />
+          <form action={action}>
+            <input type="hidden" name="compte_id" value={compteId} />
+            <input type="hidden" name="lie" value={lie ? "0" : "1"} />
             <Button type="submit" disabled={enCours}>
               {enCours ? "Modification…" : "Confirmer"}
             </Button>

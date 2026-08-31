@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { EtatAction, Produit } from "@/lib/types";
 
-import { enregistrerProduit } from "../actions";
+import { enregistrerProduit, retirerProduit } from "../actions";
 
 /**
  * Création ou modification d'un produit, dans un dialogue.
@@ -28,10 +28,19 @@ export function DialogueProduit({ produit }: { produit?: Produit }) {
     enregistrerProduit,
     {},
   );
+  const [etatRetrait, actionRetrait, retraitEnCours] = useActionState<
+    EtatAction,
+    FormData
+  >(retirerProduit, {});
 
   useEffect(() => {
     if (etat.succes) toast.success(etat.succes);
   }, [etat.succes, etat.jeton]);
+
+  useEffect(() => {
+    if (etatRetrait.succes) toast.success(etatRetrait.succes);
+    if (etatRetrait.erreur) toast.error(etatRetrait.erreur);
+  }, [etatRetrait.succes, etatRetrait.erreur, etatRetrait.jeton]);
 
   const cle = produit?.id ?? "new";
 
@@ -41,7 +50,9 @@ export function DialogueProduit({ produit }: { produit?: Produit }) {
       variante={produit ? "outline" : "default"}
       tailleBouton={produit ? "sm" : undefined}
       titre={produit ? `Modifier ${produit.nom}` : "Nouveau produit"}
-      jeton={etat.jeton}
+      // Les deux jetons concaténés : `??` garderait celui de l'édition une
+      // fois posé, et un retrait réussi ensuite ne fermerait plus le dialogue.
+      jeton={`${etat.jeton ?? ""}-${etatRetrait.jeton ?? ""}`}
     >
       <form action={action} className="space-y-4">
         {produit && <input type="hidden" name="id" value={produit.id} />}
@@ -136,6 +147,36 @@ export function DialogueProduit({ produit }: { produit?: Produit }) {
           </Button>
         </div>
       </form>
+
+      {/* Retrait en pied de dialogue, et seulement en édition : il n'a aucun
+          sens sur un produit qu'on est en train de créer.
+
+          Hors du <form> ci-dessus, deux formulaires ne s'imbriquant pas en
+          HTML. Séparé par une bordure et en petit : on arrive ici pour
+          modifier, pas pour retirer, et ce geste ne doit pas se cliquer par
+          inadvertance. Pas de dialogue de confirmation par-dessus celui-ci :
+          l'ouvrir était déjà un geste délibéré, et `retirer_produit()` ne
+          détruit jamais de comptabilité. */}
+      {produit && (
+        <form action={actionRetrait} className="mt-2 border-t pt-4">
+          <input type="hidden" name="id" value={produit.id} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-muted-foreground text-xs">
+              Retirer du catalogue : supprimé s&apos;il n&apos;a jamais servi,
+              passé inactif s&apos;il a un historique.
+            </p>
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={retraitEnCours}
+            >
+              {retraitEnCours ? "Retrait…" : "Retirer"}
+            </Button>
+          </div>
+        </form>
+      )}
     </DialogueAction>
   );
 }
