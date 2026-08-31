@@ -30,7 +30,7 @@ const attendre = (ms: number) =>
  * direct à `127.0.0.1:3002` par tunnel SSH, chemin que documente
  * exploitation.md, `cf-connecting-ip` est absent et `x-real-ip` devient la
  * seule source, choisie par l'appelant. Cinq adresses distinctes plus tard,
- * l'IP de son choix était bloquée : la faille que 0034 ferme côté SQL, qui
+ * l'IP de son choix était bloquée : la faille que le `revoke` sur `bloquer_ip` ferme côté SQL, qui
  * rentrait par l'en-tête.
  *
  * Sans en-tête de confiance, on renvoie `null` et le palier 3 ne s'arme pas.
@@ -116,7 +116,7 @@ export async function seConnecter(
     // Ouverte à `anon`, elle laissait n'importe quel détenteur de la clé
     // publique bloquer l'IP de son choix, dev compris, et le dev bloqué ne
     // pouvait plus lever son propre blocage depuis l'application. Le droit est
-    // désormais réservé à `service_role` (migration 0034), dont la clé ne
+    // désormais réservé à `service_role`, dont la clé ne
     // quitte pas le serveur.
     if (doitBloquerIp && ip) {
       await clientAdmin().rpc("bloquer_ip", {

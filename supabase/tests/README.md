@@ -13,7 +13,7 @@ Sans instance Supabase sous la main, un Postgres jetable suffit :
 ```bash
 docker compose -f compose.test.yaml up -d --wait
 export DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres
-./supabase/appliquer-migrations.sh && ./supabase/tests/lancer.sh
+./supabase/appliquer-schema.sh && ./supabase/tests/lancer.sh
 ```
 
 Les deux scripts partagent `supabase/_connexion.sh`, qui résout la cible :
@@ -81,4 +81,4 @@ testerait un état que l'application ne sait pas produire.
 | `ERROR: permission denied for schema public` après un `t_agir()` | il manque un `reset role;` avant de créer une fixture |
 | Un test passe seul et échoue dans la suite | impossible ici : chaque fichier a sa transaction. Si ça arrive, c'est que le test s'appuie sur l'état global |
 | Un compteur « non vus » reste à 0 alors que le dossier vient d'être créé | `now()` est figé à l'ouverture de la transaction : la marque « vu » et le dossier portent le même horodatage, et la comparaison est stricte. Poser la marque une seconde en arrière (voir `04_sav.sql`) |
-| pgtap apparaît dans l'inventaire de `appliquer-migrations.sh` | une transaction de test a été committée. pgtap pose ~1000 fonctions dans `public` |
+| pgtap apparaît dans l'inventaire de `appliquer-schema.sh` | une transaction de test a été committée. pgtap pose ~1000 fonctions dans `public` |

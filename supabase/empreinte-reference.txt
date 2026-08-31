@@ -1,0 +1,3485 @@
+COLONNE   demande_lignes.demande_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   demande_lignes.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   demande_lignes.produit_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   demande_lignes.quantite_accordee  #5  integer  NOT NULL  defaut=0
+COLONNE   demande_lignes.quantite_demandee  #4  integer  NOT NULL  defaut=-
+COLONNE   demandes_restock.cree_le  #6  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   demandes_restock.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   demandes_restock.motif_refus  #5  text  NULL  defaut=-
+COLONNE   demandes_restock.note  #4  text  NULL  defaut=-
+COLONNE   demandes_restock.statut  #3  statut_demande  NOT NULL  defaut='en_attente'::statut_demande
+COLONNE   demandes_restock.traitee_le  #7  timestamp with time zone  NULL  defaut=-
+COLONNE   demandes_restock.traitee_par  #8  uuid  NULL  defaut=-
+COLONNE   demandes_restock.vendeur_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   invitations.commission_unitaire  #4  numeric(10,2)  NOT NULL  defaut=0
+COLONNE   invitations.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   invitations.doit_changer_mdp  #6  boolean  NOT NULL  defaut=true
+COLONNE   invitations.email  #1  text  NOT NULL  defaut=-
+COLONNE   invitations.nom  #2  text  NOT NULL  defaut=-
+COLONNE   invitations.role  #3  text  NOT NULL  defaut='vendeur'::text
+COLONNE   invitations.utilisee  #5  boolean  NOT NULL  defaut=false
+COLONNE   ip_bloquees.bloquee_le  #2  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   ip_bloquees.ip  #1  text  NOT NULL  defaut=-
+COLONNE   ip_bloquees.jusqu_a  #3  timestamp with time zone  NULL  defaut=-
+COLONNE   ip_bloquees.motif  #5  text  NULL  defaut=-
+COLONNE   ip_bloquees.posee_par  #6  uuid  NULL  defaut=-
+COLONNE   ip_bloquees.recidive  #4  integer  NOT NULL  defaut=1
+COLONNE   journal_admin.acteur  #3  uuid  NULL  defaut=-
+COLONNE   journal_admin.acteur_nom  #4  text  NULL  defaut=-
+COLONNE   journal_admin.action  #7  text  NOT NULL  defaut=-
+COLONNE   journal_admin.apres  #9  jsonb  NULL  defaut=-
+COLONNE   journal_admin.avant  #8  jsonb  NULL  defaut=-
+COLONNE   journal_admin.cible  #5  uuid  NULL  defaut=-
+COLONNE   journal_admin.cible_nom  #6  text  NULL  defaut=-
+COLONNE   journal_admin.cree_le  #2  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   journal_admin.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   journal_operations.acteur  #3  uuid  NULL  defaut=-
+COLONNE   journal_operations.acteur_nom  #4  text  NULL  defaut=-
+COLONNE   journal_operations.action  #7  text  NOT NULL  defaut=-
+COLONNE   journal_operations.cree_le  #2  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   journal_operations.detail  #11  jsonb  NULL  defaut=-
+COLONNE   journal_operations.entite  #5  text  NOT NULL  defaut=-
+COLONNE   journal_operations.entite_id  #6  uuid  NULL  defaut=-
+COLONNE   journal_operations.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   journal_operations.libelle  #8  text  NOT NULL  defaut=-
+COLONNE   journal_operations.montant  #10  numeric(12,2)  NULL  defaut=-
+COLONNE   journal_operations.quantite  #9  integer  NULL  defaut=-
+COLONNE   mouvements_stock.cree_le  #12  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   mouvements_stock.cree_par  #11  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.detenteur_id  #3  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.groupe_id  #6  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   mouvements_stock.motif  #10  text  NULL  defaut=-
+COLONNE   mouvements_stock.origine_demande_id  #9  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.origine_restock_id  #8  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.origine_sav_id  #13  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.origine_vente_id  #7  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.produit_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   mouvements_stock.quantite  #4  integer  NOT NULL  defaut=-
+COLONNE   mouvements_stock.type  #5  type_mouvement  NOT NULL  defaut=-
+COLONNE   produits.actif  #6  boolean  NOT NULL  defaut=true
+COLONNE   produits.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   produits.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   produits.nom  #2  text  NOT NULL  defaut=-
+COLONNE   produits.prix_vente_conseille  #4  numeric(10,2)  NOT NULL  defaut=0
+COLONNE   produits.seuil_alerte  #5  integer  NOT NULL  defaut=3
+COLONNE   produits.sku  #3  text  NULL  defaut=-
+COLONNE   profils.actif  #5  boolean  NOT NULL  defaut=false
+COLONNE   profils.commission_unitaire  #4  numeric(10,2)  NOT NULL  defaut=0
+COLONNE   profils.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   profils.doit_changer_mdp  #6  boolean  NOT NULL  defaut=false
+COLONNE   profils.id  #1  uuid  NOT NULL  defaut=-
+COLONNE   profils.nom  #2  text  NOT NULL  defaut=-
+COLONNE   profils.role  #3  text  NOT NULL  defaut='vendeur'::text
+COLONNE   profils.sav_gestion_vu_le  #9  timestamp with time zone  NULL  defaut=-
+COLONNE   profils.sav_vu_le  #8  timestamp with time zone  NULL  defaut=-
+COLONNE   profils.stock_lie_entrepot  #10  boolean  NOT NULL  defaut=false
+COLONNE   restock_lignes.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   restock_lignes.produit_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   restock_lignes.quantite  #4  integer  NOT NULL  defaut=-
+COLONNE   restock_lignes.restock_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   restocks.cree_le  #9  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   restocks.cree_par  #8  uuid  NULL  defaut=-
+COLONNE   restocks.date  #2  date  NOT NULL  defaut=CURRENT_DATE
+COLONNE   restocks.frais_port  #6  numeric(10,2)  NOT NULL  defaut=0
+COLONNE   restocks.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   restocks.prix_achat_base  #5  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   restocks.prix_achat_unitaire  #7  numeric(10,4)  NOT NULL  defaut=-
+COLONNE   restocks.quantite_totale  #4  integer  NOT NULL  defaut=-
+COLONNE   restocks.reference  #3  text  NULL  defaut=-
+COLONNE   roles.cle  #1  text  NOT NULL  defaut=-
+COLONNE   roles.libelle  #2  text  NOT NULL  defaut=-
+COLONNE   roles.niveau  #3  integer  NOT NULL  defaut=-
+COLONNE   sav.cree_le  #10  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   sav.cree_par  #9  uuid  NULL  defaut=-
+COLONNE   sav.date  #4  date  NOT NULL  defaut=CURRENT_DATE
+COLONNE   sav.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   sav.montant_rembourse  #7  numeric(12,2)  NOT NULL  defaut=0
+COLONNE   sav.motif  #8  text  NOT NULL  defaut=-
+COLONNE   sav.motif_refus  #12  text  NULL  defaut=-
+COLONNE   sav.produit_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   sav.quantite  #5  integer  NOT NULL  defaut=-
+COLONNE   sav.resolution  #6  text  NOT NULL  defaut=-
+COLONNE   sav.statut  #11  text  NOT NULL  defaut='valide'::text
+COLONNE   sav.traite_le  #13  timestamp with time zone  NULL  defaut=-
+COLONNE   sav.traite_par  #14  uuid  NULL  defaut=-
+COLONNE   sav.vente_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   vente_lignes.commission_unitaire  #6  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   vente_lignes.cout_unitaire  #7  numeric(10,4)  NOT NULL  defaut=-
+COLONNE   vente_lignes.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   vente_lignes.prix_vente_unitaire  #5  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   vente_lignes.produit_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   vente_lignes.quantite  #4  integer  NOT NULL  defaut=-
+COLONNE   vente_lignes.vente_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   ventes.client  #4  text  NOT NULL  defaut='Anonyme'::text
+COLONNE   ventes.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   ventes.date  #2  date  NOT NULL  defaut=CURRENT_DATE
+COLONNE   ventes.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   ventes.montant_total  #6  numeric(10,2)  NOT NULL  defaut=0
+COLONNE   ventes.quantite_totale  #5  integer  NOT NULL  defaut=0
+COLONNE   ventes.vendeur_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   ventes_annulees.annulee_le  #8  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   ventes_annulees.annulee_par  #9  uuid  NULL  defaut=-
+COLONNE   ventes_annulees.client  #4  text  NOT NULL  defaut=-
+COLONNE   ventes_annulees.cree_le  #7  timestamp with time zone  NOT NULL  defaut=-
+COLONNE   ventes_annulees.date  #2  date  NOT NULL  defaut=-
+COLONNE   ventes_annulees.id  #1  uuid  NOT NULL  defaut=-
+COLONNE   ventes_annulees.montant_total  #6  numeric(12,2)  NOT NULL  defaut=-
+COLONNE   ventes_annulees.motif  #10  text  NULL  defaut=-
+COLONNE   ventes_annulees.quantite_totale  #5  integer  NOT NULL  defaut=-
+COLONNE   ventes_annulees.vendeur_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   versements.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   versements.cree_par  #6  uuid  NULL  defaut=-
+COLONNE   versements.date  #2  date  NOT NULL  defaut=CURRENT_DATE
+COLONNE   versements.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   versements.montant  #4  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   versements.note  #5  text  NULL  defaut=-
+COLONNE   versements.vendeur_id  #3  uuid  NOT NULL  defaut=-
+CONTRAINTE demande_lignes  accordee_max_demandee  CHECK ((quantite_accordee <= quantite_demandee))
+CONTRAINTE demande_lignes  demande_lignes_demande_id_fkey  FOREIGN KEY (demande_id) REFERENCES demandes_restock(id) ON DELETE CASCADE
+CONTRAINTE demande_lignes  demande_lignes_demande_id_produit_id_key  UNIQUE (demande_id, produit_id)
+CONTRAINTE demande_lignes  demande_lignes_pkey  PRIMARY KEY (id)
+CONTRAINTE demande_lignes  demande_lignes_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE demande_lignes  demande_lignes_quantite_accordee_check  CHECK ((quantite_accordee >= 0))
+CONTRAINTE demande_lignes  demande_lignes_quantite_demandee_check  CHECK ((quantite_demandee > 0))
+CONTRAINTE demandes_restock  demande_traitement_coherent  CHECK ((((statut = 'en_attente'::statut_demande) AND (traitee_le IS NULL) AND (traitee_par IS NULL)) OR (statut = 'annulee'::statut_demande) OR ((statut = ANY (ARRAY['approuvee'::statut_demande, 'partielle'::statut_demande, 'refusee'::statut_demande])) AND (traitee_le IS NOT NULL) AND (traitee_par IS NOT NULL))))
+CONTRAINTE demandes_restock  demandes_restock_pkey  PRIMARY KEY (id)
+CONTRAINTE demandes_restock  demandes_restock_traitee_par_fkey  FOREIGN KEY (traitee_par) REFERENCES profils(id)
+CONTRAINTE demandes_restock  demandes_restock_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE RESTRICT
+CONTRAINTE invitations  invitations_commission_unitaire_check  CHECK ((commission_unitaire >= (0)::numeric))
+CONTRAINTE invitations  invitations_pkey  PRIMARY KEY (email)
+CONTRAINTE invitations  invitations_role_fk  FOREIGN KEY (role) REFERENCES roles(cle)
+CONTRAINTE ip_bloquees  ip_bloquees_pkey  PRIMARY KEY (ip)
+CONTRAINTE ip_bloquees  ip_bloquees_posee_par_fkey  FOREIGN KEY (posee_par) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE ip_bloquees  ip_bloquees_recidive_check  CHECK ((recidive > 0))
+CONTRAINTE journal_admin  journal_admin_acteur_fkey  FOREIGN KEY (acteur) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE journal_admin  journal_admin_cible_fkey  FOREIGN KEY (cible) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE journal_admin  journal_admin_pkey  PRIMARY KEY (id)
+CONTRAINTE journal_operations  journal_operations_acteur_fkey  FOREIGN KEY (acteur) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE journal_operations  journal_operations_pkey  PRIMARY KEY (id)
+CONTRAINTE mouvements_stock  mouvements_stock_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id)
+CONTRAINTE mouvements_stock  mouvements_stock_detenteur_id_fkey  FOREIGN KEY (detenteur_id) REFERENCES profils(id) ON DELETE RESTRICT
+CONTRAINTE mouvements_stock  mouvements_stock_origine_demande_id_fkey  FOREIGN KEY (origine_demande_id) REFERENCES demandes_restock(id) ON DELETE SET NULL
+CONTRAINTE mouvements_stock  mouvements_stock_origine_restock_id_fkey  FOREIGN KEY (origine_restock_id) REFERENCES restock_lignes(id) ON DELETE CASCADE
+CONTRAINTE mouvements_stock  mouvements_stock_origine_sav_id_fkey  FOREIGN KEY (origine_sav_id) REFERENCES sav(id) ON DELETE CASCADE
+CONTRAINTE mouvements_stock  mouvements_stock_origine_vente_id_fkey  FOREIGN KEY (origine_vente_id) REFERENCES ventes(id) ON DELETE CASCADE
+CONTRAINTE mouvements_stock  mouvements_stock_pkey  PRIMARY KEY (id)
+CONTRAINTE mouvements_stock  mouvements_stock_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE mouvements_stock  mouvements_stock_quantite_check  CHECK ((quantite <> 0))
+CONTRAINTE mouvements_stock  mvt_coherence  CHECK (
+CASE type
+    WHEN 'entree_achat'::type_mouvement THEN ((detenteur_id IS NULL) AND (quantite > 0) AND (origine_restock_id IS NOT NULL))
+    WHEN 'vente'::type_mouvement THEN ((detenteur_id IS NOT NULL) AND (quantite < 0) AND (origine_vente_id IS NOT NULL))
+    WHEN 'transfert'::type_mouvement THEN (groupe_id IS NOT NULL)
+    WHEN 'retour'::type_mouvement THEN (groupe_id IS NOT NULL)
+    WHEN 'ajustement'::type_mouvement THEN (motif IS NOT NULL)
+    WHEN 'sav'::type_mouvement THEN ((quantite < 0) AND (origine_sav_id IS NOT NULL))
+    ELSE NULL::boolean
+END)
+CONTRAINTE produits  produits_pkey  PRIMARY KEY (id)
+CONTRAINTE produits  produits_prix_vente_conseille_check  CHECK ((prix_vente_conseille >= (0)::numeric))
+CONTRAINTE produits  produits_seuil_alerte_check  CHECK ((seuil_alerte >= 0))
+CONTRAINTE profils  profils_commission_unitaire_check  CHECK ((commission_unitaire >= (0)::numeric))
+CONTRAINTE profils  profils_id_fkey  FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+CONTRAINTE profils  profils_pkey  PRIMARY KEY (id)
+CONTRAINTE profils  profils_role_fk  FOREIGN KEY (role) REFERENCES roles(cle)
+CONTRAINTE profils  profils_stock_lie_encadrement  CHECK (((NOT stock_lie_entrepot) OR (role <> 'vendeur'::text)))
+CONTRAINTE restock_lignes  restock_lignes_pkey  PRIMARY KEY (id)
+CONTRAINTE restock_lignes  restock_lignes_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE restock_lignes  restock_lignes_quantite_check  CHECK ((quantite > 0))
+CONTRAINTE restock_lignes  restock_lignes_restock_id_fkey  FOREIGN KEY (restock_id) REFERENCES restocks(id) ON DELETE CASCADE
+CONTRAINTE restock_lignes  restock_lignes_restock_id_produit_id_key  UNIQUE (restock_id, produit_id)
+CONTRAINTE restocks  restocks_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id)
+CONTRAINTE restocks  restocks_frais_port_check  CHECK ((frais_port >= (0)::numeric))
+CONTRAINTE restocks  restocks_pkey  PRIMARY KEY (id)
+CONTRAINTE restocks  restocks_prix_achat_base_check  CHECK ((prix_achat_base >= (0)::numeric))
+CONTRAINTE restocks  restocks_prix_achat_unitaire_check  CHECK ((prix_achat_unitaire >= (0)::numeric))
+CONTRAINTE restocks  restocks_quantite_totale_check  CHECK ((quantite_totale > 0))
+CONTRAINTE roles  roles_niveau_key  UNIQUE (niveau)
+CONTRAINTE roles  roles_pkey  PRIMARY KEY (cle)
+CONTRAINTE sav  sav_coherence  CHECK (
+CASE resolution
+    WHEN 'echange'::text THEN (montant_rembourse = (0)::numeric)
+    WHEN 'remboursement'::text THEN (montant_rembourse > (0)::numeric)
+    ELSE NULL::boolean
+END)
+CONTRAINTE sav  sav_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id)
+CONTRAINTE sav  sav_montant_rembourse_check  CHECK ((montant_rembourse >= (0)::numeric))
+CONTRAINTE sav  sav_pkey  PRIMARY KEY (id)
+CONTRAINTE sav  sav_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE sav  sav_quantite_check  CHECK ((quantite > 0))
+CONTRAINTE sav  sav_resolution_check  CHECK ((resolution = ANY (ARRAY['echange'::text, 'remboursement'::text])))
+CONTRAINTE sav  sav_statut_connu  CHECK ((statut = ANY (ARRAY['valide'::text, 'en_attente'::text, 'refuse'::text, 'annule'::text])))
+CONTRAINTE sav  sav_traite_par_fkey  FOREIGN KEY (traite_par) REFERENCES profils(id)
+CONTRAINTE sav  sav_vente_id_fkey  FOREIGN KEY (vente_id) REFERENCES ventes(id) ON DELETE CASCADE
+CONTRAINTE vente_lignes  vente_lignes_commission_unitaire_check  CHECK ((commission_unitaire >= (0)::numeric))
+CONTRAINTE vente_lignes  vente_lignes_cout_unitaire_check  CHECK ((cout_unitaire >= (0)::numeric))
+CONTRAINTE vente_lignes  vente_lignes_pkey  PRIMARY KEY (id)
+CONTRAINTE vente_lignes  vente_lignes_prix_vente_unitaire_check  CHECK ((prix_vente_unitaire > (0)::numeric))
+CONTRAINTE vente_lignes  vente_lignes_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE vente_lignes  vente_lignes_quantite_check  CHECK ((quantite > 0))
+CONTRAINTE vente_lignes  vente_lignes_vente_id_fkey  FOREIGN KEY (vente_id) REFERENCES ventes(id) ON DELETE CASCADE
+CONTRAINTE vente_lignes  vente_lignes_vente_id_produit_id_key  UNIQUE (vente_id, produit_id)
+CONTRAINTE ventes  ventes_pkey  PRIMARY KEY (id)
+CONTRAINTE ventes  ventes_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE RESTRICT
+CONTRAINTE ventes_annulees  ventes_annulees_annulee_par_fkey  FOREIGN KEY (annulee_par) REFERENCES profils(id)
+CONTRAINTE ventes_annulees  ventes_annulees_pkey  PRIMARY KEY (id)
+CONTRAINTE ventes_annulees  ventes_annulees_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE RESTRICT
+CONTRAINTE versements  versements_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id)
+CONTRAINTE versements  versements_montant_check  CHECK ((montant > (0)::numeric))
+CONTRAINTE versements  versements_pkey  PRIMARY KEY (id)
+CONTRAINTE versements  versements_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE RESTRICT
+INDEX     CREATE INDEX idx_demandes_attente ON public.demandes_restock USING btree (cree_le) WHERE (statut = 'en_attente'::statut_demande)
+INDEX     CREATE INDEX idx_journal_admin_date ON public.journal_admin USING btree (cree_le DESC)
+INDEX     CREATE INDEX idx_journal_operations_date ON public.journal_operations USING btree (cree_le DESC)
+INDEX     CREATE INDEX idx_mvt_cree_le ON public.mouvements_stock USING btree (cree_le DESC)
+INDEX     CREATE INDEX idx_mvt_detenteur ON public.mouvements_stock USING btree (detenteur_id, produit_id) INCLUDE (quantite)
+INDEX     CREATE INDEX idx_mvt_groupe ON public.mouvements_stock USING btree (groupe_id) WHERE (groupe_id IS NOT NULL)
+INDEX     CREATE INDEX idx_mvt_origine_demande ON public.mouvements_stock USING btree (origine_demande_id) WHERE (origine_demande_id IS NOT NULL)
+INDEX     CREATE INDEX idx_mvt_origine_restock ON public.mouvements_stock USING btree (origine_restock_id) WHERE (origine_restock_id IS NOT NULL)
+INDEX     CREATE INDEX idx_mvt_origine_sav ON public.mouvements_stock USING btree (origine_sav_id) WHERE (origine_sav_id IS NOT NULL)
+INDEX     CREATE INDEX idx_mvt_origine_vente ON public.mouvements_stock USING btree (origine_vente_id) WHERE (origine_vente_id IS NOT NULL)
+INDEX     CREATE INDEX idx_mvt_produit ON public.mouvements_stock USING btree (produit_id) INCLUDE (quantite)
+INDEX     CREATE INDEX idx_sav_date ON public.sav USING btree (date DESC)
+INDEX     CREATE INDEX idx_sav_produit ON public.sav USING btree (produit_id)
+INDEX     CREATE INDEX idx_sav_statut ON public.sav USING btree (statut) WHERE (statut = 'en_attente'::text)
+INDEX     CREATE INDEX idx_sav_vente ON public.sav USING btree (vente_id)
+INDEX     CREATE INDEX idx_vente_lignes_produit ON public.vente_lignes USING btree (produit_id)
+INDEX     CREATE INDEX idx_ventes_annulees_vendeur ON public.ventes_annulees USING btree (vendeur_id, date DESC)
+INDEX     CREATE INDEX idx_ventes_vendeur ON public.ventes USING btree (vendeur_id, date DESC)
+INDEX     CREATE INDEX idx_versements_vendeur ON public.versements USING btree (vendeur_id, date DESC)
+INDEX     CREATE UNIQUE INDEX demande_lignes_demande_id_produit_id_key ON public.demande_lignes USING btree (demande_id, produit_id)
+INDEX     CREATE UNIQUE INDEX demande_lignes_pkey ON public.demande_lignes USING btree (id)
+INDEX     CREATE UNIQUE INDEX demandes_restock_pkey ON public.demandes_restock USING btree (id)
+INDEX     CREATE UNIQUE INDEX idx_demande_une_seule_en_attente ON public.demandes_restock USING btree (vendeur_id) WHERE (statut = 'en_attente'::statut_demande)
+INDEX     CREATE UNIQUE INDEX idx_produits_nom ON public.produits USING btree (lower(nom))
+INDEX     CREATE UNIQUE INDEX idx_produits_sku ON public.produits USING btree (lower(sku)) WHERE (sku IS NOT NULL)
+INDEX     CREATE UNIQUE INDEX invitations_pkey ON public.invitations USING btree (email)
+INDEX     CREATE UNIQUE INDEX ip_bloquees_pkey ON public.ip_bloquees USING btree (ip)
+INDEX     CREATE UNIQUE INDEX journal_admin_pkey ON public.journal_admin USING btree (id)
+INDEX     CREATE UNIQUE INDEX journal_operations_pkey ON public.journal_operations USING btree (id)
+INDEX     CREATE UNIQUE INDEX mouvements_stock_pkey ON public.mouvements_stock USING btree (id)
+INDEX     CREATE UNIQUE INDEX produits_pkey ON public.produits USING btree (id)
+INDEX     CREATE UNIQUE INDEX profils_pkey ON public.profils USING btree (id)
+INDEX     CREATE UNIQUE INDEX restock_lignes_pkey ON public.restock_lignes USING btree (id)
+INDEX     CREATE UNIQUE INDEX restock_lignes_restock_id_produit_id_key ON public.restock_lignes USING btree (restock_id, produit_id)
+INDEX     CREATE UNIQUE INDEX restocks_pkey ON public.restocks USING btree (id)
+INDEX     CREATE UNIQUE INDEX roles_niveau_key ON public.roles USING btree (niveau)
+INDEX     CREATE UNIQUE INDEX roles_pkey ON public.roles USING btree (cle)
+INDEX     CREATE UNIQUE INDEX sav_pkey ON public.sav USING btree (id)
+INDEX     CREATE UNIQUE INDEX vente_lignes_pkey ON public.vente_lignes USING btree (id)
+INDEX     CREATE UNIQUE INDEX vente_lignes_vente_id_produit_id_key ON public.vente_lignes USING btree (vente_id, produit_id)
+INDEX     CREATE UNIQUE INDEX ventes_annulees_pkey ON public.ventes_annulees USING btree (id)
+INDEX     CREATE UNIQUE INDEX ventes_pkey ON public.ventes USING btree (id)
+INDEX     CREATE UNIQUE INDEX versements_pkey ON public.versements USING btree (id)
+ENUM      statut_demande = en_attente, approuvee, partielle, refusee, annulee
+ENUM      type_mouvement = entree_achat, transfert, vente, retour, ajustement, sav
+FONCTION  ajuster_stock(uuid,integer,text,uuid)
+CREATE OR REPLACE FUNCTION public.ajuster_stock(p_produit_id uuid, p_delta integer, p_motif text, p_detenteur_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_id    uuid;
+  v_dispo int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_delta = 0 then
+    raise exception 'Un ajustement nul n''a pas de sens.' using errcode = '22023';
+  end if;
+  if p_motif is null or trim(p_motif) = '' then
+    raise exception 'Motif obligatoire pour un ajustement.' using errcode = '22023';
+  end if;
+
+  perform verrouiller_stock(p_produit_id, p_detenteur_id);
+
+  if p_delta < 0 then
+    v_dispo := stock_detenu(p_produit_id, p_detenteur_id);
+    if v_dispo < abs(p_delta) then
+      raise exception 'Ajustement impossible : % disponible(s), % retirée(s).',
+        v_dispo, abs(p_delta) using errcode = '23514';
+    end if;
+  end if;
+
+  insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                               motif, cree_par)
+  values (p_produit_id, p_detenteur_id, p_delta, 'ajustement',
+          trim(p_motif), auth.uid())
+  returning id into v_id;
+
+  return v_id;
+end $function$
+
+FONCTION  annuler_demande_restock(uuid)
+CREATE OR REPLACE FUNCTION public.annuler_demande_restock(p_demande_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_d demandes_restock;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  -- `for update` : verrouille la ligne, sinon une annulation et un traitement
+  -- admin simultanés pourraient tous deux se croire légitimes.
+  select * into v_d from demandes_restock where id = p_demande_id for update;
+  if not found then
+    raise exception 'Demande introuvable.' using errcode = '02000';
+  end if;
+  if v_d.vendeur_id <> auth.uid() and not est_admin() then
+    raise exception 'Cette demande n''est pas la vôtre.' using errcode = '42501';
+  end if;
+  if v_d.statut <> 'en_attente' then
+    raise exception 'Demande déjà traitée (statut : %).', v_d.statut
+      using errcode = '23514';
+  end if;
+
+  update demandes_restock set statut = 'annulee' where id = p_demande_id;
+end $function$
+
+FONCTION  annuler_invitation(text)
+CREATE OR REPLACE FUNCTION public.annuler_invitation(p_email text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_email text := lower(trim(coalesce(p_email, '')));
+  v_util  boolean;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select utilisee into v_util from invitations where email = v_email;
+  if not found then
+    raise exception 'Invitation introuvable.' using errcode = '02000';
+  end if;
+
+  if v_util then
+    raise exception
+      'Cette invitation a déjà servi à créer un compte : elle ne se retire pas.'
+      using errcode = '23514';
+  end if;
+
+  delete from invitations where email = v_email;
+end $function$
+
+FONCTION  annuler_sav(uuid)
+CREATE OR REPLACE FUNCTION public.annuler_sav(p_sav_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_s sav;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  select * into v_s from sav where id = p_sav_id for update;
+  if not found then
+    raise exception 'Dossier SAV introuvable.' using errcode = '02000';
+  end if;
+  if not est_admin()
+     and (select vendeur_id from ventes where id = v_s.vente_id) <> auth.uid()
+  then
+    raise exception 'Ce dossier n''est pas le vôtre.' using errcode = '42501';
+  end if;
+  if v_s.statut <> 'en_attente' then
+    raise exception 'Seul un dossier en attente peut être retiré (statut : %).',
+      v_s.statut using errcode = '23514';
+  end if;
+
+  update sav set statut = 'annule', traite_le = now(), traite_par = auth.uid()
+   where id = p_sav_id;
+end $function$
+
+FONCTION  bilan_global(date,date)
+CREATE OR REPLACE FUNCTION public.bilan_global(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date)
+ RETURNS TABLE(ca numeric, nb_ventes integer, qte_vendue integer, cout_marchandises numeric, commissions numeric, marge_nette numeric, montant_a_recuperer numeric, valeur_stock numeric, achats_total numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  l as (
+    select vl.quantite, vl.prix_vente_unitaire, vl.cout_unitaire, vl.commission_unitaire
+      from vente_lignes vl
+      join ventes v on v.id = vl.vente_id
+      cross join bornes b
+     where v.date between b.du and b.au
+  ),
+  entetes as (
+    select count(*) as e_nb, coalesce(sum(v.montant_total), 0) as e_ca
+      from ventes v cross join bornes b
+     where v.date between b.du and b.au
+  ),
+  s as (
+    select coalesce(sum(sv.montant_rembourse), 0) as rembourse,
+           coalesce(sum(case when sv.resolution = 'echange'
+                             then sv.quantite * vl.cout_unitaire else 0 end), 0) as cout_echanges
+      from sav sv
+      join vente_lignes vl
+        on vl.vente_id = sv.vente_id and vl.produit_id = sv.produit_id
+      cross join bornes b
+     where sv.date between b.du and b.au
+       and sv.statut = 'valide'
+  )
+  select
+    ((select e.e_ca from entetes e) - (select s.rembourse from s))::numeric(12,2),
+    (select e.e_nb from entetes e)::int,
+    coalesce(sum(l.quantite), 0)::int,
+    (coalesce(sum(l.quantite * l.cout_unitaire), 0)
+     + (select s.cout_echanges from s))::numeric(12,2),
+    coalesce(sum(l.quantite * l.commission_unitaire), 0)::numeric(12,2),
+    (coalesce(sum(l.quantite * (l.prix_vente_unitaire - l.cout_unitaire
+                                - l.commission_unitaire)), 0)
+     - (select s.rembourse from s)
+     - (select s.cout_echanges from s))::numeric(12,2),
+    (select coalesce(sum(c.reste_a_verser), 0) from v_comptes_vendeurs c
+      where c.role = 'vendeur')::numeric(12,2),
+    (select coalesce(sum(sp.stock_total * cout_moyen_pondere(sp.produit_id)), 0)
+       from v_stock_produit sp)::numeric(12,2),
+    (select coalesce(sum(r.prix_achat_base + r.frais_port), 0)
+       from restocks r cross join bornes b2
+      where r.date between b2.du and b2.au)::numeric(12,2)
+  from l;
+end $function$
+
+FONCTION  bloquer_ip(text,text)
+CREATE OR REPLACE FUNCTION public.bloquer_ip(p_ip text, p_motif text DEFAULT NULL::text)
+ RETURNS timestamp with time zone
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  -- Le seul bouton à tourner. Voir l'en-tête pour les deux bornes.
+  c_oubli    constant interval := interval '30 days';
+  v_recidive int;
+  v_duree    interval;
+  v_jusqu_a  timestamptz;
+begin
+  if p_ip is null or trim(p_ip) = '' then
+    raise exception 'Adresse IP manquante.' using errcode = '22023';
+  end if;
+
+  -- AVANT de lire le compteur : une ligne éteinte depuis plus de `c_oubli` ne
+  -- doit plus peser sur l'escalade. La supprimer suffit à faire repartir
+  -- l'adresse à 15 minutes, et borne la table au passage.
+  delete from ip_bloquees
+   where jusqu_a is not null
+     and jusqu_a < now() - c_oubli;
+
+  select recidive + 1 into v_recidive from ip_bloquees where ip = p_ip;
+  v_recidive := coalesce(v_recidive, 1);
+
+  v_duree := case
+               when v_recidive >= 4 then interval '7 days'
+               when v_recidive = 3  then interval '24 hours'
+               when v_recidive = 2  then interval '1 hour'
+               else interval '15 minutes'
+             end;
+  v_jusqu_a := now() + v_duree;
+
+  insert into ip_bloquees (ip, bloquee_le, jusqu_a, recidive, motif)
+  values (p_ip, now(), v_jusqu_a, v_recidive, p_motif)
+  on conflict (ip) do update
+    set bloquee_le = now(),
+        jusqu_a    = excluded.jusqu_a,
+        recidive   = excluded.recidive,
+        motif      = excluded.motif,
+        -- Un blocage manuel n'est pas réduit par un blocage automatique.
+        posee_par  = null
+   where ip_bloquees.jusqu_a is not null;
+
+  return v_jusqu_a;
+end $function$
+
+FONCTION  bloquer_ip_definitivement(text,text)
+CREATE OR REPLACE FUNCTION public.bloquer_ip_definitivement(p_ip text, p_motif text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_dev() then
+    raise exception 'Réservé au propriétaire technique.' using errcode = '42501';
+  end if;
+  if nullif(trim(coalesce(p_motif, '')), '') is null then
+    raise exception 'Un motif est obligatoire pour un blocage définitif.'
+      using errcode = '23514';
+  end if;
+
+  insert into ip_bloquees (ip, jusqu_a, motif, posee_par)
+  values (p_ip, null, trim(p_motif), auth.uid())
+  on conflict (ip) do update
+    set jusqu_a = null, motif = excluded.motif, posee_par = auth.uid();
+
+  perform tracer_admin('blocage IP définitif', null, null,
+    jsonb_build_object('ip', p_ip, 'motif', trim(p_motif)));
+end $function$
+
+FONCTION  changer_actif(uuid,boolean)
+CREATE OR REPLACE FUNCTION public.changer_actif(p_id uuid, p_actif boolean)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role  text;
+  v_avant jsonb;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+  if p_id = auth.uid() then
+    -- Se désactiver soi-même verrouillerait la maison, éventuellement sans
+    -- personne pour rouvrir.
+    raise exception 'On ne désactive pas son propre compte.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+  perform exiger_gestion_de(v_role);
+
+  select jsonb_build_object('actif', actif) into v_avant
+    from profils where id = p_id;
+
+  update profils set actif = coalesce(p_actif, false) where id = p_id;
+
+  perform tracer_admin(
+    case when coalesce(p_actif, false) then 'réactivation' else 'désactivation' end,
+    p_id, v_avant, jsonb_build_object('actif', coalesce(p_actif, false)));
+end $function$
+
+FONCTION  changer_role(uuid,text)
+CREATE OR REPLACE FUNCTION public.changer_role(p_id uuid, p_role text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_ancien text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_id = auth.uid() then
+    raise exception 'On ne change pas son propre rôle.' using errcode = '42501';
+  end if;
+
+  select role into v_ancien from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+
+  -- L'ANCIEN et le NOUVEAU rôle doivent être strictement sous l'appelant :
+  -- sans le premier contrôle, un gérant rétrograderait un dev.
+  perform exiger_gestion_de(v_ancien);
+  perform exiger_gestion_de(p_role);
+
+  update profils
+     set role = p_role,
+         stock_lie_entrepot = case when p_role = 'vendeur' then false
+                                   else stock_lie_entrepot end
+   where id = p_id;
+
+  perform tracer_admin('changement de rôle', p_id,
+    jsonb_build_object('role', v_ancien),
+    jsonb_build_object('role', p_role));
+end $function$
+
+FONCTION  changer_stock_lie(uuid,boolean)
+CREATE OR REPLACE FUNCTION public.changer_stock_lie(p_id uuid, p_lie boolean)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role  text;
+  v_avant jsonb;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+
+  if v_role = 'vendeur' then
+    raise exception
+      'Un vendeur n''a pas accès à l''entrepôt : ce réglage ne concerne que l''encadrement.'
+      using errcode = '23514';
+  end if;
+
+  -- Se régler soi-même est LÉGITIME ici, contrairement au rôle ou à
+  -- l'activation : le gérant qui héberge l'entrepôt est le mieux placé pour
+  -- le déclarer, et le réglage ne lui donne aucun droit qu'il n'a pas déjà.
+  -- Un gérant ne règle en revanche pas un dev.
+  if p_id <> auth.uid() then
+    perform exiger_gestion_de(v_role);
+  end if;
+
+  select jsonb_build_object('stock_lie_entrepot', stock_lie_entrepot) into v_avant
+    from profils where id = p_id;
+
+  update profils set stock_lie_entrepot = coalesce(p_lie, false) where id = p_id;
+
+  perform tracer_admin('lien entrepôt', p_id, v_avant,
+    jsonb_build_object('stock_lie_entrepot', coalesce(p_lie, false)));
+end $function$
+
+FONCTION  comptes_encadrement()
+CREATE OR REPLACE FUNCTION public.comptes_encadrement()
+ RETURNS TABLE(id uuid, nom text, role text, libelle text, niveau integer, actif boolean, mdp_provisoire boolean, stock_lie_entrepot boolean, cree_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select p.id, p.nom, p.role, r.libelle, r.niveau, p.actif,
+           p.doit_changer_mdp, p.stock_lie_entrepot, p.cree_le
+      from profils p
+      join roles r on r.cle = p.role
+     where r.niveau >= 2
+     order by r.niveau desc, p.nom;
+end $function$
+
+FONCTION  cout_moyen_pondere(uuid)
+CREATE OR REPLACE FUNCTION public.cout_moyen_pondere(p_produit_id uuid)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_qte_achetee   int     := 0;
+  v_val_achetee   numeric := 0;
+  v_qte_sortie    int     := 0;
+  v_val_sortie    numeric := 0;
+  v_reste         int;
+  v_dernier_prix  numeric;
+begin
+  select coalesce(sum(rl.quantite), 0),
+         coalesce(sum(rl.quantite * r.prix_achat_unitaire), 0)
+    into v_qte_achetee, v_val_achetee
+    from restock_lignes rl
+    join restocks r on r.id = rl.restock_id
+   where rl.produit_id = p_produit_id;
+
+  select coalesce(sum(vl.quantite), 0),
+         coalesce(sum(vl.quantite * vl.cout_unitaire), 0)
+    into v_qte_sortie, v_val_sortie
+    from vente_lignes vl
+   where vl.produit_id = p_produit_id;
+
+  v_reste := v_qte_achetee - v_qte_sortie;
+
+  if v_reste > 0 then
+    return round((v_val_achetee - v_val_sortie) / v_reste, 4);
+  end if;
+
+  -- Stock épuisé (ou jamais acheté) : on se replie sur le dernier prix
+  -- d'achat connu. Sans ce repli, une vente juste après épuisement figerait
+  -- un coût de 0 et afficherait une marge de 100 %.
+  select r.prix_achat_unitaire into v_dernier_prix
+    from restock_lignes rl
+    join restocks r on r.id = rl.restock_id
+   where rl.produit_id = p_produit_id
+   order by r.date desc, r.cree_le desc
+   limit 1;
+
+  return coalesce(v_dernier_prix, 0);
+end $function$
+
+FONCTION  creances()
+CREATE OR REPLACE FUNCTION public.creances()
+ RETURNS TABLE(vendeur_id uuid, nom text, role text, actif boolean, ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select c.vendeur_id, c.nom, c.role, c.actif, c.ca, c.commissions, c.verse,
+           c.rembourse, c.reste_a_verser, c.nb_ventes
+      from v_comptes_vendeurs c
+     where c.role = 'vendeur' or c.nb_ventes > 0
+     order by c.reste_a_verser desc, c.nom;
+end $function$
+
+FONCTION  creer_demande_restock(jsonb,text)
+CREATE OR REPLACE FUNCTION public.creer_demande_restock(p_lignes jsonb, p_note text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_demande_id uuid;
+  v_ligne      record;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Une demande vide n''a pas de sens.' using errcode = '22023';
+  end if;
+
+  -- Message explicite plutôt que la violation brute de l'index unique
+  -- partiel, que l'interface ne saurait pas traduire.
+  if exists (select 1 from demandes_restock
+              where vendeur_id = auth.uid() and statut = 'en_attente') then
+    raise exception 'Une demande est déjà en attente. L''annuler avant d''en créer une nouvelle.'
+      using errcode = '23505';
+  end if;
+
+  insert into demandes_restock (vendeur_id, note)
+  values (auth.uid(), nullif(trim(coalesce(p_note, '')), ''))
+  returning id into v_demande_id;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité demandée invalide.' using errcode = '22023';
+    end if;
+    if not exists (select 1 from produits where id = v_ligne.produit_id and actif) then
+      raise exception 'Produit inconnu ou inactif.' using errcode = '22023';
+    end if;
+
+    insert into demande_lignes (demande_id, produit_id, quantite_demandee)
+    values (v_demande_id, v_ligne.produit_id, v_ligne.quantite);
+  end loop;
+
+  return v_demande_id;
+end $function$
+
+FONCTION  creer_restock_fournisseur(jsonb,numeric,numeric,text,date)
+CREATE OR REPLACE FUNCTION public.creer_restock_fournisseur(p_lignes jsonb, p_prix_base numeric, p_frais_port numeric DEFAULT 0, p_reference text DEFAULT NULL::text, p_date date DEFAULT CURRENT_DATE)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_restock_id uuid;
+  v_qte_tot    int := 0;
+  v_ligne      record;
+  v_ligne_id   uuid;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Aucune ligne d''achat.' using errcode = '22023';
+  end if;
+  if p_prix_base < 0 or p_frais_port < 0 then
+    raise exception 'Montants négatifs interdits.' using errcode = '22023';
+  end if;
+
+  select sum((l->>'quantite')::int) into v_qte_tot
+    from jsonb_array_elements(p_lignes) l;
+  if v_qte_tot is null or v_qte_tot <= 0 then
+    raise exception 'Quantité totale invalide.' using errcode = '22023';
+  end if;
+
+  -- Les frais de port sont répartis sur les unités : le coût de revient réel
+  -- inclut l'acheminement, sinon la marge est surévaluée.
+  insert into restocks (date, reference, quantite_totale, prix_achat_base,
+                        frais_port, prix_achat_unitaire, cree_par)
+  values (p_date, p_reference, v_qte_tot, p_prix_base, p_frais_port,
+          round((p_prix_base + p_frais_port) / v_qte_tot, 4), auth.uid())
+  returning id into v_restock_id;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide pour un produit.' using errcode = '22023';
+    end if;
+
+    insert into restock_lignes (restock_id, produit_id, quantite)
+    values (v_restock_id, v_ligne.produit_id, v_ligne.quantite)
+    returning id into v_ligne_id;
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_restock_id, cree_par)
+    values (v_ligne.produit_id, null, v_ligne.quantite, 'entree_achat',
+            v_ligne_id, auth.uid());
+  end loop;
+
+  return v_restock_id;
+end $function$
+
+FONCTION  declarer_sav(uuid,uuid,integer,text,text,numeric,uuid,boolean)
+CREATE OR REPLACE FUNCTION public.declarer_sav(p_vente_id uuid, p_produit_id uuid, p_quantite integer, p_resolution text, p_motif text, p_montant numeric DEFAULT 0, p_detenteur_id uuid DEFAULT NULL::uuid, p_depuis_entrepot boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_sav_id     uuid;
+  v_vendeur    uuid;
+  v_admin      boolean := est_admin();
+  v_statut     text;
+  v_vendue     int;
+  v_deja       int;
+  v_prix       numeric(10,2);
+  v_max        numeric(12,2);
+  v_source     uuid;
+  v_dispo      int;
+  v_produit    text := coalesce((select nom from produits where id = p_produit_id), '?');
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+  if p_resolution not in ('echange','remboursement') then
+    raise exception 'Dénouement invalide : attendu ''echange'' ou ''remboursement''.'
+      using errcode = '22023';
+  end if;
+  if p_quantite is null or p_quantite <= 0 then
+    raise exception 'Quantité invalide.' using errcode = '22023';
+  end if;
+  if p_motif is null or trim(p_motif) = '' then
+    raise exception 'Motif obligatoire : « SAV » seul n''explique rien six mois plus tard.'
+      using errcode = '22023';
+  end if;
+
+  select v.vendeur_id into v_vendeur from ventes v where v.id = p_vente_id;
+  if not found then
+    raise exception 'Vente introuvable.' using errcode = '02000';
+  end if;
+  -- Un vendeur n'ouvre un dossier que sur SES ventes. Sans ce contrôle, il
+  -- pourrait faire baisser le stock d'un collègue.
+  if not v_admin and v_vendeur <> auth.uid() then
+    raise exception 'Cette vente n''est pas la vôtre.' using errcode = '42501';
+  end if;
+
+  select vl.quantite, vl.prix_vente_unitaire into v_vendue, v_prix
+    from vente_lignes vl
+   where vl.vente_id = p_vente_id and vl.produit_id = p_produit_id;
+  if not found then
+    raise exception 'Cette vente ne contient pas de %.', v_produit
+      using errcode = '02000';
+  end if;
+
+  -- Les dossiers EN ATTENTE comptent dans le cumul : sans cela, déclarer deux
+  -- fois la même unité avant l'arbitrage passerait les deux fois.
+  select coalesce(sum(s.quantite), 0) into v_deja
+    from sav s
+   where s.vente_id = p_vente_id and s.produit_id = p_produit_id
+     and s.statut in ('valide','en_attente');
+
+  if v_deja + p_quantite > v_vendue then
+    raise exception
+      'SAV impossible : % unité(s) vendue(s) de %, % déjà en SAV, % demandée(s).',
+      v_vendue, v_produit, v_deja, p_quantite
+      using errcode = '23514';
+  end if;
+
+  if p_resolution = 'remboursement' then
+    v_max := (p_quantite * v_prix)::numeric(12,2);
+    if p_montant is null or p_montant <= 0 then
+      raise exception 'Le montant remboursé doit être strictement positif.'
+        using errcode = '22023';
+    end if;
+    if p_montant > v_max then
+      raise exception
+        'Remboursement supérieur au payé : % € maximum pour % unité(s) de % à % €.',
+        to_char(v_max, 'FM999999990.00'), p_quantite, v_produit,
+        to_char(v_prix, 'FM999999990.00')
+        using errcode = '23514';
+    end if;
+  end if;
+
+  -- LA RÈGLE, en une expression. Un gérant tranche seul ; un vendeur agit seul
+  -- sur la marchandise et demande pour l'argent.
+  v_statut := case
+                when v_admin then 'valide'
+                when p_resolution = 'echange' then 'valide'
+                else 'en_attente'
+              end;
+
+  insert into sav (vente_id, produit_id, quantite, resolution,
+                   montant_rembourse, motif, statut, cree_par,
+                   traite_le, traite_par)
+  values (p_vente_id, p_produit_id, p_quantite, p_resolution,
+          case when p_resolution = 'remboursement' then p_montant else 0 end,
+          trim(p_motif), v_statut, auth.uid(),
+          case when v_statut = 'valide' then now() end,
+          case when v_statut = 'valide' then auth.uid() end)
+  returning id into v_sav_id;
+
+  if p_resolution = 'echange' then
+    -- L'unité de remplacement sort du stock du vendeur de la vente : c'est lui
+    -- qui est face au client. `p_depuis_entrepot` est une commodité de gérant —
+    -- un vendeur n'a pas accès à l'entrepôt, le paramètre est ignoré pour lui.
+    if v_admin and p_depuis_entrepot then
+      v_source := null;
+    elsif v_admin then
+      v_source := coalesce(p_detenteur_id, v_vendeur);
+    else
+      v_source := auth.uid();
+    end if;
+
+    perform verrouiller_stock(p_produit_id, v_source);
+
+    v_dispo := stock_detenu(p_produit_id, v_source);
+    if v_dispo < p_quantite then
+      raise exception 'Stock insuffisant pour l''échange : % demandée(s), % disponible(s) chez %.',
+        p_quantite, v_dispo,
+        coalesce((select nom from profils where id = v_source), 'l''entrepôt')
+        using errcode = '23514';
+    end if;
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_sav_id, motif, cree_par)
+    values (p_produit_id, v_source, -p_quantite, 'sav',
+            v_sav_id, trim(p_motif), auth.uid());
+  end if;
+
+  return v_sav_id;
+end $function$
+
+FONCTION  dossiers_sav(integer,boolean)
+CREATE OR REPLACE FUNCTION public.dossiers_sav(p_limite integer DEFAULT 100, p_les_miennes boolean DEFAULT false)
+ RETURNS TABLE(id uuid, vente_id uuid, date date, statut text, resolution text, quantite integer, montant_rembourse numeric, motif text, motif_refus text, produit text, client text, vendeur text, vendeur_id uuid, declare_par text, traite_par text, traite_le timestamp with time zone, cree_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+    select s.id, s.vente_id, s.date, s.statut, s.resolution, s.quantite,
+           s.montant_rembourse, s.motif, s.motif_refus,
+           p.nom, v.client, pr.nom, v.vendeur_id,
+           coalesce(dp.nom, '—'),
+           tp.nom,
+           s.traite_le,
+           s.cree_le
+      from sav s
+      join ventes   v  on v.id  = s.vente_id
+      join profils  pr on pr.id = v.vendeur_id
+      join produits p  on p.id  = s.produit_id
+      left join profils dp on dp.id = s.cree_par
+      left join profils tp on tp.id = s.traite_par
+     where v.vendeur_id = auth.uid()
+        or (est_admin() and not p_les_miennes)
+     -- En attente d'abord : c'est ce qui appelle une décision.
+     order by (s.statut = 'en_attente') desc, s.cree_le desc
+     limit least(greatest(coalesce(p_limite, 100), 1), 500);
+end $function$
+
+FONCTION  droit_correction(uuid)
+CREATE OR REPLACE FUNCTION public.droit_correction(p_vente_id uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_vendeur uuid;
+  v_cree_le timestamptz;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  select vendeur_id, cree_le into v_vendeur, v_cree_le
+    from ventes where id = p_vente_id;
+  if not found then
+    raise exception 'Vente introuvable.' using errcode = '02000';
+  end if;
+
+  -- Un gérant ou un dev corrige sans limite de temps.
+  if est_admin() then
+    return false;
+  end if;
+
+  if v_vendeur <> auth.uid() then
+    raise exception 'Cette vente n''est pas la vôtre.' using errcode = '42501';
+  end if;
+
+  if v_cree_le < now() - fenetre_correction() then
+    -- extract() plutôt que l'interval brut : sans ça le message afficherait
+    -- « passé 48:00:00 », lisible par un développeur, pas par un vendeur.
+    raise exception
+      'Correction impossible passé % h. Demander au gérant.',
+      (extract(epoch from fenetre_correction()) / 3600)::int
+      using errcode = '42501';
+  end if;
+
+  return true;
+end $function$
+
+FONCTION  enregistrer_vente(jsonb,text,date,uuid)
+CREATE OR REPLACE FUNCTION public.enregistrer_vente(p_lignes jsonb, p_client text DEFAULT 'Anonyme'::text, p_date date DEFAULT CURRENT_DATE, p_vendeur_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_vendeur    uuid;
+  v_lie        boolean;
+  v_commission numeric(10,2);
+  v_vente_id   uuid;
+  v_ligne      record;
+  v_dispo      int;
+  v_manque     int;
+  v_groupe     uuid;
+  v_total      numeric(12,2) := 0;
+  v_qte_tot    int := 0;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  -- Un non-admin ne peut jamais écrire une vente au nom d'un autre.
+  v_vendeur := coalesce(p_vendeur_id, auth.uid());
+  if v_vendeur <> auth.uid() and not est_admin() then
+    raise exception 'Enregistrer pour un autre vendeur est réservé à l''administrateur.'
+      using errcode = '42501';
+  end if;
+
+  select commission_unitaire, stock_lie_entrepot into v_commission, v_lie
+    from profils where id = v_vendeur and actif;
+  if not found then
+    raise exception 'Vendeur inconnu ou inactif.' using errcode = '42501';
+  end if;
+
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Aucune ligne de vente.' using errcode = '22023';
+  end if;
+
+  insert into ventes (date, vendeur_id, client, quantite_totale, montant_total)
+  values (p_date, v_vendeur, coalesce(nullif(trim(p_client), ''), 'Anonyme'), 0, 0)
+  returning id into v_vente_id;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite,
+           max((l->>'prix_vente_unitaire')::numeric) as prix
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide.' using errcode = '22023';
+    end if;
+    if v_ligne.prix is null or v_ligne.prix < 0 then
+      raise exception 'Prix de vente invalide.' using errcode = '22023';
+    end if;
+
+    -- VERROU AVANT LECTURE, toujours. Ordre imposé quand les deux sont pris :
+    -- entrepôt (NULL) d'abord, détenteur ensuite. Le même que
+    -- `transferer_stock` : en dévier produirait des interblocages
+    -- intermittents entre une vente et un transfert simultanés.
+    if v_lie then
+      perform verrouiller_stock(v_ligne.produit_id, null);
+    end if;
+    perform verrouiller_stock(v_ligne.produit_id, v_vendeur);
+
+    v_dispo := stock_detenu(v_ligne.produit_id, v_vendeur);
+
+    -- Compte lié : ce qui manque est pris à l'entrepôt, par un vrai transfert
+    -- à deux jambes. `v_dispo` d'abord, donc le peu qu'il détiendrait déjà
+    -- part en premier — sinon deux stocks du même produit coexisteraient.
+    if v_lie and v_dispo < v_ligne.quantite then
+      v_manque := v_ligne.quantite - v_dispo;
+
+      if stock_detenu(v_ligne.produit_id, null) < v_manque then
+        raise exception
+          'Stock entrepôt insuffisant pour % : % manquante(s), % disponible(s).',
+          coalesce((select nom from produits where id = v_ligne.produit_id), 'produit inconnu'),
+          v_manque, stock_detenu(v_ligne.produit_id, null)
+          using errcode = '23514';
+      end if;
+
+      v_groupe := gen_random_uuid();
+      insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                    groupe_id, motif, cree_par)
+      -- Le motif porte les 8 premiers caractères de l'identifiant de vente :
+      -- assez pour retrouver la vente dans le journal, assez court pour tenir
+      -- dans une cellule. L'uuid entier y serait illisible.
+      values (v_ligne.produit_id, null, -v_manque, 'transfert',
+              v_groupe,
+              format('Vente depuis l''entrepôt · %s', left(v_vente_id::text, 8)),
+              auth.uid()),
+             (v_ligne.produit_id, v_vendeur, v_manque, 'transfert',
+              v_groupe,
+              format('Vente depuis l''entrepôt · %s', left(v_vente_id::text, 8)),
+              auth.uid());
+
+      v_dispo := stock_detenu(v_ligne.produit_id, v_vendeur);
+    end if;
+
+    if v_dispo < v_ligne.quantite then
+      raise exception 'Stock insuffisant pour % : % demandée(s), % disponible(s).',
+        coalesce((select nom from produits where id = v_ligne.produit_id), 'produit inconnu'),
+        v_ligne.quantite, v_dispo
+        using errcode = '23514';
+    end if;
+
+    -- Figeage comptable. cout_moyen_pondere() est évalué MAINTENANT : la
+    -- ligne ne sera plus jamais revalorisée.
+    insert into vente_lignes (vente_id, produit_id, quantite, prix_vente_unitaire,
+                              commission_unitaire, cout_unitaire)
+    values (v_vente_id, v_ligne.produit_id, v_ligne.quantite, v_ligne.prix,
+            v_commission, cout_moyen_pondere(v_ligne.produit_id));
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_vente_id, cree_par)
+    values (v_ligne.produit_id, v_vendeur, -v_ligne.quantite, 'vente',
+            v_vente_id, auth.uid());
+
+    v_total   := v_total + v_ligne.quantite * v_ligne.prix;
+    v_qte_tot := v_qte_tot + v_ligne.quantite;
+  end loop;
+
+  update ventes
+     set quantite_totale = v_qte_tot, montant_total = v_total
+   where id = v_vente_id;
+
+  return v_vente_id;
+end $function$
+
+FONCTION  enregistrer_versement(uuid,numeric,date,text,boolean)
+CREATE OR REPLACE FUNCTION public.enregistrer_versement(p_vendeur_id uuid, p_montant numeric, p_date date DEFAULT CURRENT_DATE, p_note text DEFAULT NULL::text, p_autoriser_excedent boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_id  uuid;
+  v_du  numeric(12,2);
+  v_nom text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_montant is null or p_montant <= 0 then
+    raise exception 'Le montant doit être strictement positif.' using errcode = '22023';
+  end if;
+
+  -- Sérialise deux versements concurrents pour le même vendeur, sinon les
+  -- deux liraient la même dette et la borne serait contournable.
+  perform pg_advisory_xact_lock(hashtext('versement/' || p_vendeur_id::text));
+
+  select c.reste_a_verser, c.nom into v_du, v_nom
+    from v_comptes_vendeurs c where c.vendeur_id = p_vendeur_id;
+  if not found then
+    raise exception 'Vendeur inconnu.' using errcode = '02000';
+  end if;
+
+  if not p_autoriser_excedent and p_montant > v_du then
+    raise exception '% ne doit que % €. Cocher « autoriser l''excédent » pour une avance.',
+      v_nom, to_char(v_du, 'FM999999990.00')
+      using errcode = '23514';
+  end if;
+
+  insert into versements (date, vendeur_id, montant, note, cree_par)
+  values (p_date, p_vendeur_id, p_montant,
+          nullif(trim(coalesce(p_note, '')), ''), auth.uid())
+  returning id into v_id;
+
+  return v_id;
+end $function$
+
+FONCTION  est_actif()
+CREATE OR REPLACE FUNCTION public.est_actif()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1 from profils where id = auth.uid() and actif
+  );
+$function$
+
+FONCTION  est_admin()
+CREATE OR REPLACE FUNCTION public.est_admin()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1 from profils
+     where id = auth.uid() and actif and role in ('dev','gerant')
+  );
+$function$
+
+FONCTION  est_dev()
+CREATE OR REPLACE FUNCTION public.est_dev()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1 from profils where id = auth.uid() and actif and role = 'dev'
+  );
+$function$
+
+FONCTION  exiger_changement_mdp(uuid)
+CREATE OR REPLACE FUNCTION public.exiger_changement_mdp(p_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+  perform exiger_gestion_de(v_role);
+
+  update profils set doit_changer_mdp = true where id = p_id;
+
+  perform tracer_admin('mot de passe à changer', p_id, null, null);
+end $function$
+
+FONCTION  exiger_gestion_de(text)
+CREATE OR REPLACE FUNCTION public.exiger_gestion_de(p_role text)
+ RETURNS void
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_cible int := niveau_de(p_role);
+begin
+  if v_cible is null then
+    raise exception 'Rôle inconnu : %.', p_role using errcode = '22023';
+  end if;
+  if v_cible >= niveau_courant() then
+    raise exception
+      'Interdit : on ne peut gérer qu''un niveau inférieur au sien (cible « % »).',
+      p_role using errcode = '42501';
+  end if;
+end $function$
+
+FONCTION  exiger_restock_reprenable(uuid)
+CREATE OR REPLACE FUNCTION public.exiger_restock_reprenable(p_restock_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_cree_le timestamptz;
+  v_apres   int;
+  v_ligne   record;
+  v_dispo   int;
+begin
+  select cree_le into v_cree_le from restocks where id = p_restock_id;
+  if not found then
+    raise exception 'Achat introuvable.' using errcode = '02000';
+  end if;
+
+  -- 1. Les unités sont-elles encore toutes en entrepôt ?
+  for v_ligne in
+    select produit_id, sum(quantite)::int as quantite
+      from restock_lignes where restock_id = p_restock_id
+     group by produit_id order by 1
+  loop
+    perform verrouiller_stock(v_ligne.produit_id, null);
+    v_dispo := stock_detenu(v_ligne.produit_id, null);
+    if v_dispo < v_ligne.quantite then
+      raise exception
+        'Reprise refusée : sur les % unité(s) de % achetées, % seulement sont encore en entrepôt. Passer par un ajustement de stock motivé.',
+        v_ligne.quantite,
+        coalesce((select nom from produits where id = v_ligne.produit_id), '?'),
+        v_dispo
+        using errcode = '23514';
+    end if;
+  end loop;
+
+  -- 2. Une vente postérieure a-t-elle figé un coût qui en dépend ?
+  select count(*) into v_apres
+    from vente_lignes vl
+    join ventes v on v.id = vl.vente_id
+   where v.cree_le > v_cree_le
+     and vl.produit_id in (select produit_id from restock_lignes
+                            where restock_id = p_restock_id);
+
+  if v_apres > 0 then
+    raise exception
+      'Reprise refusée : % vente(s) postérieure(s) ont figé un coût qui dépend de cet achat. Passer par un ajustement de stock motivé.',
+      v_apres using errcode = '23514';
+  end if;
+end $function$
+
+FONCTION  fenetre_correction()
+CREATE OR REPLACE FUNCTION public.fenetre_correction()
+ RETURNS interval
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$ select interval '48 hours' $function$
+
+FONCTION  gerer_nouvel_utilisateur()
+CREATE OR REPLACE FUNCTION public.gerer_nouvel_utilisateur()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_inv invitations;
+begin
+  select * into v_inv from invitations
+   where email = lower(new.email) and not utilisee;
+
+  if found then
+    -- Compte invité par l'admin : actif immédiatement, avec ses conditions.
+    insert into profils (id, nom, role, commission_unitaire, actif, doit_changer_mdp)
+    values (new.id, v_inv.nom, v_inv.role, v_inv.commission_unitaire,
+            true, v_inv.doit_changer_mdp)
+    on conflict (id) do nothing;
+
+    update invitations set utilisee = true where email = v_inv.email;
+  else
+    -- Aucune invitation : profil créé mais INACTIF. Volontaire — même si
+    -- l'inscription libre était rouverte par erreur, le compte n'accéderait
+    -- à rien.
+    insert into profils (id, nom, role, commission_unitaire, actif)
+    values (new.id, split_part(new.email, '@', 1), 'vendeur', 0, false)
+    on conflict (id) do nothing;
+  end if;
+
+  return new;
+end $function$
+
+FONCTION  inviter_utilisateur(text,text,text,numeric)
+CREATE OR REPLACE FUNCTION public.inviter_utilisateur(p_email text, p_nom text, p_role text, p_commission numeric DEFAULT 0)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_email text := lower(trim(p_email));
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+  perform exiger_gestion_de(p_role);
+
+  if v_email = '' or position('@' in v_email) = 0 then
+    raise exception 'Adresse e-mail invalide.' using errcode = '22023';
+  end if;
+  if trim(coalesce(p_nom, '')) = '' then
+    raise exception 'Le nom est obligatoire.' using errcode = '22023';
+  end if;
+  if p_commission is null or p_commission < 0 then
+    raise exception 'Commission invalide.' using errcode = '22023';
+  end if;
+
+  -- Un compte déjà créé ne se réinvite pas : ce serait sans effet (le trigger
+  -- ne lit l'invitation qu'à l'inscription) et donnerait un faux espoir.
+  if exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'Un compte existe déjà pour %.', v_email using errcode = '23505';
+  end if;
+
+  insert into invitations (email, nom, role, commission_unitaire,
+                           utilisee, doit_changer_mdp)
+  values (v_email, trim(p_nom), p_role, p_commission, false, true)
+  on conflict (email) do update
+    set nom = excluded.nom,
+        role = excluded.role,
+        commission_unitaire = excluded.commission_unitaire,
+        utilisee = false,
+        doit_changer_mdp = true;
+
+  -- Pas de cible : le compte n'existe pas encore, c'est justement l'objet de
+  -- l'invitation. L'adresse tient lieu d'identité dans la trace.
+  perform tracer_admin('invitation', null, null,
+    jsonb_build_object('email', v_email, 'role', p_role,
+                       'commission', p_commission));
+end $function$
+
+FONCTION  ip_bloquees_actives()
+CREATE OR REPLACE FUNCTION public.ip_bloquees_actives()
+ RETURNS TABLE(ip text, bloquee_le timestamp with time zone, jusqu_a timestamp with time zone, recidive integer, motif text, definitif boolean)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_dev() then
+    raise exception 'Réservé au propriétaire technique.' using errcode = '42501';
+  end if;
+
+  return query
+    select b.ip, b.bloquee_le, b.jusqu_a, b.recidive, b.motif,
+           (b.jusqu_a is null)
+      from ip_bloquees b
+     where b.jusqu_a is null or b.jusqu_a > now()
+     order by b.bloquee_le desc;
+end $function$
+
+FONCTION  ip_est_bloquee(text)
+CREATE OR REPLACE FUNCTION public.ip_est_bloquee(p_ip text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists (
+    select 1 from ip_bloquees
+     where ip = p_ip and (jusqu_a is null or jusqu_a > now())
+  );
+$function$
+
+FONCTION  journal_admin(date,date,integer,integer)
+CREATE OR REPLACE FUNCTION public.journal_admin(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date, p_limite integer DEFAULT 100, p_offset integer DEFAULT 0)
+ RETURNS TABLE(cree_le timestamp with time zone, acteur text, action text, cible text, avant jsonb, apres jsonb)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_dev() then
+    raise exception 'Réservé au propriétaire technique.' using errcode = '42501';
+  end if;
+
+  return query
+    select j.cree_le,
+           coalesce(j.acteur_nom, '(compte retiré)'),
+           j.action,
+           j.cible_nom,
+           j.avant, j.apres
+      from journal_admin j
+     where (p_du is null or j.cree_le::date >= p_du)
+       and (p_au is null or j.cree_le::date <= p_au)
+     order by j.cree_le desc
+     limit least(greatest(coalesce(p_limite, 100), 1), 500)
+    offset greatest(coalesce(p_offset, 0), 0);
+end $function$
+
+FONCTION  journal_transactions(date,date,text,uuid,integer,integer)
+CREATE OR REPLACE FUNCTION public.journal_transactions(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date, p_type text DEFAULT NULL::text, p_vendeur_id uuid DEFAULT NULL::uuid, p_limite integer DEFAULT 100, p_offset integer DEFAULT 0)
+ RETURNS TABLE(horodatage timestamp with time zone, date_compta date, type text, libelle text, vendeur text, quantite integer, montant numeric, reference uuid)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_limite int := least(greatest(coalesce(p_limite, 100), 1), 1000);
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  tout as (
+    -- L'identifiant court est CE QUE LES MOTIFS CITENT : sans lui sur la
+    -- ligne de vente, « Vente depuis l'entrepôt · 863c6a12 » ne se rattache à
+    -- rien de visible. Huit caractères suffisent à l'échelle du journal.
+    select v.cree_le, v.date, 'vente'::text,
+           'Vente à ' || v.client || ' · ' || left(v.id::text, 8), pr.nom,
+           v.quantite_totale, v.montant_total::numeric(12,2), v.id
+      from ventes v join profils pr on pr.id = v.vendeur_id
+    union all
+    -- Les annulées, avec leur propre type : le journal doit montrer qu'une
+    -- vente a existé puis a été reprise, sans quoi elle disparaît de
+    -- l'historique et le vendeur ne peut pas vérifier son geste.
+    select a.annulee_le, a.date, 'vente_annulee'::text,
+           'Vente annulée · ' || left(a.id::text, 8) || ' · ' || a.client,
+           pr.nom, a.quantite_totale, a.montant_total::numeric(12,2), a.id
+      from ventes_annulees a join profils pr on pr.id = a.vendeur_id
+    union all
+    select r.cree_le, r.date, 'achat'::text,
+           'Achat ' || coalesce(r.reference, '(sans référence)'), null::text,
+           r.quantite_totale, (r.prix_achat_base + r.frais_port)::numeric(12,2), r.id
+      from restocks r
+    union all
+    select m.cree_le, m.cree_le::date, m.type::text,
+           -- Le motif d'abord, le libellé générique en repli.
+           coalesce(
+             nullif(trim(m.motif), ''),
+             case m.type when 'transfert' then 'Transfert vers ' || coalesce(pr.nom, 'entrepôt')
+                         else 'Retour depuis un vendeur' end
+           ),
+           pr.nom, m.quantite, null::numeric(12,2), m.id
+      from mouvements_stock m
+      left join profils pr on pr.id = m.detenteur_id
+     where m.type in ('transfert','retour') and m.quantite > 0
+    union all
+    select m.cree_le, m.cree_le::date, 'ajustement'::text,
+           'Ajustement : ' || coalesce(m.motif, '(sans motif)'),
+           coalesce(pr.nom, 'Entrepôt'), m.quantite, null::numeric(12,2), m.id
+      from mouvements_stock m
+      left join profils pr on pr.id = m.detenteur_id
+     where m.type = 'ajustement'
+    union all
+    select s.cree_le, s.date, 'sav'::text,
+           'SAV ' || (case s.resolution when 'echange' then 'échange' else 'remboursement' end)
+             || ' — ' || p.nom || ' : ' || s.motif,
+           pr.nom, -s.quantite,
+           nullif(s.montant_rembourse, 0)::numeric(12,2), s.id
+      from sav s
+      join ventes   v  on v.id  = s.vente_id
+      join profils  pr on pr.id = v.vendeur_id
+      join produits p  on p.id  = s.produit_id
+     where s.statut = 'valide'
+    union all
+    -- Les opérations qui EFFACENT une écriture. Sans elles, une suppression
+    -- change les totaux sans laisser la moindre ligne pour l'expliquer : le
+    -- journal est dérivé de l'état courant, donc aveugle à ce qui n'y est
+    -- plus. Voir `journal_operations`.
+    select o.cree_le, o.cree_le::date, ('op_' || o.action)::text,
+           o.libelle, o.acteur_nom, o.quantite, o.montant, o.entite_id
+      from journal_operations o
+    union all
+    select ver.cree_le, ver.date, 'versement'::text,
+           'Versement reçu', pr.nom, null::int, ver.montant::numeric(12,2), ver.id
+      from versements ver join profils pr on pr.id = ver.vendeur_id
+  )
+  select t.*
+    from tout t (cree_le, dt, tp, lib, vd, qte, mt, ref)
+    cross join bornes b
+   where t.dt between b.du and b.au
+     and (p_type is null or t.tp = p_type)
+     and (p_vendeur_id is null
+          or t.vd = (select nom from profils where id = p_vendeur_id))
+   order by t.cree_le desc
+   limit v_limite offset greatest(coalesce(p_offset, 0), 0);
+end $function$
+
+FONCTION  lever_blocage_ip(text)
+CREATE OR REPLACE FUNCTION public.lever_blocage_ip(p_ip text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_dev() then
+    raise exception 'Réservé au propriétaire technique.' using errcode = '42501';
+  end if;
+
+  delete from ip_bloquees where ip = p_ip;
+
+  perform tracer_admin('levée de blocage IP', null,
+    jsonb_build_object('ip', p_ip), null);
+end $function$
+
+FONCTION  ma_dette()
+CREATE OR REPLACE FUNCTION public.ma_dette()
+ RETURNS TABLE(ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer, qte_vendue integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+    select c.ca, c.commissions, c.verse, c.rembourse, c.reste_a_verser,
+           c.nb_ventes, c.qte_vendue
+      from v_comptes_vendeurs c
+     where c.vendeur_id = auth.uid();
+end $function$
+
+FONCTION  marquer_mdp_change()
+CREATE OR REPLACE FUNCTION public.marquer_mdp_change()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if auth.uid() is null then
+    raise exception 'Non authentifié.' using errcode = '42501';
+  end if;
+  update profils set doit_changer_mdp = false where id = auth.uid();
+end $function$
+
+FONCTION  marquer_sav_gestion_vu(timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.marquer_sav_gestion_vu(p_vu_jusqu_a timestamp with time zone DEFAULT NULL::timestamp with time zone)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  update profils
+     set sav_gestion_vu_le = greatest(coalesce(sav_gestion_vu_le, '-infinity'::timestamptz),
+                                      least(coalesce(p_vu_jusqu_a, now()), now()))
+   where id = auth.uid();
+end $function$
+
+FONCTION  marquer_sav_vu(timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.marquer_sav_vu(p_vu_jusqu_a timestamp with time zone DEFAULT NULL::timestamp with time zone)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  update profils
+     set sav_vu_le = greatest(coalesce(sav_vu_le, '-infinity'::timestamptz),
+                              least(coalesce(p_vu_jusqu_a, now()), now()))
+   where id = auth.uid();
+end $function$
+
+FONCTION  mes_ventes(integer)
+CREATE OR REPLACE FUNCTION public.mes_ventes(p_limite integer DEFAULT 20)
+ RETURNS TABLE(id uuid, date date, client text, quantite_totale integer, montant_total numeric, cree_le timestamp with time zone, corrigeable boolean, sav_unites integer, sav_rembourse numeric, sav_en_attente integer, annulee_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+    select v.id, v.date, v.client, v.quantite_totale, v.montant_total, v.cree_le,
+           (v.cree_le >= now() - fenetre_correction()) as corrigeable,
+           coalesce(s.unites, 0)::int,
+           coalesce(s.rembourse, 0)::numeric(12,2),
+           coalesce(s.en_attente, 0)::int,
+           null::timestamptz
+      from ventes v
+      left join (
+        -- `unites` compte le validé ET l'en-attente : le badge répond à « cette
+        -- vente a-t-elle posé problème ? ». `rembourse` ne compte que le validé,
+        -- car c'est le seul argent réellement sorti.
+        select sv.vente_id,
+               sum(sv.quantite) filter (where sv.statut in ('valide','en_attente')) as unites,
+               sum(sv.montant_rembourse) filter (where sv.statut = 'valide') as rembourse,
+               count(*) filter (where sv.statut = 'en_attente') as en_attente
+          from sav sv group by sv.vente_id
+      ) s on s.vente_id = v.id
+     where v.vendeur_id = auth.uid()
+
+    union all
+
+    -- Les annulées, tirées de l'archive. Aucun SAV possible sur une vente qui
+    -- n'existe plus, d'où les zéros ; `corrigeable` est faux par construction.
+    select a.id, a.date, a.client, a.quantite_totale, a.montant_total, a.cree_le,
+           false, 0, 0::numeric(12,2), 0, a.annulee_le
+      from ventes_annulees a
+     where a.vendeur_id = auth.uid()
+
+     order by cree_le desc
+     limit least(greatest(coalesce(p_limite, 20), 1), 100);
+end $function$
+
+FONCTION  modifier_compte(uuid,text,numeric)
+CREATE OR REPLACE FUNCTION public.modifier_compte(p_id uuid, p_nom text, p_commission numeric)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role  text;
+  v_avant jsonb;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+  perform exiger_gestion_de(v_role);
+
+  if trim(coalesce(p_nom, '')) = '' then
+    raise exception 'Le nom est obligatoire.' using errcode = '22023';
+  end if;
+  if p_commission is null or p_commission < 0 then
+    raise exception 'Commission invalide.' using errcode = '22023';
+  end if;
+
+  -- AVANT l'update : après, l'ancienne valeur n'existe plus nulle part.
+  select jsonb_build_object('nom', nom, 'commission', commission_unitaire)
+    into v_avant from profils where id = p_id;
+
+  update profils
+     set nom = trim(p_nom), commission_unitaire = p_commission
+   where id = p_id;
+
+  perform tracer_admin('modification', p_id, v_avant,
+    jsonb_build_object('nom', trim(p_nom), 'commission', p_commission));
+end $function$
+
+FONCTION  modifier_restock(uuid,jsonb,numeric,numeric,text,date)
+CREATE OR REPLACE FUNCTION public.modifier_restock(p_restock_id uuid, p_lignes jsonb, p_prix_base numeric, p_frais_port numeric DEFAULT 0, p_reference text DEFAULT NULL::text, p_date date DEFAULT NULL::date)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_avant    jsonb;
+  v_qte_tot  int;
+  v_ligne    record;
+  v_ligne_id uuid;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Aucune ligne d''achat.' using errcode = '22023';
+  end if;
+  if p_prix_base < 0 or p_frais_port < 0 then
+    raise exception 'Montants négatifs interdits.' using errcode = '22023';
+  end if;
+
+  perform 1 from restocks where id = p_restock_id for update;
+  perform exiger_restock_reprenable(p_restock_id);
+
+  select sum((l->>'quantite')::int) into v_qte_tot
+    from jsonb_array_elements(p_lignes) l;
+  if v_qte_tot is null or v_qte_tot <= 0 then
+    raise exception 'Quantité totale invalide.' using errcode = '22023';
+  end if;
+
+  -- L'AVANT, relevé pendant qu'il existe encore.
+  select jsonb_build_object('reference', reference, 'unites', quantite_totale,
+                            'total', prix_achat_base + frais_port)
+    into v_avant from restocks where id = p_restock_id;
+
+  -- Les anciennes lignes partent, et leurs mouvements avec elles par cascade.
+  delete from restock_lignes where restock_id = p_restock_id;
+
+  update restocks
+     set date                = coalesce(p_date, date),
+         reference           = p_reference,
+         quantite_totale     = v_qte_tot,
+         prix_achat_base     = p_prix_base,
+         frais_port          = p_frais_port,
+         prix_achat_unitaire = round((p_prix_base + p_frais_port) / v_qte_tot, 4)
+   where id = p_restock_id;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide pour un produit.' using errcode = '22023';
+    end if;
+
+    insert into restock_lignes (restock_id, produit_id, quantite)
+    values (p_restock_id, v_ligne.produit_id, v_ligne.quantite)
+    returning id into v_ligne_id;
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_restock_id, cree_par)
+    values (v_ligne.produit_id, null, v_ligne.quantite, 'entree_achat',
+            v_ligne_id, auth.uid());
+  end loop;
+
+  perform tracer_operation(
+    'achat', p_restock_id, 'correction',
+    format('Achat corrigé · %s', coalesce(p_reference, '(sans référence)')),
+    v_qte_tot, (p_prix_base + p_frais_port)::numeric(12,2),
+    jsonb_build_object('avant', v_avant));
+end $function$
+
+FONCTION  modifier_vente(uuid,jsonb,text,date)
+CREATE OR REPLACE FUNCTION public.modifier_vente(p_vente_id uuid, p_lignes jsonb, p_client text DEFAULT NULL::text, p_date date DEFAULT NULL::date)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_avant      jsonb;
+  v_vendeur    uuid;
+  v_commission numeric(10,2);
+  v_ligne      record;
+  v_dispo      int;
+  v_total      numeric(12,2) := 0;
+  v_qte_tot    int := 0;
+begin
+  -- Sérialise deux corrections concurrentes de la même vente. Le verrou est
+  -- pris AVANT toute lecture ou écriture.
+  perform 1 from ventes where id = p_vente_id for update;
+
+  perform droit_correction(p_vente_id);
+
+  select vendeur_id into v_vendeur from ventes where id = p_vente_id;
+
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception
+      'Une vente sans ligne n''a pas de sens : pour la supprimer, utiliser l''annulation.'
+      using errcode = '22023';
+  end if;
+
+  -- Commission d'origine, capturée AVANT la suppression des lignes. Toutes les
+  -- lignes d'une vente partagent la même valeur (elle vient du profil au
+  -- moment de la saisie).
+  select commission_unitaire into v_commission
+    from vente_lignes where vente_id = p_vente_id limit 1;
+  if v_commission is null then
+    select commission_unitaire into v_commission from profils where id = v_vendeur;
+  end if;
+
+  -- On défait l'ancienne version. Les mouvements pointent la VENTE, pas les
+  -- lignes : il faut donc les supprimer explicitement.
+  delete from mouvements_stock where origine_vente_id = p_vente_id;
+  delete from vente_lignes      where vente_id        = p_vente_id;
+
+  -- Puis on refait, avec exactement la mécanique d'enregistrer_vente().
+  -- L'AVANT, relevé pendant que les anciennes lignes existent encore.
+  select jsonb_build_object('unites', quantite_totale, 'montant', montant_total,
+                            'client', client)
+    into v_avant from ventes where id = p_vente_id;
+
+  -- `group by` : deux lignes du même produit sont fusionnées (contrainte
+  -- unique). `order by 1` : ordre de verrouillage déterministe.
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite,
+           max((l->>'prix_vente_unitaire')::numeric) as prix
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide.' using errcode = '22023';
+    end if;
+    if v_ligne.prix is null or v_ligne.prix < 0 then
+      raise exception 'Prix de vente invalide.' using errcode = '22023';
+    end if;
+
+    -- VERROU AVANT LECTURE, comme partout ailleurs.
+    perform verrouiller_stock(v_ligne.produit_id, v_vendeur);
+
+    -- Les anciens mouvements sont déjà supprimés : le stock lu inclut donc
+    -- naturellement la restitution de l'ancienne version.
+    v_dispo := stock_detenu(v_ligne.produit_id, v_vendeur);
+    if v_dispo < v_ligne.quantite then
+      raise exception 'Stock insuffisant pour % : % demandée(s), % disponible(s).',
+        coalesce((select nom from produits where id = v_ligne.produit_id), 'produit inconnu'),
+        v_ligne.quantite, v_dispo
+        using errcode = '23514';
+    end if;
+
+    insert into vente_lignes (vente_id, produit_id, quantite, prix_vente_unitaire,
+                              commission_unitaire, cout_unitaire)
+    values (p_vente_id, v_ligne.produit_id, v_ligne.quantite, v_ligne.prix,
+            v_commission, cout_moyen_pondere(v_ligne.produit_id));
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_vente_id, cree_par)
+    values (v_ligne.produit_id, v_vendeur, -v_ligne.quantite, 'vente',
+            p_vente_id, auth.uid());
+
+    v_total   := v_total + v_ligne.quantite * v_ligne.prix;
+    v_qte_tot := v_qte_tot + v_ligne.quantite;
+  end loop;
+
+  update ventes
+     set quantite_totale = v_qte_tot,
+         montant_total   = v_total,
+         client          = coalesce(nullif(trim(coalesce(p_client, '')), ''), client),
+         date            = coalesce(p_date, date)
+   where id = p_vente_id;
+
+  -- Le journal comptable montre la vente CORRIGÉE, et rien ne dit qu'elle l'a
+  -- été : les lignes d'origine ont été supprimées puis refaites. La trace
+  -- conserve l'état d'avant, seul endroit où il subsiste.
+  perform tracer_operation(
+    'vente', p_vente_id, 'correction',
+    format('Vente corrigée · %s', left(p_vente_id::text, 8)),
+    v_qte_tot, v_total,
+    jsonb_build_object('avant', v_avant));
+
+  return p_vente_id;
+end $function$
+
+FONCTION  mon_journal(integer)
+CREATE OR REPLACE FUNCTION public.mon_journal(p_limite integer DEFAULT 50)
+ RETURNS TABLE(horodatage timestamp with time zone, type text, libelle text, quantite integer, montant numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_limite int := least(greatest(coalesce(p_limite, 50), 1), 500);
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+  select * from (
+    select v.cree_le, 'vente'::text, 'Vente à ' || v.client,
+           v.quantite_totale, v.montant_total::numeric(12,2)
+      from ventes v where v.vendeur_id = auth.uid()
+    union all
+    select a.annulee_le, 'vente_annulee'::text,
+           'Vente annulée · ' || left(a.id::text, 8) || ' · ' || a.client,
+           a.quantite_totale, a.montant_total::numeric(12,2)
+      from ventes_annulees a where a.vendeur_id = auth.uid()
+    union all
+    select m.cree_le, 'reception'::text,
+           'Réception de ' || p.nom, m.quantite, null::numeric(12,2)
+      from mouvements_stock m join produits p on p.id = m.produit_id
+     where m.detenteur_id = auth.uid() and m.type = 'transfert' and m.quantite > 0
+    union all
+    select ver.cree_le, 'versement'::text, 'Versement effectué',
+           null::int, ver.montant::numeric(12,2)
+      from versements ver where ver.vendeur_id = auth.uid()
+  ) j (cree_le, tp, lib, qte, mt)
+  order by j.cree_le desc
+  limit v_limite;
+end $function$
+
+FONCTION  niveau_courant()
+CREATE OR REPLACE FUNCTION public.niveau_courant()
+ RETURNS integer
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select coalesce((
+    select r.niveau from profils p join roles r on r.cle = p.role
+     where p.id = auth.uid() and p.actif
+  ), 0);
+$function$
+
+FONCTION  niveau_de(text)
+CREATE OR REPLACE FUNCTION public.niveau_de(p_role text)
+ RETURNS integer
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select niveau from roles where cle = p_role;
+$function$
+
+FONCTION  refuser_sav(uuid,text)
+CREATE OR REPLACE FUNCTION public.refuser_sav(p_sav_id uuid, p_motif text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_statut text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select statut into v_statut from sav where id = p_sav_id for update;
+  if not found then
+    raise exception 'Dossier SAV introuvable.' using errcode = '02000';
+  end if;
+  if v_statut <> 'en_attente' then
+    raise exception 'Dossier déjà traité (statut : %).', v_statut
+      using errcode = '23514';
+  end if;
+
+  update sav
+     set statut      = 'refuse',
+         motif_refus = nullif(trim(coalesce(p_motif, '')), ''),
+         traite_le   = now(),
+         traite_par  = auth.uid()
+   where id = p_sav_id;
+end $function$
+
+FONCTION  reinitialiser_donnees(text)
+CREATE OR REPLACE FUNCTION public.reinitialiser_donnees(p_confirmation text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_comptes jsonb;
+  v_total   int;
+begin
+  if not est_dev() then
+    raise exception 'Réservé au propriétaire technique.' using errcode = '42501';
+  end if;
+
+  -- Compté AVANT, forcément : après, il ne reste rien à compter. Ce décompte
+  -- sert deux fois : il constitue la confirmation attendue, et il restera la
+  -- seule trace de ce qui a existé.
+  select jsonb_build_object(
+    'ventes',           (select count(*) from ventes),
+    'ventes_annulees',  (select count(*) from ventes_annulees),
+    'mouvements',       (select count(*) from mouvements_stock),
+    'versements',       (select count(*) from versements),
+    'sav',              (select count(*) from sav),
+    'demandes',         (select count(*) from demandes_restock),
+    'achats',           (select count(*) from restocks),
+    'produits',         (select count(*) from produits),
+    'operations',       (select count(*) from journal_operations)
+  ) into v_comptes;
+
+  select sum(value::int) into v_total from jsonb_each_text(v_comptes);
+
+  -- Rien à effacer : le dire plutôt que d'accepter un geste vide. Sans ce cas,
+  -- la confirmation attendue serait « 0 », que n'importe quel contexte
+  -- produit, et le garde-fou ne garderait plus rien.
+  if coalesce(v_total, 0) = 0 then
+    raise exception 'Rien à effacer : la base ne contient aucune donnée d''activité.'
+      using errcode = '22023';
+  end if;
+
+  if nullif(trim(coalesce(p_confirmation, '')), '') is distinct from v_total::text then
+    raise exception
+      'Confirmation incorrecte : saisir %, le nombre de lignes que cette base va perdre.',
+      v_total using errcode = '22023';
+  end if;
+
+  -- `where true` PARTOUT, et ce n'est pas du bruit à nettoyer.
+  --
+  -- L'instance charge `supautils` en `session_preload_libraries`, qui arme
+  -- `safeupdate` pour les rôles non superutilisateur : un `delete` sans clause
+  -- `where` y est refusé par « DELETE requires a WHERE clause ». Le garde-fou
+  -- vise les suppressions massives accidentelles, et il a raison ; ici la
+  -- suppression massive est l'objet même de la fonction, d'où la clause
+  -- explicite qui dit « oui, je sais ».
+  --
+  -- `security definer` n'y change rien : il modifie l'utilisateur effectif, pas
+  -- les réglages de session, et c'est la connexion PostgREST qui les porte.
+  --
+  -- À NE PAS RETIRER : aucun test ne rattraperait la régression. Le harnais
+  -- pgTAP se connecte en `postgres` et simule le rôle par `set role`, où
+  -- `safeupdate` n'est pas armé. Le défaut n'apparaît qu'en conditions
+  -- réelles, à travers l'application.
+  --
+  -- Ordre imposé par les clés étrangères en RESTRICT vers profils et produits :
+  -- l'activité part avant les produits, qui partent avant tout le reste.
+  delete from sav where true;
+  delete from mouvements_stock where true;
+  delete from vente_lignes where true;
+  delete from ventes where true;
+  delete from ventes_annulees where true;
+  delete from versements where true;
+  delete from demande_lignes where true;
+  delete from demandes_restock where true;
+  delete from restock_lignes where true;
+  delete from restocks where true;
+  delete from produits where true;
+  delete from journal_operations where true;
+
+  -- DEUX traces, pour deux lectorats.
+  --
+  -- `journal_admin` est réservé au dev. Un gérant y voyait donc toutes les
+  -- données disparaître sans la moindre explication visible, d'autant que la
+  -- remise à zéro vide `journal_operations`, qui est précisément ce qui
+  -- expliquait les suppressions passées.
+  --
+  -- L'ordre compte : vider PUIS tracer. L'inverse effacerait la ligne qu'on
+  -- vient d'écrire. Et les deux sont APRÈS les suppressions : si l'une échoue,
+  -- la transaction est annulée et aucune trace ne prétend qu'une remise à zéro
+  -- a eu lieu.
+  perform tracer_admin('réinitialisation des données', null, v_comptes, null);
+
+  perform tracer_operation(
+    'base', null, 'réinitialisation',
+    format('Données réinitialisées · %s ligne(s) effacée(s)', v_total),
+    null, null, v_comptes);
+
+  return v_comptes;
+end $function$
+
+FONCTION  retirer_compte(uuid)
+CREATE OR REPLACE FUNCTION public.retirer_compte(p_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_nom   text;
+  v_role  text;
+  v_actif boolean;
+  v_refs  int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  -- Se retirer soi-même verrouillerait la maison, éventuellement sans
+  -- personne pour rouvrir. Même refus que dans `changer_actif`.
+  if p_id = auth.uid() then
+    raise exception 'On ne retire pas son propre compte.' using errcode = '42501';
+  end if;
+
+  select nom, role, actif into v_nom, v_role, v_actif from profils where id = p_id;
+  if not found then
+    raise exception 'Compte introuvable.' using errcode = '02000';
+  end if;
+
+  -- « On ne gère qu'un niveau strictement inférieur au sien » : un gérant ne
+  -- retire pas un autre gérant, et personne ne retire un dev.
+  perform exiger_gestion_de(v_role);
+
+  select (select count(*) from ventes           where vendeur_id  = p_id)
+       + (select count(*) from mouvements_stock where detenteur_id = p_id)
+       + (select count(*) from mouvements_stock where cree_par     = p_id)
+       + (select count(*) from versements       where vendeur_id   = p_id)
+       + (select count(*) from versements       where cree_par     = p_id)
+       + (select count(*) from demandes_restock where vendeur_id   = p_id)
+       + (select count(*) from demandes_restock where traitee_par  = p_id)
+       + (select count(*) from restocks         where cree_par     = p_id)
+       + (select count(*) from sav              where cree_par     = p_id)
+       + (select count(*) from sav              where traite_par   = p_id)
+    into v_refs;
+
+  if v_refs = 0 then
+    -- La trace AVANT la suppression : `journal_admin.cible` passe à NULL par
+    -- `on delete set null`, et c'est `cible_nom`, copié par `tracer_admin`,
+    -- qui garde le nom de qui a disparu.
+    perform tracer_admin('suppression de compte', p_id,
+      jsonb_build_object('nom', v_nom, 'role', v_role, 'actif', v_actif), null);
+
+    delete from auth.users where id = p_id;
+    return format('%s a été supprimé : ce compte n''avait aucun historique.', v_nom);
+  end if;
+
+  if not v_actif then
+    return format('%s est déjà désactivé. Son historique interdit de le supprimer.', v_nom);
+  end if;
+
+  -- `changer_actif` trace déjà la désactivation. On ajoute la trace du GESTE,
+  -- qui n'est pas le même : « retirer » a choisi de désactiver faute de
+  -- pouvoir supprimer, et c'est cette décision qu'on veut relire.
+  perform changer_actif(p_id, false);
+  perform tracer_admin('retrait de compte, désactivé', p_id,
+    jsonb_build_object('references', v_refs), null);
+
+  return format(
+    '%s a un historique : le compte est DÉSACTIVÉ plutôt que supprimé. Il perd tout accès immédiatement, sa comptabilité et son stock détenu restent intacts.',
+    v_nom);
+end $function$
+
+FONCTION  retirer_produit(uuid)
+CREATE OR REPLACE FUNCTION public.retirer_produit(p_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_nom   text;
+  v_actif boolean;
+  v_refs  int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select nom, actif into v_nom, v_actif from produits where id = p_id;
+  if not found then
+    raise exception 'Produit introuvable.' using errcode = '02000';
+  end if;
+
+  select (select count(*) from mouvements_stock where produit_id = p_id)
+       + (select count(*) from vente_lignes     where produit_id = p_id)
+       + (select count(*) from restock_lignes   where produit_id = p_id)
+       + (select count(*) from sav              where produit_id = p_id)
+       + (select count(*) from demande_lignes   where produit_id = p_id)
+    into v_refs;
+
+  if v_refs = 0 then
+    perform tracer_operation('produit', p_id, 'suppression',
+      format('Produit supprimé · %s', v_nom), null, null, null);
+
+    delete from produits where id = p_id;
+    return format('%s a été supprimé du catalogue.', v_nom);
+  end if;
+
+  -- Déjà inactif : le dire plutôt que de prétendre avoir agi. Sans ce cas,
+  -- un second clic renverrait le même message de succès qu'au premier.
+  if not v_actif then
+    return format('%s est déjà inactif. Son historique interdit de le supprimer.', v_nom);
+  end if;
+
+  update produits set actif = false where id = p_id;
+
+  perform tracer_operation('produit', p_id, 'désactivation',
+    format('Produit désactivé · %s', v_nom), null, null,
+    jsonb_build_object('references', v_refs));
+
+  return format(
+    '%s a un historique : il est passé INACTIF plutôt que supprimé. Il disparaît des listes de saisie, la comptabilité est conservée.',
+    v_nom);
+end $function$
+
+FONCTION  retourner_stock(uuid,jsonb,text,date)
+CREATE OR REPLACE FUNCTION public.retourner_stock(p_vendeur_id uuid, p_lignes jsonb, p_motif text DEFAULT NULL::text, p_date date DEFAULT CURRENT_DATE)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_groupe uuid := gen_random_uuid();
+  v_ligne  record;
+  v_dispo  int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_vendeur_id is null then
+    raise exception 'Vendeur non précisé.' using errcode = '22023';
+  end if;
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Aucune ligne de retour.' using errcode = '22023';
+  end if;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide.' using errcode = '22023';
+    end if;
+
+    -- Ordre imposé : entrepôt (NULL) avant vendeur, pour un même produit.
+    perform verrouiller_stock(v_ligne.produit_id, null);
+    perform verrouiller_stock(v_ligne.produit_id, p_vendeur_id);
+
+    v_dispo := stock_detenu(v_ligne.produit_id, p_vendeur_id);
+    if v_dispo < v_ligne.quantite then
+      raise exception 'Le vendeur ne détient que % unité(s) de %.',
+        v_dispo, coalesce((select nom from produits where id = v_ligne.produit_id), '?')
+        using errcode = '23514';
+    end if;
+
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  groupe_id, motif, cree_par)
+    values (v_ligne.produit_id, p_vendeur_id, -v_ligne.quantite, 'retour',
+            v_groupe, p_motif, auth.uid()),
+           (v_ligne.produit_id, null, v_ligne.quantite, 'retour',
+            v_groupe, p_motif, auth.uid());
+  end loop;
+
+  return v_groupe;
+end $function$
+
+FONCTION  revenus_vendeurs(date,date)
+CREATE OR REPLACE FUNCTION public.revenus_vendeurs(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date)
+ RETURNS TABLE(vendeur_id uuid, nom text, role text, actif boolean, nb_ventes integer, qte_vendue integer, ca numeric, commissions numeric, marge_nette numeric, sav_unites integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  agg as (
+    select v.vendeur_id,
+           count(distinct v.id)                    as nb_ventes,
+           sum(vl.quantite)                        as qte,
+           sum(vl.quantite * vl.prix_vente_unitaire) as ca,
+           sum(vl.quantite * vl.commission_unitaire) as commissions,
+           sum(vl.quantite * (vl.prix_vente_unitaire - vl.cout_unitaire
+                              - vl.commission_unitaire)) as marge
+      from ventes v
+      join vente_lignes vl on vl.vente_id = v.id
+      cross join bornes b
+     where v.date between b.du and b.au
+     group by v.vendeur_id
+  ),
+  sv as (
+    select v.vendeur_id,
+           sum(s.quantite)                                   as unites,
+           sum(s.montant_rembourse)                          as rembourse,
+           sum(case when s.resolution = 'echange'
+                    then s.quantite * vl.cout_unitaire else 0 end) as cout_echanges
+      from sav s
+      join ventes v on v.id = s.vente_id
+      join vente_lignes vl
+        on vl.vente_id = s.vente_id and vl.produit_id = s.produit_id
+      cross join bornes b
+     where s.date between b.du and b.au
+       and s.statut = 'valide'
+     group by v.vendeur_id
+  )
+  select pr.id, pr.nom, pr.role, pr.actif,
+         coalesce(a.nb_ventes, 0)::int,
+         coalesce(a.qte, 0)::int,
+         (coalesce(a.ca, 0) - coalesce(sv.rembourse, 0))::numeric(12,2),
+         coalesce(a.commissions, 0)::numeric(12,2),
+         (coalesce(a.marge, 0) - coalesce(sv.rembourse, 0)
+          - coalesce(sv.cout_echanges, 0))::numeric(12,2),
+         coalesce(sv.unites, 0)::int
+    from profils pr
+    left join agg a  on a.vendeur_id  = pr.id
+    left join sv     on sv.vendeur_id = pr.id
+   where pr.role = 'vendeur' or a.vendeur_id is not null
+   order by coalesce(a.ca, 0) desc, pr.nom;
+end $function$
+
+FONCTION  revoquer_sav(uuid,text)
+CREATE OR REPLACE FUNCTION public.revoquer_sav(p_sav_id uuid, p_motif text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_s      sav;
+  v_motif  text := nullif(trim(coalesce(p_motif, '')), '');
+  v_source uuid;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  if v_motif is null then
+    raise exception 'Un motif est obligatoire pour révoquer un dossier validé.'
+      using errcode = '23514';
+  end if;
+
+  select * into v_s from sav where id = p_sav_id for update;
+  if not found then
+    raise exception 'Dossier SAV introuvable.' using errcode = '02000';
+  end if;
+  if v_s.statut <> 'valide' then
+    raise exception 'Seul un dossier validé se révoque (statut : %).', v_s.statut
+      using errcode = '23514';
+  end if;
+
+  -- L'échange a fait sortir une unité : elle revient à son détenteur d'origine,
+  -- celui d'où elle était sortie — jamais à l'entrepôt.
+  if v_s.resolution = 'echange' then
+    v_source := (select m.detenteur_id from mouvements_stock m
+                  where m.origine_sav_id = v_s.id limit 1);
+    perform verrouiller_stock(v_s.produit_id, v_source);
+    delete from mouvements_stock where origine_sav_id = v_s.id;
+  end if;
+
+  update sav
+     set statut      = 'refuse',
+         motif_refus = v_motif,
+         traite_le   = now(),
+         traite_par  = auth.uid()
+   where id = p_sav_id;
+
+  -- Le dossier reste en base, mais le journal comptable ne montre que les SAV
+  -- au statut `valide` : révoqué, il en disparaît. La trace dit ce qui a
+  -- changé et pourquoi, là où le dossier n'est plus visible.
+  perform tracer_operation(
+    'sav', p_sav_id, 'révocation',
+    format('SAV révoqué · %s · %s',
+           coalesce((select nom from produits where id = v_s.produit_id), '?'),
+           v_motif),
+    v_s.quantite, nullif(v_s.montant_rembourse, 0),
+    jsonb_build_object('resolution', v_s.resolution, 'motif_refus', v_motif));
+end $function$
+
+FONCTION  sav_gestion_non_vus()
+CREATE OR REPLACE FUNCTION public.sav_gestion_non_vus()
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_vu timestamptz;
+  v_nb int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select p.sav_gestion_vu_le into v_vu from profils p where p.id = auth.uid();
+
+  select count(*) into v_nb
+    from sav s
+   where s.statut = 'valide'
+     and coalesce(s.traite_le, s.cree_le) > coalesce(v_vu, '-infinity'::timestamptz)
+     and coalesce(s.traite_par, s.cree_par) is distinct from auth.uid();
+
+  return coalesce(v_nb, 0);
+end $function$
+
+FONCTION  sav_non_vus()
+CREATE OR REPLACE FUNCTION public.sav_non_vus()
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_vu  timestamptz;
+  v_nb  int;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  select p.sav_vu_le into v_vu from profils p where p.id = auth.uid();
+
+  select count(*) into v_nb
+    from sav s
+    join ventes v on v.id = s.vente_id
+   where v.vendeur_id = auth.uid()
+     and coalesce(s.traite_le, s.cree_le) > coalesce(v_vu, '-infinity'::timestamptz)
+     and coalesce(s.traite_par, s.cree_par) is distinct from auth.uid();
+
+  return coalesce(v_nb, 0);
+end $function$
+
+FONCTION  source_stock(uuid)
+CREATE OR REPLACE FUNCTION public.source_stock(p_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select case when p.stock_lie_entrepot then null else p.id end
+    from profils p
+   where p.id = coalesce(p_id, auth.uid());
+$function$
+
+FONCTION  stock_detenteurs(uuid)
+CREATE OR REPLACE FUNCTION public.stock_detenteurs(p_vendeur_id uuid DEFAULT NULL::uuid)
+ RETURNS TABLE(detenteur_id uuid, detenteur text, produit_id uuid, produit text, quantite integer, valeur numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select s.detenteur_id,
+           coalesce(pr.nom, 'Entrepôt') as detenteur,
+           s.produit_id, p.nom,
+           s.quantite,
+           (s.quantite * cout_moyen_pondere(s.produit_id))::numeric(12,2)
+      from v_stock_detenteur s
+      join produits p on p.id = s.produit_id
+      left join profils pr on pr.id = s.detenteur_id
+     where s.quantite <> 0
+       and (p_vendeur_id is null or s.detenteur_id is not distinct from p_vendeur_id)
+     order by coalesce(pr.nom, 'Entrepôt'), p.nom;
+end $function$
+
+FONCTION  stock_detenu(uuid,uuid)
+CREATE OR REPLACE FUNCTION public.stock_detenu(p_produit_id uuid, p_detenteur_id uuid)
+ RETURNS integer
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select coalesce(sum(quantite), 0)::int
+    from mouvements_stock
+   where produit_id = p_produit_id
+     and detenteur_id is not distinct from p_detenteur_id;
+$function$
+
+FONCTION  stock_disponible()
+CREATE OR REPLACE FUNCTION public.stock_disponible()
+ RETURNS TABLE(produit_id uuid, produit text, quantite integer, seuil_alerte integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_source uuid;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  v_source := source_stock();
+
+  return query
+    select p.id, p.nom,
+           coalesce(s.quantite, 0)::int,
+           p.seuil_alerte
+      from produits p
+      -- `is not distinct from` : `= NULL` vaut toujours NULL, et l'entrepôt
+      -- EST le détenteur NULL. Piège documenté dans donnees.md.
+      left join v_stock_detenteur s
+             on s.produit_id = p.id and s.detenteur_id is not distinct from v_source
+     where p.actif or coalesce(s.quantite, 0) <> 0
+     order by p.nom;
+end $function$
+
+FONCTION  stock_entrepot()
+CREATE OR REPLACE FUNCTION public.stock_entrepot()
+ RETURNS TABLE(produit_id uuid, produit text, quantite integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+    select p.id, p.nom, coalesce(s.quantite, 0)::int
+      from produits p
+      left join v_stock_detenteur s
+             on s.produit_id = p.id and s.detenteur_id is null
+     where p.actif
+     order by p.nom;
+end $function$
+
+FONCTION  stock_valorise()
+CREATE OR REPLACE FUNCTION public.stock_valorise()
+ RETURNS TABLE(produit_id uuid, produit text, actif boolean, seuil_alerte integer, stock_entrepot integer, stock_distribue integer, stock_total integer, cout_unitaire numeric, valeur_totale numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select s.produit_id, s.nom, s.actif, s.seuil_alerte,
+           s.stock_entrepot, s.stock_distribue, s.stock_total,
+           cout_moyen_pondere(s.produit_id)::numeric(10,4),
+           (s.stock_total * cout_moyen_pondere(s.produit_id))::numeric(12,2)
+      from v_stock_produit s
+     order by s.nom;
+end $function$
+
+FONCTION  supprimer_restock(uuid)
+CREATE OR REPLACE FUNCTION public.supprimer_restock(p_restock_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_reference text;
+  v_quantite  int;
+  v_montant   numeric(12,2);
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  perform 1 from restocks where id = p_restock_id for update;
+  perform exiger_restock_reprenable(p_restock_id);
+
+  -- Le libellé est rédigé MAINTENANT, tant que l'achat existe. Après le
+  -- `delete`, ni la référence ni le montant ne sont reconstituables.
+  select r.reference, r.quantite_totale, r.prix_achat_base + r.frais_port
+    into v_reference, v_quantite, v_montant
+    from restocks r where r.id = p_restock_id;
+
+  perform tracer_operation(
+    'achat', p_restock_id, 'annulation',
+    format('Achat annulé · %s', coalesce(v_reference, '(sans référence)')),
+    v_quantite, v_montant,
+    jsonb_build_object('reference', v_reference));
+
+  delete from restocks where id = p_restock_id;
+end $function$
+
+FONCTION  supprimer_sav(uuid)
+CREATE OR REPLACE FUNCTION public.supprimer_sav(p_sav_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_s       sav;
+  v_produit text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select * into v_s from sav where id = p_sav_id;
+  select nom into v_produit from produits where id = v_s.produit_id;
+
+  delete from sav where id = p_sav_id;
+  if not found then
+    raise exception 'Dossier SAV introuvable.' using errcode = '02000';
+  end if;
+
+  -- Supprimer efface le dossier ET son motif : c'est justement ce qui
+  -- distingue `supprimer_sav` de `revoquer_sav`. La trace conserve ce que la
+  -- suppression détruit.
+  perform tracer_operation(
+    'sav', p_sav_id, 'suppression',
+    format('SAV supprimé · %s · %s', coalesce(v_produit, '?'),
+           coalesce(v_s.motif, 'sans motif')),
+    v_s.quantite, nullif(v_s.montant_rembourse, 0),
+    jsonb_build_object('resolution', v_s.resolution, 'statut', v_s.statut));
+end $function$
+
+FONCTION  supprimer_vente(uuid)
+CREATE OR REPLACE FUNCTION public.supprimer_vente(p_vente_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_dans_fenetre boolean;
+  v_apres        int;
+  v_vendeur      uuid;
+  v_lie          boolean;
+  v_lignes       jsonb;
+  v_ligne        record;
+  v_groupe       uuid;
+  v_rendre       int;
+begin
+  perform 1 from ventes where id = p_vente_id for update;
+
+  -- Vérifie l'existence, l'appartenance et la fenêtre d'un seul coup.
+  v_dans_fenetre := droit_correction(p_vente_id);
+
+  if not v_dans_fenetre then
+    select count(*) into v_apres
+      from vente_lignes vl2
+      join ventes v2 on v2.id = vl2.vente_id
+     where v2.cree_le > (select cree_le from ventes where id = p_vente_id)
+       and vl2.produit_id in (select produit_id from vente_lignes
+                               where vente_id = p_vente_id);
+
+    if v_apres > 0 then
+      raise exception
+        'Annulation refusée : % vente(s) postérieure(s) ont figé un coût qui dépend de celle-ci. Passer par un ajustement de stock motivé.',
+        v_apres using errcode = '23514';
+    end if;
+  end if;
+
+  select v.vendeur_id, p.stock_lie_entrepot into v_vendeur, v_lie
+    from ventes v join profils p on p.id = v.vendeur_id
+   where v.id = p_vente_id;
+
+  -- Les lignes sont relevées AVANT la suppression : elles partent en cascade
+  -- avec la vente, et c'est d'elles qu'on tire les quantités à rendre.
+  select jsonb_agg(jsonb_build_object('produit', produit_id, 'quantite', quantite))
+    into v_lignes
+    from vente_lignes where vente_id = p_vente_id;
+
+  -- L'archive, avant que la ligne ne disparaisse. `on conflict do nothing` :
+  -- une vente déjà archivée le reste, une seconde annulation n'écrase pas la
+  -- date ni l'auteur de la première.
+  insert into ventes_annulees (id, date, vendeur_id, client, quantite_totale,
+                               montant_total, cree_le, annulee_par)
+  select v.id, v.date, v.vendeur_id, v.client, v.quantite_totale,
+         v.montant_total, v.cree_le, auth.uid()
+    from ventes v where v.id = p_vente_id
+  on conflict (id) do nothing;
+
+  -- Le `on delete cascade` de mouvements_stock.origine_vente_id restitue le
+  -- stock AU BON DÉTENTEUR : le mouvement négatif disparaît avec la vente.
+  delete from ventes where id = p_vente_id;
+
+  -- Compte lié : ce détenteur n'existe pas de son point de vue. Les unités
+  -- rendues par la cascade repartent donc à l'entrepôt, d'où elles venaient.
+  if v_lie and v_lignes is not null then
+    for v_ligne in
+      select (e->>'produit')::uuid as produit_id, (e->>'quantite')::int as quantite
+        from jsonb_array_elements(v_lignes) e
+       order by 1
+    loop
+      perform verrouiller_stock(v_ligne.produit_id, null);
+      perform verrouiller_stock(v_ligne.produit_id, v_vendeur);
+
+      v_rendre := least(v_ligne.quantite, stock_detenu(v_ligne.produit_id, v_vendeur));
+
+      if v_rendre > 0 then
+        v_groupe := gen_random_uuid();
+        insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                      groupe_id, motif, cree_par)
+        values (v_ligne.produit_id, v_vendeur, -v_rendre, 'retour',
+                v_groupe,
+                format('Annulation vente depuis l''entrepôt · %s',
+                       left(p_vente_id::text, 8)),
+                auth.uid()),
+               (v_ligne.produit_id, null, v_rendre, 'retour',
+                v_groupe,
+                format('Annulation vente depuis l''entrepôt · %s',
+                       left(p_vente_id::text, 8)),
+                auth.uid());
+      end if;
+    end loop;
+  end if;
+end $function$
+
+FONCTION  supprimer_versement(uuid)
+CREATE OR REPLACE FUNCTION public.supprimer_versement(p_versement_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_montant numeric(12,2);
+  v_nom     text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  -- Relevé avant : un versement supprimé fait remonter la dette d'un vendeur
+  -- sans qu'aucune écriture ne l'explique.
+  select v.montant, p.nom into v_montant, v_nom
+    from versements v join profils p on p.id = v.vendeur_id
+   where v.id = p_versement_id;
+
+  delete from versements where id = p_versement_id;
+  if not found then
+    raise exception 'Versement introuvable.' using errcode = '02000';
+  end if;
+
+  perform tracer_operation(
+    'versement', p_versement_id, 'suppression',
+    format('Versement supprimé · %s', coalesce(v_nom, '?')),
+    null, v_montant, null);
+end $function$
+
+FONCTION  totaux_stock()
+CREATE OR REPLACE FUNCTION public.totaux_stock()
+ RETURNS TABLE(entrepot integer, distribue integer, total integer, valeur numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select coalesce(sum(sp.stock_entrepot), 0)::int,
+           coalesce(sum(sp.stock_distribue), 0)::int,
+           coalesce(sum(sp.stock_total), 0)::int,
+           -- Arrondi UNE SEULE FOIS, à la fin, comme bilan_global().
+           coalesce(sum(sp.stock_total * cout_moyen_pondere(sp.produit_id)), 0)::numeric(12,2)
+      from v_stock_produit sp;
+end $function$
+
+FONCTION  tracer_admin(text,uuid,jsonb,jsonb)
+CREATE OR REPLACE FUNCTION public.tracer_admin(p_action text, p_cible uuid DEFAULT NULL::uuid, p_avant jsonb DEFAULT NULL::jsonb, p_apres jsonb DEFAULT NULL::jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  insert into journal_admin (acteur, acteur_nom, cible, cible_nom, action, avant, apres)
+  values (
+    auth.uid(),
+    (select nom from profils where id = auth.uid()),
+    p_cible,
+    (select nom from profils where id = p_cible),
+    p_action, p_avant, p_apres
+  );
+end $function$
+
+FONCTION  tracer_operation(text,uuid,text,text,integer,numeric,jsonb)
+CREATE OR REPLACE FUNCTION public.tracer_operation(p_entite text, p_entite_id uuid, p_action text, p_libelle text, p_quantite integer DEFAULT NULL::integer, p_montant numeric DEFAULT NULL::numeric, p_detail jsonb DEFAULT NULL::jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  insert into journal_operations (acteur, acteur_nom, entite, entite_id,
+                                  action, libelle, quantite, montant, detail)
+  values (auth.uid(),
+          (select nom from profils where id = auth.uid()),
+          p_entite, p_entite_id, p_action, p_libelle,
+          p_quantite, p_montant, p_detail);
+end $function$
+
+FONCTION  traiter_demande_restock(uuid,text,jsonb,text)
+CREATE OR REPLACE FUNCTION public.traiter_demande_restock(p_demande_id uuid, p_decision text, p_lignes_accordees jsonb DEFAULT NULL::jsonb, p_motif text DEFAULT NULL::text)
+ RETURNS statut_demande
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_d          demandes_restock;
+  v_ligne      record;
+  v_accorde    int;
+  v_dispo      int;
+  v_groupe     uuid := gen_random_uuid();
+  v_tot_acc    int := 0;
+  v_tot_dem    int := 0;
+  v_statut     statut_demande;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_decision not in ('approuver','refuser') then
+    raise exception 'Décision invalide : attendu ''approuver'' ou ''refuser''.'
+      using errcode = '22023';
+  end if;
+
+  -- IDEMPOTENCE : le verrou de ligne + le contrôle de statut garantissent
+  -- qu'une demande ne peut pas être traitée deux fois, même si l'admin
+  -- double-clique ou si deux onglets envoient la requête.
+  select * into v_d from demandes_restock where id = p_demande_id for update;
+  if not found then
+    raise exception 'Demande introuvable.' using errcode = '02000';
+  end if;
+  if v_d.statut <> 'en_attente' then
+    raise exception 'Demande déjà traitée (statut : %).', v_d.statut
+      using errcode = '23514';
+  end if;
+
+  if p_decision = 'refuser' then
+    update demandes_restock
+       set statut      = 'refusee',
+           motif_refus = nullif(trim(coalesce(p_motif, '')), ''),
+           traitee_le  = now(),
+           traitee_par = auth.uid()
+     where id = p_demande_id;
+    return 'refusee';
+  end if;
+
+  -- Approbation : on parcourt les lignes DEMANDÉES dans un ordre déterministe
+  -- (produit_id croissant) pour respecter l'ordre de verrouillage global.
+  for v_ligne in
+    select dl.id, dl.produit_id, dl.quantite_demandee
+      from demande_lignes dl
+     where dl.demande_id = p_demande_id
+     order by dl.produit_id
+  loop
+    v_tot_dem := v_tot_dem + v_ligne.quantite_demandee;
+
+    if p_lignes_accordees is null then
+      v_accorde := v_ligne.quantite_demandee;
+    else
+      select coalesce(sum((l->>'quantite')::int), 0) into v_accorde
+        from jsonb_array_elements(p_lignes_accordees) l
+       where (l->>'produit_id')::uuid = v_ligne.produit_id;
+    end if;
+
+    if v_accorde < 0 then
+      raise exception 'Quantité accordée négative.' using errcode = '22023';
+    end if;
+    -- On ne peut pas accorder plus que demandé (contrainte de table aussi).
+    if v_accorde > v_ligne.quantite_demandee then
+      raise exception 'Accordé (%) supérieur à demandé (%) pour %.',
+        v_accorde, v_ligne.quantite_demandee,
+        coalesce((select nom from produits where id = v_ligne.produit_id), '?')
+        using errcode = '22023';
+    end if;
+
+    if v_accorde > 0 then
+      -- Ordre imposé : entrepôt (NULL) puis vendeur, pour un même produit.
+      perform verrouiller_stock(v_ligne.produit_id, null);
+      perform verrouiller_stock(v_ligne.produit_id, v_d.vendeur_id);
+
+      v_dispo := stock_detenu(v_ligne.produit_id, null);
+      if v_dispo < v_accorde then
+        raise exception
+          'Stock entrepôt insuffisant pour % : % accordée(s), % disponible(s). Accorder une quantité partielle.',
+          coalesce((select nom from produits where id = v_ligne.produit_id), '?'),
+          v_accorde, v_dispo
+          using errcode = '23514';
+      end if;
+
+      -- Les 2 jambes du transfert, de somme nulle : le stock total de la
+      -- maison ne change pas, il change seulement de mains.
+      insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                    groupe_id, origine_demande_id, cree_par)
+      values (v_ligne.produit_id, null, -v_accorde, 'transfert',
+              v_groupe, p_demande_id, auth.uid()),
+             (v_ligne.produit_id, v_d.vendeur_id, v_accorde, 'transfert',
+              v_groupe, p_demande_id, auth.uid());
+    end if;
+
+    update demande_lignes set quantite_accordee = v_accorde where id = v_ligne.id;
+    v_tot_acc := v_tot_acc + v_accorde;
+  end loop;
+
+  -- Un « approuver » qui n'accorde rien est un refus dans les faits : on le
+  -- nomme comme tel plutôt que de laisser une demande « approuvée » à 0.
+  v_statut := case
+                when v_tot_acc = 0         then 'refusee'
+                when v_tot_acc < v_tot_dem then 'partielle'
+                else 'approuvee'
+              end;
+
+  update demandes_restock
+     set statut      = v_statut,
+         motif_refus = nullif(trim(coalesce(p_motif, '')), ''),
+         traitee_le  = now(),
+         traitee_par = auth.uid()
+   where id = p_demande_id;
+
+  return v_statut;
+end $function$
+
+FONCTION  transferer_stock(uuid,jsonb,text)
+CREATE OR REPLACE FUNCTION public.transferer_stock(p_detenteur_id uuid, p_lignes jsonb, p_motif text DEFAULT NULL::text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_groupe uuid := gen_random_uuid();
+  v_ligne  record;
+  v_dispo  int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+  if p_detenteur_id is null then
+    raise exception 'Détenteur non précisé.' using errcode = '22023';
+  end if;
+  -- Le stock d'un compte désactivé serait immobilisé : il ne peut plus ni
+  -- vendre ni rendre. Mieux vaut refuser l'envoi que le constater après coup.
+  if not exists (select 1 from profils where id = p_detenteur_id and actif) then
+    raise exception 'Compte inconnu ou inactif.' using errcode = '42501';
+  end if;
+  if p_lignes is null or jsonb_array_length(p_lignes) = 0 then
+    raise exception 'Aucune ligne de transfert.' using errcode = '22023';
+  end if;
+
+  for v_ligne in
+    select (l->>'produit_id')::uuid as produit_id,
+           sum((l->>'quantite')::int)::int as quantite
+      from jsonb_array_elements(p_lignes) l
+     group by 1
+     order by 1
+  loop
+    if v_ligne.quantite <= 0 then
+      raise exception 'Quantité invalide.' using errcode = '22023';
+    end if;
+
+    -- Ordre imposé : produit_id croissant (le `order by` ci-dessus), et pour un
+    -- même produit l'entrepôt (NULL) avant le détenteur. Voir verrouiller_stock()
+    -- par `verrouiller_stock` : en dévier produirait des interblocages intermittents.
+    perform verrouiller_stock(v_ligne.produit_id, null);
+    perform verrouiller_stock(v_ligne.produit_id, p_detenteur_id);
+
+    v_dispo := stock_detenu(v_ligne.produit_id, null);
+    if v_dispo < v_ligne.quantite then
+      raise exception
+        'Stock entrepôt insuffisant pour % : % demandée(s), % disponible(s).',
+        coalesce((select nom from produits where id = v_ligne.produit_id), '?'),
+        v_ligne.quantite, v_dispo
+        using errcode = '23514';
+    end if;
+
+    -- Les 2 jambes, de somme nulle : le stock total de la maison ne change
+    -- pas, il change seulement de mains (invariant n°2 de
+    -- verifier_coherence_stock()).
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  groupe_id, motif, cree_par)
+    values (v_ligne.produit_id, null, -v_ligne.quantite, 'transfert',
+            v_groupe, nullif(trim(coalesce(p_motif, '')), ''), auth.uid()),
+           (v_ligne.produit_id, p_detenteur_id, v_ligne.quantite, 'transfert',
+            v_groupe, nullif(trim(coalesce(p_motif, '')), ''), auth.uid());
+  end loop;
+
+  return v_groupe;
+end $function$
+
+FONCTION  valider_sav(uuid)
+CREATE OR REPLACE FUNCTION public.valider_sav(p_sav_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_s      sav;
+  v_source uuid;
+  v_dispo  int;
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  select * into v_s from sav where id = p_sav_id for update;
+  if not found then
+    raise exception 'Dossier SAV introuvable.' using errcode = '02000';
+  end if;
+  if v_s.statut <> 'en_attente' then
+    raise exception 'Dossier déjà traité (statut : %).', v_s.statut
+      using errcode = '23514';
+  end if;
+
+  -- Un échange en attente ne devrait pas exister (ils sont validés d'emblée),
+  -- mais la fonction reste correcte s'il s'en présentait un : le mouvement se
+  -- fait à la validation, jamais deux fois.
+  if v_s.resolution = 'echange'
+     and not exists (select 1 from mouvements_stock m where m.origine_sav_id = v_s.id)
+  then
+    v_source := (select vendeur_id from ventes where id = v_s.vente_id);
+    perform verrouiller_stock(v_s.produit_id, v_source);
+    v_dispo := stock_detenu(v_s.produit_id, v_source);
+    if v_dispo < v_s.quantite then
+      raise exception 'Stock insuffisant pour l''échange : % demandée(s), % disponible(s).',
+        v_s.quantite, v_dispo using errcode = '23514';
+    end if;
+    insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                  origine_sav_id, motif, cree_par)
+    values (v_s.produit_id, v_source, -v_s.quantite, 'sav',
+            v_s.id, v_s.motif, auth.uid());
+  end if;
+
+  update sav set statut = 'valide', traite_le = now(), traite_par = auth.uid()
+   where id = p_sav_id;
+end $function$
+
+FONCTION  ventes_savables(integer,boolean)
+CREATE OR REPLACE FUNCTION public.ventes_savables(p_limite integer DEFAULT 100, p_les_miennes boolean DEFAULT false)
+ RETURNS TABLE(vente_id uuid, date date, cree_le timestamp with time zone, client text, vendeur text, vendeur_id uuid, produit_id uuid, produit text, quantite integer, deja_en_sav integer, restant integer, prix_unitaire numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  return query
+    select v.id, v.date, v.cree_le, v.client, pr.nom, v.vendeur_id,
+           p.id, p.nom,
+           vl.quantite,
+           coalesce(s.deja, 0)::int,
+           (vl.quantite - coalesce(s.deja, 0))::int,
+           vl.prix_vente_unitaire
+      from vente_lignes vl
+      join ventes   v  on v.id  = vl.vente_id
+      join profils  pr on pr.id = v.vendeur_id
+      join produits p  on p.id  = vl.produit_id
+      left join (
+        select sv.vente_id, sv.produit_id, sum(sv.quantite) as deja
+          from sav sv
+         where sv.statut in ('valide','en_attente')
+         group by sv.vente_id, sv.produit_id
+      ) s on s.vente_id = vl.vente_id and s.produit_id = vl.produit_id
+     where vl.quantite > coalesce(s.deja, 0)
+       -- Un vendeur ne voit que SES ventes. Cette fonction est SECURITY
+       -- DEFINER : sans cette clause, elle publierait les clients de tous.
+       and (v.vendeur_id = auth.uid() or (est_admin() and not p_les_miennes))
+     order by v.cree_le desc, p.nom
+     limit least(greatest(coalesce(p_limite, 100), 1), 500);
+end $function$
+
+FONCTION  ventes_vendeur(uuid,integer)
+CREATE OR REPLACE FUNCTION public.ventes_vendeur(p_vendeur_id uuid, p_limite integer DEFAULT 20)
+ RETURNS TABLE(id uuid, date date, client text, quantite_totale integer, montant_total numeric, cree_le timestamp with time zone, sav_unites integer, sav_rembourse numeric, sav_en_attente integer, annulee_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+    select v.id, v.date, v.client, v.quantite_totale, v.montant_total, v.cree_le,
+           coalesce(s.unites, 0)::int,
+           coalesce(s.rembourse, 0)::numeric(12,2),
+           coalesce(s.en_attente, 0)::int,
+           null::timestamptz
+      from ventes v
+      left join (
+        select sv.vente_id,
+               sum(sv.quantite) filter (where sv.statut in ('valide','en_attente')) as unites,
+               sum(sv.montant_rembourse) filter (where sv.statut = 'valide') as rembourse,
+               count(*) filter (where sv.statut = 'en_attente') as en_attente
+          from sav sv group by sv.vente_id
+      ) s on s.vente_id = v.id
+     where v.vendeur_id = p_vendeur_id
+
+    union all
+
+    select a.id, a.date, a.client, a.quantite_totale, a.montant_total, a.cree_le,
+           0, 0::numeric(12,2), 0, a.annulee_le
+      from ventes_annulees a
+     where a.vendeur_id = p_vendeur_id
+
+     order by cree_le desc
+     limit least(greatest(coalesce(p_limite, 20), 1), 200);
+end $function$
+
+FONCTION  verifier_coherence_stock()
+CREATE OR REPLACE FUNCTION public.verifier_coherence_stock()
+ RETURNS TABLE(anomalie text, detail text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  -- 1. Un stock négatif est structurellement impossible via les RPC.
+  return query
+    select 'stock_negatif',
+           format('%s détient %s unité(s) de %s',
+                  coalesce(pr.nom, 'Entrepôt'), s.quantite, p.nom)
+      from v_stock_detenteur s
+      join produits p on p.id = s.produit_id
+      left join profils pr on pr.id = s.detenteur_id
+     where s.quantite < 0;
+
+  -- 2. Les 2 jambes d'un déplacement doivent s'annuler.
+  return query
+    select 'transfert_desequilibre',
+           format('groupe %s : somme %s au lieu de 0', m.groupe_id, sum(m.quantite))
+      from mouvements_stock m
+     where m.groupe_id is not null
+     group by m.groupe_id
+    having sum(m.quantite) <> 0;
+
+  -- 3. L'en-tête de vente doit refléter ses lignes.
+  return query
+    select 'entete_vente_incoherente',
+           format('vente %s : en-tête %s € / %s u, lignes %s € / %s u',
+                  v.id, v.montant_total, v.quantite_totale,
+                  coalesce(sum(vl.quantite * vl.prix_vente_unitaire), 0),
+                  coalesce(sum(vl.quantite), 0))
+      from ventes v
+      left join vente_lignes vl on vl.vente_id = v.id
+     group by v.id, v.montant_total, v.quantite_totale
+    having v.montant_total <> coalesce(sum(vl.quantite * vl.prix_vente_unitaire), 0)
+        or v.quantite_totale <> coalesce(sum(vl.quantite), 0);
+end $function$
+
+FONCTION  verrouiller_stock(uuid,uuid)
+CREATE OR REPLACE FUNCTION public.verrouiller_stock(p_produit_id uuid, p_detenteur_id uuid)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select pg_advisory_xact_lock(
+    hashtext(p_produit_id::text || '/' || coalesce(p_detenteur_id::text, 'entrepot'))
+  );
+$function$
+
+VUE       v_comptes_vendeurs
+ SELECT pr.id AS vendeur_id,
+    pr.nom,
+    pr.role,
+    pr.actif,
+    pr.commission_unitaire,
+    COALESCE(v.ca, 0::numeric)::numeric(12,2) AS ca,
+    COALESCE(v.nb_ventes, 0::bigint)::integer AS nb_ventes,
+    COALESCE(v.qte_vendue, 0::bigint)::integer AS qte_vendue,
+    COALESCE(c.commissions, 0::numeric)::numeric(12,2) AS commissions,
+    COALESCE(ve.verse, 0::numeric)::numeric(12,2) AS verse,
+    COALESCE(sv.rembourse, 0::numeric)::numeric(12,2) AS rembourse,
+        CASE
+            WHEN pr.role <> 'vendeur'::text THEN 0::numeric(12,2)
+            ELSE (COALESCE(v.ca, 0::numeric) - COALESCE(c.commissions, 0::numeric) - COALESCE(ve.verse, 0::numeric) - COALESCE(sv.rembourse, 0::numeric))::numeric(12,2)
+        END AS reste_a_verser
+   FROM profils pr
+     LEFT JOIN ( SELECT ventes.vendeur_id,
+            sum(ventes.montant_total) AS ca,
+            count(*) AS nb_ventes,
+            sum(ventes.quantite_totale) AS qte_vendue
+           FROM ventes
+          GROUP BY ventes.vendeur_id) v ON v.vendeur_id = pr.id
+     LEFT JOIN ( SELECT ve2.vendeur_id,
+            sum(vl.quantite::numeric * vl.commission_unitaire) AS commissions
+           FROM ventes ve2
+             JOIN vente_lignes vl ON vl.vente_id = ve2.id
+          GROUP BY ve2.vendeur_id) c ON c.vendeur_id = pr.id
+     LEFT JOIN ( SELECT versements.vendeur_id,
+            sum(versements.montant) AS verse
+           FROM versements
+          GROUP BY versements.vendeur_id) ve ON ve.vendeur_id = pr.id
+     LEFT JOIN ( SELECT v3.vendeur_id,
+            sum(s.montant_rembourse) AS rembourse
+           FROM sav s
+             JOIN ventes v3 ON v3.id = s.vente_id
+          WHERE s.statut = 'valide'::text
+          GROUP BY v3.vendeur_id) sv ON sv.vendeur_id = pr.id;
+VUE       v_lignes_vente
+ SELECT vl.id,
+    vl.vente_id,
+    v.vendeur_id,
+    v.date,
+    v.client,
+    vl.produit_id,
+    p.nom AS produit,
+    vl.quantite,
+    vl.prix_vente_unitaire,
+    vl.commission_unitaire,
+    (vl.quantite::numeric * vl.prix_vente_unitaire)::numeric(12,2) AS montant_ligne,
+    (vl.quantite::numeric * vl.commission_unitaire)::numeric(12,2) AS commission_ligne
+   FROM vente_lignes vl
+     JOIN ventes v ON v.id = vl.vente_id
+     JOIN produits p ON p.id = vl.produit_id
+  WHERE v.vendeur_id = auth.uid() OR est_admin();
+VUE       v_stock_detenteur
+ SELECT detenteur_id,
+    produit_id,
+    sum(quantite)::integer AS quantite
+   FROM mouvements_stock
+  GROUP BY detenteur_id, produit_id;
+VUE       v_stock_produit
+ SELECT p.id AS produit_id,
+    p.nom,
+    p.actif,
+    p.seuil_alerte,
+    COALESCE(sum(m.quantite) FILTER (WHERE m.detenteur_id IS NULL), 0::bigint)::integer AS stock_entrepot,
+    COALESCE(sum(m.quantite) FILTER (WHERE m.detenteur_id IS NOT NULL), 0::bigint)::integer AS stock_distribue,
+    COALESCE(sum(m.quantite), 0::bigint)::integer AS stock_total
+   FROM produits p
+     LEFT JOIN mouvements_stock m ON m.produit_id = p.id
+  GROUP BY p.id, p.nom, p.actif, p.seuil_alerte;
+RLS       demande_lignes  enabled=t  forced=f
+RLS       demandes_restock  enabled=t  forced=f
+RLS       invitations  enabled=t  forced=f
+RLS       ip_bloquees  enabled=t  forced=f
+RLS       journal_admin  enabled=t  forced=f
+RLS       journal_operations  enabled=t  forced=f
+RLS       mouvements_stock  enabled=t  forced=f
+RLS       produits  enabled=t  forced=f
+RLS       profils  enabled=t  forced=f
+RLS       restock_lignes  enabled=t  forced=f
+RLS       restocks  enabled=t  forced=f
+RLS       roles  enabled=t  forced=f
+RLS       sav  enabled=t  forced=f
+RLS       vente_lignes  enabled=t  forced=f
+RLS       ventes  enabled=t  forced=f
+RLS       ventes_annulees  enabled=t  forced=f
+RLS       versements  enabled=t  forced=f
+POLICY    demande_lignes.demande_lignes_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    demande_lignes.demande_lignes_select  cmd=r  roles=PUBLIC  using=(EXISTS ( SELECT 1
+   FROM demandes_restock d
+  WHERE ((d.id = demande_lignes.demande_id) AND ((d.vendeur_id = auth.uid()) OR est_admin()))))  check=-
+POLICY    demandes_restock.demandes_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    demandes_restock.demandes_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
+POLICY    invitations.invitations_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    ip_bloquees.ip_bloquees_select  cmd=r  roles=PUBLIC  using=est_dev()  check=-
+POLICY    journal_admin.journal_admin_select  cmd=r  roles=PUBLIC  using=est_dev()  check=-
+POLICY    journal_operations.journal_operations_select  cmd=r  roles=PUBLIC  using=est_admin()  check=-
+POLICY    mouvements_stock.mvt_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    mouvements_stock.mvt_select  cmd=r  roles=PUBLIC  using=((detenteur_id = auth.uid()) OR est_admin())  check=-
+POLICY    produits.produits_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    produits.produits_select  cmd=r  roles=PUBLIC  using=est_actif()  check=-
+POLICY    profils.profils_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    profils.profils_select  cmd=r  roles=PUBLIC  using=((id = auth.uid()) OR est_admin())  check=-
+POLICY    restock_lignes.restock_lignes_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    restocks.restocks_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    roles.roles_select  cmd=r  roles=PUBLIC  using=est_actif()  check=-
+POLICY    sav.sav_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    sav.sav_select  cmd=r  roles=PUBLIC  using=(est_admin() OR (EXISTS ( SELECT 1
+   FROM ventes v
+  WHERE ((v.id = sav.vente_id) AND (v.vendeur_id = auth.uid())))))  check=-
+POLICY    vente_lignes.vente_lignes_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    ventes.ventes_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
+POLICY    ventes_annulees.ventes_annulees_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
+POLICY    versements.versements_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
+POLICY    versements.versements_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
+DROIT-FN  ajuster_stock(uuid,integer,text,uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  annuler_demande_restock(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  annuler_invitation(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  annuler_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  bilan_global(date,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  bloquer_ip(text,text)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  bloquer_ip_definitivement(text,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  changer_actif(uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  changer_role(uuid,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  changer_stock_lie(uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  comptes_encadrement()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  cout_moyen_pondere(uuid)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  creances()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  creer_demande_restock(jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  creer_restock_fournisseur(jsonb,numeric,numeric,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  declarer_sav(uuid,uuid,integer,text,text,numeric,uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  dossiers_sav(integer,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  droit_correction(uuid)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  enregistrer_vente(jsonb,text,date,uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  enregistrer_versement(uuid,numeric,date,text,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  est_actif()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  est_admin()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  est_dev()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  exiger_changement_mdp(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  exiger_gestion_de(text)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  exiger_restock_reprenable(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  fenetre_correction()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  gerer_nouvel_utilisateur()  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  inviter_utilisateur(text,text,text,numeric)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ip_bloquees_actives()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ip_est_bloquee(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  journal_admin(date,date,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  journal_transactions(date,date,text,uuid,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  lever_blocage_ip(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ma_dette()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  marquer_mdp_change()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  marquer_sav_gestion_vu(timestamp with time zone)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  marquer_sav_vu(timestamp with time zone)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  mes_ventes(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  modifier_compte(uuid,text,numeric)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  modifier_restock(uuid,jsonb,numeric,numeric,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  modifier_vente(uuid,jsonb,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  mon_journal(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  niveau_courant()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  niveau_de(text)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  refuser_sav(uuid,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  reinitialiser_donnees(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  retirer_compte(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  retirer_produit(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  retourner_stock(uuid,jsonb,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  revenus_vendeurs(date,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  revoquer_sav(uuid,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  sav_gestion_non_vus()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  sav_non_vus()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  source_stock(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  stock_detenteurs(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  stock_detenu(uuid,uuid)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  stock_disponible()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  stock_entrepot()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  stock_valorise()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  supprimer_restock(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  supprimer_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  supprimer_vente(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  supprimer_versement(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  totaux_stock()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  tracer_admin(text,uuid,jsonb,jsonb)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  tracer_operation(text,uuid,text,text,integer,numeric,jsonb)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  traiter_demande_restock(uuid,text,jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  transferer_stock(uuid,jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  valider_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ventes_savables(integer,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ventes_vendeur(uuid,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  verifier_coherence_stock()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  verrouiller_stock(uuid,uuid)  postgres=X/postgres | service_role=X/postgres
+DROIT-TB  demande_lignes  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  demandes_restock  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  invitations  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  ip_bloquees  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  journal_admin  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  journal_operations  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  mouvements_stock  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  produits  authenticated=arwdDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  profils  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  restock_lignes  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  restocks  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  roles  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  sav  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  v_comptes_vendeurs  postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  v_lignes_vente  authenticated=arwdDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  v_stock_detenteur  postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  v_stock_produit  postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  vente_lignes  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  ventes  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  ventes_annulees  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  versements  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+COMMENT-O ip_bloquees  Palier 3 de l'anti-bourrage. jusqu_a NULL = blocage définitif, posé à la main.
+COMMENT-O journal_admin  Trace des actions d'administration de comptes. Écriture par tracer_admin() uniquement, lecture réservée au dev.
+COMMENT-O journal_operations  Trace des opérations qui effacent ou corrigent une écriture. Le journal comptable étant dérivé de l'état courant, sans elle une suppression est invisible.
+COMMENT-C profils.commission_unitaire  Valeur COURANTE. La valeur historique d'une vente est figée dans vente_lignes.
+COMMENT-C profils.sav_gestion_vu_le  Dernière ouverture de l'écran Gestion → SAV. Sert uniquement à la pastille de nouveauté, jamais à une décision d'autorisation.
+COMMENT-C profils.sav_vu_le  Dernière ouverture de l'écran SAV par ce compte. Sert uniquement à la pastille de nouveauté, jamais à une décision d'autorisation.
+COMMENT-C profils.stock_lie_entrepot  Vrai quand l'entrepôt EST le stock de ce compte : ses ventes y puisent directement. Réservé à l'encadrement.
+COMMENT-F annuler_invitation(text)  Retire une invitation NON consommée. Garde volontairement plus faible que inviter_utilisateur : retirer ne peut élever personne.
+COMMENT-F bloquer_ip(text,text)  Palier 3 de l'anti-bourrage. Réservée à service_role : le paramètre p_ip est choisi par l'appelant, l'ouvrir à anon permettait de bloquer une adresse arbitraire, dev compris.
+COMMENT-F est_admin()  Vrai si l'appelant est un admin ACTIF. Le rôle seul ne suffit jamais.
+COMMENT-F reinitialiser_donnees(text)  Vide les données d'activité, conserve comptes, invitations, blocages IP et journal d'administration. Réservée au dev (seul verrou d'autorisation) ; la confirmation attendue est le nombre de lignes à effacer, garde-fou contre l'erreur d'instance.
+COMMENT-F retirer_compte(uuid)  Supprime un compte sans aucune trace, désactive celui qui a un historique. Renvoie le message à afficher.
+COMMENT-F retirer_produit(uuid)  Supprime un produit jamais employé, désactive celui qui a un historique. Renvoie le message à afficher.
+COMMENT-F transferer_stock(uuid,jsonb,text)  Transfert entrepôt → détenteur, sans demande préalable. Aucun filtre de rôle : un compte d'encadrement peut détenir du stock et vendre.

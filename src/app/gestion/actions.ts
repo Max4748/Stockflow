@@ -20,7 +20,7 @@ import type { EtatAction, EtatActionSecret } from "@/lib/types";
  * donne un message clair plutôt qu'un résultat vide.
  *
  * Aucun calcul métier ici. Coûts, marges, dettes et contrôles de stock sont
- * faits en SQL — voir les migrations 0005 à 0008.
+ * faits en SQL — voir `supabase/schema/20_fonctions/`.
  */
 
 function rafraichir() {
@@ -163,7 +163,7 @@ export async function enregistrerProduit(
  * écrivent en direct, parce qu'un produit ne porte aucun invariant comptable ;
  * le retrait, lui, en toucherait un.
  *
- * `retirer_produit()` (migration 0022) choisit le dénouement : suppression si
+ * `retirer_produit()` choisit le dénouement : suppression si
  * le produit n'a jamais servi, désactivation sinon. Elle renvoie le message à
  * afficher, qui est déjà rédigé pour un humain et dit LEQUEL des deux a eu
  * lieu. L'interface n'a rien à décider ni à reformuler.
@@ -234,7 +234,7 @@ export async function enregistrerAchat(
 /**
  * Corrige un achat déjà saisi.
  *
- * `modifier_restock` (migration 0026) défait puis refait les lignes en
+ * `modifier_restock` défait puis refait les lignes en
  * conservant l'en-tête, et refuse dès que l'achat a produit des effets :
  * unités déjà sorties de l'entrepôt, ou vente postérieure ayant figé un coût
  * qui en dépend. Le message oriente vers l'ajustement de stock motivé.
@@ -560,7 +560,7 @@ export async function revoquerSav(
  *
  * `borne` est l'horodatage du dossier le plus récent AFFICHÉ. C'est lui qui
  * est enregistré, et non `now()` : entre le rendu et cet appel, un vendeur a
- * pu déclarer un dossier que le gérant n'a jamais vu passer (voir 0021). La
+ * pu déclarer un dossier que le gérant n'a jamais vu passer (voir `marquer_sav_gestion_vu`). La
  * valeur vient du navigateur — la fonction SQL la borne des deux côtés.
  */
 export async function marquerSavGestionVu(borne: string | null): Promise<void> {
@@ -746,7 +746,7 @@ export async function creerVendeur(
   const supabase = await creerClient();
 
   // ÉTAPE 1 — l'invitation, via RPC : l'écriture directe dans `invitations` est
-  // révoquée depuis 0011, précisément parce que sa colonne `role` était
+  // révoquée, précisément parce que sa colonne `role` était
   // librement insérable — donc une escalade de privilèges en une requête.
   const { error: erreurInvitation } = await supabase.rpc(
     "inviter_utilisateur",
@@ -814,7 +814,7 @@ export async function reinitialiserMotDePasse(
 
   // Le drapeau force le vendeur à choisir son propre mot de passe à la
   // prochaine connexion — flux déjà en place côté vendeur. Via RPC : l'update
-  // direct sur `profils` est révoqué depuis 0011.
+  // direct sur `profils` est révoqué.
   const supabase = await creerClient();
   const { error: erreurDrapeau } = await supabase.rpc("exiger_changement_mdp", {
     p_id: vendeurId,
@@ -894,7 +894,7 @@ export async function basculerActivation(
 /**
  * Retire un compte du dispositif.
  *
- * `retirer_compte()` (migration 0024) choisit le dénouement : suppression si le
+ * `retirer_compte()` choisit le dénouement : suppression si le
  * compte n'a laissé aucune trace, désactivation sinon. Elle renvoie le message
  * à afficher, qui dit LEQUEL des deux a eu lieu.
  *
@@ -991,7 +991,7 @@ export async function changerRole(
  * Garde volontairement plus faible que celle de la création : `inviter_*`
  * exige un niveau strictement supérieur à la cible, `annuler_invitation` se
  * contente d'`est_admin()`. Reprendre la règle de création rendrait
- * l'invitation `dev` de l'amorçage indestructible. Voir la migration 0023.
+ * l'invitation `dev` de l'amorçage indestructible. Voir `annuler_invitation`.
  */
 export async function annulerInvitation(
   _etat: EtatAction,
@@ -1019,7 +1019,7 @@ export async function annulerInvitation(
  * devait se transférer du stock à lui-même avant chaque vente, une écriture
  * qui ne décrivait aucun déplacement.
  *
- * Le contrôle est en base (`changer_stock_lie`, migration 0025) : un vendeur
+ * Le contrôle est en base (`changer_stock_lie`) : un vendeur
  * est refusé, et un gérant ne règle pas un dev. Se régler soi-même est en
  * revanche légitime, contrairement au rôle ou à l'activation — le gérant qui
  * héberge l'entrepôt est le mieux placé pour le déclarer, et le réglage ne lui

@@ -64,17 +64,33 @@ jobs:
       # Contrôle statique, avant toute exécution : `supautils` refuse un
       # `delete` sans `where` pour les rôles non superutilisateur, et aucun
       # test ne peut l'attraper puisque le harnais tourne en superutilisateur.
-      - name: Migrations sans suppression non qualifiée
+      - name: Schéma sans suppression non qualifiée
         run: npm run verif:sql
 
-      - name: Rejeu des migrations (3 passes)
+      - name: Rejeu du schéma (3 passes)
         run: npm run test:db
 
       - name: Schéma sur le Postgres de service
-        run: ./supabase/appliquer-migrations.sh
+        run: ./supabase/appliquer-schema.sh
 
       - name: Règles métier (pgTAP)
         run: npm run test:sql
+
+      # Égalité de schéma : l'empreinte obtenue en UNE passe sur une base vide
+      # doit correspondre à la référence versionnée. C'est ce qui a permis de
+      # remplacer 42 migrations empilées par un schéma sans doublon sans rien
+      # changer en base, et c'est ce qui empêche une dérive silencieuse ensuite —
+      # une colonne, une contrainte, un `revoke` perdu en réécrivant un fichier.
+      - name: Empreinte du schéma conforme à la référence
+        run: |
+          ./supabase/empreinte-schema.sh > /tmp/empreinte-obtenue.txt
+          if ! diff -u supabase/empreinte-reference.txt /tmp/empreinte-obtenue.txt; then
+            echo
+            echo "Le schéma obtenu diffère de la référence versionnée."
+            echo "Si l'écart est VOULU, régénérer la référence et la committer :"
+            echo "  ./supabase/empreinte-schema.sh > supabase/empreinte-reference.txt"
+            exit 1
+          fi
 
       # En dernier : c'est le plus lent, et il n'apprend rien de plus qu'une
       # erreur que le typage aurait déjà signalée, sauf pour les modules

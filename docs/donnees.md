@@ -255,7 +255,7 @@ Cette colonne ne sert **jamais** à une décision d'autorisation.
 
 ### Quand l'entrepôt est chez le gérant
 
-`profils.stock_lie_entrepot` (migration `0025`) déclare qu'un compte
+`profils.stock_lie_entrepot` déclare qu'un compte
 d'encadrement **est** l'entrepôt. Cas réel : le stock est physiquement chez le
 gérant, et lui faire transférer de la marchandise vers lui-même avant chaque
 vente décrivait un déplacement qui n'existait pas.
@@ -273,7 +273,7 @@ Il ne change que deux choses :
 | `enregistrer_vente()` | prend dans l'entrepôt ce qui manque au vendeur |
 
 **Le transfert est écrit, pas contourné.** La contrainte `mvt_coherence`
-impose depuis `0004` qu'une vente sorte d'un détenteur nommé. L'assouplir pour
+impose qu'une vente sorte d'un détenteur nommé. L'assouplir pour
 ce cas aurait affaibli un invariant qui tient pour tout le monde, afin
 d'épargner deux lignes au registre. La vente écrit donc elle-même les deux
 jambes du transfert, puis la sortie. Le geste disparaît de l'écran du gérant,
@@ -284,7 +284,7 @@ L'ordre de verrouillage est celui de `transferer_stock` : entrepôt d'abord,
 détenteur ensuite. En dévier produirait des interblocages intermittents entre
 une vente et un transfert simultanés.
 
-**L'annulation d'une vente doit rendre l'unité à l'entrepôt** (`0027`). Le
+**L'annulation d'une vente doit rendre l'unité à l'entrepôt.** Le
 `on delete cascade` d'`origine_vente_id` n'efface que la sortie de vente : les
 deux jambes du transfert portent un `groupe_id`, pas une origine de vente, et
 survivent. Sans retour explicite, les unités restaient chez le gérant, où
@@ -299,27 +299,27 @@ sans une ligne de code, mais le registre n'aurait plus rien montré, et une
 annulation est justement le moment où l'on veut lire ce qui s'est passé.
 
 Ce que le drapeau ne change **pas** : le SAV (`declarer_sav` a son propre
-`p_depuis_entrepot` depuis `0015`), la dette (elle vaut déjà 0 pour un
+`p_depuis_entrepot`), la dette (elle vaut déjà 0 pour un
 non-vendeur), et l'attribution des ventes, qui restent les siennes.
 
 ### Comment le gérant apprend qu'il s'est passé quelque chose
 
-Le même mécanisme, symétrique, ajouté en `0019`. Il manquait, et c'est ce qui
+Le même mécanisme, symétrique. Il manquait, et c'est ce qui
 rendait le recours du gérant théorique : `sav_non_vus()` filtre sur
 `ventes.vendeur_id = auth.uid()`, autrement dit c'est la pastille du **vendeur**.
 Côté gestion, un échange déclaré par un vendeur ne produisait aucun signal,
 puisqu'il est validé d'emblée et n'attend donc aucune décision.
 
-`sav_gestion_non_vus()` reprend les deux conditions de `0016` et en change deux
+`sav_gestion_non_vus()` reprend les deux conditions de `sav_non_vus` et en change deux
 autres :
 
-| | Pastille vendeur (`0016`) | Pastille gestion (`0019`) |
+| | Pastille vendeur (`sav_non_vus`) | Pastille gestion (`sav_gestion_non_vus`) |
 | --- | --- | --- |
 | Périmètre | ses ventes à lui | **tous** les vendeurs |
 | Statuts comptés | tous | **`valide` seulement** |
 | Colonne de visite | `profils.sav_vu_le` | `profils.sav_gestion_vu_le` |
 
-Deux colonnes distinctes parce qu'un gérant vend aussi (`0013`) : les confondre
+Deux colonnes distinctes parce qu'un gérant vend aussi : les confondre
 éteindrait sa pastille de gestion au motif qu'il a consulté ses propres
 dossiers, deux questions qui n'ont rien à voir.
 
@@ -395,7 +395,7 @@ Le journal comptable est **dérivé de l'état courant** : il lit `ventes`,
 suppression retire disparaît aussi du journal. Un achat de 345 € annulé
 changeait les totaux sans laisser la moindre ligne pour l'expliquer.
 
-`journal_operations` (migration `0035`) enregistre le **geste**, pas l'entité :
+`journal_operations` enregistre le **geste**, pas l'entité :
 qui, quoi, quand, et de quoi il s'agissait. Sept fonctions l'alimentent.
 
 | Fonction | Ce que la trace conserve |
@@ -422,7 +422,7 @@ un achat annulé est une opération comptable, pas une action d'administration.
 
 ### Une vente annulée reste visible
 
-`ventes_annulees` (migration `0029`) archive l'en-tête d'une vente au moment de
+`ventes_annulees` archive l'en-tête d'une vente au moment de
 son annulation. Les deux listes de ventes et les deux journaux la réaffichent,
 barrée et taguée ; aucun agrégat ne la voit plus.
 
@@ -446,71 +446,81 @@ Conséquence à connaître : une vente annulée ne peut plus porter de SAV ni ê
 corrigée, ses lignes ayant disparu. C'est voulu, et `corrigeable` vaut faux
 pour elle.
 
-## Ordre des migrations
+## Organisation du schéma
 
-39 fichiers, **rejoués intégralement dans l'ordre à chaque exécution** :
+`supabase/schema/`, **rejoué intégralement à chaque exécution** :
 `create table if not exists`, `create or replace`, `drop policy if exists`.
+Cinq couches, appliquées dans l'ordre des noms de dossier puis des noms de
+fichier — c'est le système de fichiers qui porte l'ordre, aucune liste n'est
+tenue à jour à côté.
 
-| Fichier                        | Contenu                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `0000_migration_niveaux`       | pré-migration gardée : convertit une base d'avant les niveaux             |
-| `0001_socle`                   | rôles, profils, invitations, helpers, trigger d'inscription               |
-| `0002_catalogue`               | produits                                                                  |
-| `0003_transactions`            | DDL pure des écritures                                                    |
-| `0004_mouvements_stock`        | le registre, index, vues de stock, CUMP                                   |
-| `0005_ecritures`               | achat, vente, retour, ajustement                                          |
-| `0006_demandes`                | création, annulation, traitement des réassorts                            |
-| `0007_dette`                   | créances et versements                                                    |
-| `0008_lectures`                | stock, bilan, journal, audit                                              |
-| `0009_rls_privileges`          | le **socle** de sécurité : modèle de menace, `anon` fermé, règles du schéma initial |
-| `0010_seed`                    | invitation du compte dev                                                  |
-| `0011_comptes`                 | gestion des comptes, ferme l'escalade de privilèges                       |
-| `0012_correction_ventes`       | fenêtre de correction                                                     |
-| `0013_encadrement_vend`        | transfert direct de stock, l'encadrement qui vend entre dans les tableaux |
-| `0014_sav`                     | défaillances rattachées à leur vente, et leur répercussion comptable      |
-| `0015_sav_vendeur`             | le vendeur déclare ; échange immédiat, remboursement arbitré              |
-| `0016_sav_vu`                  | le vendeur suit ses dossiers, pastille de nouveauté                       |
-| `0017_savables_horodatage`     | l'heure de saisie, pour distinguer deux ventes du même jour               |
-| `0018_totaux_et_cloisonnement` | totaux du stock calculés en SQL, espace vendeur cloisonné                 |
-| `0019_sav_revocation`          | pastille SAV côté gestion, révocation d'un dossier validé sans l'effacer  |
-| `0020_index_origines`          | index sur les clés d'origine de `mouvements_stock` (cascades et suppressions ciblées) |
-| `0021_sav_vu_borne`            | les pastilles SAV enregistrent « vu jusqu'à », pas « vu maintenant » |
-| `0022_retirer_produit`         | retrait d'un produit : supprimé s'il n'a jamais servi, désactivé sinon |
-| `0023_annuler_invitation`      | retrait d'une invitation non consommée ; `0010` cesse aussi de ressusciter celle d'amorçage |
-| `0024_retirer_compte`          | retrait d'un compte : supprimé s'il n'a laissé aucune trace, désactivé sinon |
-| `0025_stock_lie_entrepot`      | un gérant dont l'entrepôt EST le stock : ses ventes y puisent, le transfert est écrit par la vente |
-| `0026_corriger_restock`        | corriger ou annuler un achat fournisseur, sous le même garde-fou qu'une vente |
-| `0027_annulation_vente_liee`   | annuler la vente d'un gérant lié rend l'unité à l'entrepôt, et rapatrie celles restées échouées |
-| `0028_journal_motifs`          | le journal affiche le motif d'un transfert ou d'un retour au lieu d'un libellé générique |
-| `0029_ventes_annulees`         | une vente annulée passe en archive : toujours visible, plus jamais comptée |
-| `0030_prix_vente_positif`      | une vente à 0 € n'est pas une vente : la contrainte passe à `> 0` |
-| `0031_journal_admin`           | table et écriture des traces d'administration de comptes |
-| `0032_tracer_comptes`          | les sept fonctions de compte appellent `tracer_admin()` |
-| `0033_ip_bloquees`             | palier 3 de l'anti-bourrage : persistant, durée croissante |
-| `0034_bloquer_ip_privilegie`   | `bloquer_ip` réservée à `service_role` : `anon` pouvait bloquer une IP arbitraire |
-| `0035_journal_operations`      | table des opérations qui effacent une écriture |
-| `0036_tracer_operations`       | sept fonctions destructrices déclarent ce qu'elles effacent |
-| `0037_journal_avec_operations` | le journal comptable les affiche |
-| `0038_reinitialiser_donnees`   | vider l'activité en gardant les comptes, sous phrase de confirmation |
+| Couche | Contenu | Ce que sa position garantit |
+| --- | --- | --- |
+| `10_types_et_tables/` | types énumérés, tables, contraintes, index, RLS | rien n'existe avant |
+| `20_fonctions/` | les 74 fonctions, une seule définition chacune | après les tables qu'elles lisent |
+| `30_vues_et_triggers/` | les 4 vues, le trigger d'inscription | `v_lignes_vente` appelle `est_admin()`, le trigger appelle `gerer_nouvel_utilisateur()` |
+| `40_droits/` | policies, grants et revokes, commentaires | les 24 policies citent `est_admin` / `est_dev` / `est_actif` |
+| `90_donnees/` | amorçage, reprises de données | tout le schéma est en place |
 
-Trois points de séquencement non arbitraires :
+À l'intérieur d'une couche, l'ordre alphabétique suffit — sauf dans `10`, où les
+noms sont numérotés selon les **clés étrangères** : `mouvements_stock` référence
+`ventes`, `restocks` et `sav`, donc il vient après les trois, quel que soit le
+domaine auquel il appartient par ailleurs.
 
-- `0000` passe **avant** tout : convertir `profils.role` impose de supprimer la
-  vue qui en dépend, dont le propriétaire est `0007`. En passant avant, ce
-  fichier ne fait que défaire l'ancien modèle, aucun objet n'ayant deux
-  définitions.
-- `0003` avant `0004` : le registre référence les quatre tables d'écriture, ses
-  clés étrangères et ses `CHECK` multi-colonnes se déclarent d'un bloc.
-- `0009` pose le **socle** de sécurité : la base reste fermée pendant toute
-  l'installation du schéma initial. Ce n'est PAS le seul fichier de sécurité, et
-  le croire fait manquer la moitié du sujet : dix-huit migrations postérieures
-  posent des `grant`, des `create policy` ou un `enable row level security`,
-  chacune pour ce qu'elle apporte. La règle est que **toute migration créant
-  une table pose sa propre RLS dans son propre fichier**, et que toute fonction
-  repose son `grant execute` juste après elle. Une table sans RLS serait ouverte
-  à tout détenteur d'un GRANT sans qu'aucune erreur ne le signale ; une fonction
-  sans grant ne serait appelable par personne. Le filet est l'inventaire de
-  `appliquer-migrations.sh`, ligne « tables SANS RLS (doit valoir 0) ».
+### Pourquoi ce découpage plutôt que des migrations numérotées
+
+Le dossier `migrations/` empilait deux natures incompatibles. Ce qui est
+**incrémental** — une table, une colonne, un type — a un ordre porteur et ne
+peut pas être remplacé. Ce qui est **idempotent** — une fonction, une vue, une
+policy — s'écrit avec `create or replace` : l'ordre n'a aucune valeur, et
+l'historique est déjà dans git.
+
+Empiler les secondes comme les premières produisait des doublons : **125
+définitions de fonctions pour 74 fonctions**. `journal_transactions` était
+écrite six fois, de `0008` à `0037`, et seule la sixième comptait sans que rien
+ne le dise à celui qui lit. 51 définitions sur 125 s'exécutaient au rejeu pour
+se faire écraser aussitôt.
+
+Le découpage a aussi corrigé un défaut que personne ne pouvait voir en lisant :
+`revoke all on all tables in schema public from anon` ne couvre que les tables
+existant à cet instant. Placé au milieu de la pile, il laissait `select` à
+`anon` sur les cinq tables créées par des migrations postérieures — `sav`,
+`ventes_annulees`, `journal_admin`, `journal_operations`, `ip_bloquees` —
+jusqu'à la deuxième application. **Un premier déploiement était donc plus
+permissif que la production.** En couche `40`, le revoke passe après toutes les
+tables et les couvre toutes, dès la première passe.
+
+### La règle qui reste : toute table pose sa RLS, toute fonction pose son grant
+
+Une table sans RLS serait ouverte à tout détenteur d'un `grant` sans qu'aucune
+erreur ne le signale ; une fonction sans `grant execute` ne serait appelable par
+personne. Le filet est l'inventaire de `appliquer-schema.sh`, ligne
+« tables SANS RLS (doit valoir 0) ».
+
+### L'empreinte de schéma
+
+`supabase/empreinte-schema.sh` rend un texte trié et déterministe décrivant tout
+le schéma `public` : colonnes, contraintes, index, enums, corps de fonctions,
+vues, triggers, RLS, policies, **droits**, commentaires. `diff` suffit à
+comparer deux bases.
+
+`supabase/empreinte-reference.txt` en est la version versionnée, et la CI refuse
+tout écart. C'est ce qui a permis de remplacer 42 migrations par ce découpage en
+prouvant que la base obtenue était identique à l'octet près, et c'est ce qui
+empêche ensuite une dérive silencieuse — une contrainte, un `not null`, un
+`revoke` perdus en réécrivant un fichier.
+
+Les droits sont dans l'empreinte pour une raison précise : sur une base neuve,
+PostgreSQL accorde `execute` à `PUBLIC` sur toute fonction créée. Un `revoke`
+perdu ne casse rien de visible, aucun test de comportement ne bronche, et la
+fonction devient appelable par `anon`. C'est le cas de `bloquer_ip`, fermée par
+un `revoke` explicite.
+
+Régénérer la référence après un changement voulu :
+
+```bash
+./supabase/empreinte-schema.sh > supabase/empreinte-reference.txt
+```
 
 ### Une affirmation de garantie cite son test
 
@@ -519,8 +529,8 @@ que le code n'avait pas :
 
 | Où | Affirmation | Réalité |
 | --- | --- | --- |
-| `0033` | « le pire est de se bloquer lui-même » | `p_ip` est un paramètre libre : n'importe quelle adresse |
-| `0038` | « deux verrous, et le second est le vrai » | le second était une constante publiée dans le dépôt |
+| `bloquer_ip` | « le pire est de se bloquer lui-même » | `p_ip` est un paramètre libre : n'importe quelle adresse |
+| `reinitialiser_donnees` | « deux verrous, et le second est le vrai » | le second était une constante publiée dans le dépôt |
 | `14_reinitialiser.sql` | « le verrou qui compte n'est pas `est_dev()` » | c'est le seul qui compte |
 
 Le point commun n'est pas l'inattention, c'est que **le commentaire décrivait
@@ -552,7 +562,7 @@ les réglages de session, et c'est la connexion PostgREST qui les porte. Une
 fonction propriété de `postgres` appelée par `authenticated` est donc soumise
 au garde-fou.
 
-Le seul endroit concerné est `reinitialiser_donnees` (`0038`), dont la
+Le seul endroit concerné est `reinitialiser_donnees`, dont la
 suppression massive est l'objet même. Ses douze `delete` portent un
 `where true` explicite, qui dit « oui, je sais ».
 
@@ -577,8 +587,7 @@ Même piège pour une **vue** : `create or replace view` ne sait qu'ajouter des
 colonnes _en fin de liste_, et refuse d'en renommer une. Une colonne insérée au
 milieu impose un `drop view` dans les deux fichiers.
 
-Concernés à ce jour : `creances()` et `ma_dette()` (`0007`), la vue
-`v_comptes_vendeurs` (`0007`), `revenus_vendeurs()` (`0008`), `mes_ventes()`
-(`0012`), `ventes_vendeur()` et `ventes_savables()` (`0014`), `dossiers_sav()`
-(`0015`). Le contrôle qui l'attrape est gratuit : **lancer le script de
+Concernés à ce jour : `creances()`, `ma_dette()`, la vue `v_comptes_vendeurs`,
+`revenus_vendeurs()`, `mes_ventes()`, `ventes_vendeur()`, `ventes_savables()`
+et `dossiers_sav()`. Le contrôle qui l'attrape est gratuit : **lancer le script de
 migration deux fois de suite.**

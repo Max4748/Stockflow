@@ -24,9 +24,9 @@ import {
  * Arbitrage d'un remboursement demandé par un vendeur.
  *
  * Seuls les remboursements passent par ici : un échange déclaré sur le terrain
- * est déjà validé, le vendeur ayant remis l'unité au client (migration 0015).
+ * est déjà validé, le vendeur ayant remis l'unité au client.
  * Le recours du gérant sur ces échanges est ailleurs, dans l'historique :
- * révoquer (0019), qui rend l'unité au stock SANS effacer le dossier.
+ * révoquer (`revoquer_sav`), qui rend l'unité au stock SANS effacer le dossier.
  */
 export function CarteArbitrage({ dossier }: { dossier: DossierSav }) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(

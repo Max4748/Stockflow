@@ -267,7 +267,7 @@ function ChampsAchat({
  * Corriger un achat déjà saisi.
  *
  * Le même formulaire que la création, pré-rempli. La correction n'est pas
- * toujours possible : `modifier_restock` (0026) refuse dès que l'achat a
+ * toujours possible : `modifier_restock` refuse dès que l'achat a
  * produit des effets, et son message dit lequel. Ce refus n'est PAS anticipé
  * ici — le savoir demanderait de recompter le stock et les ventes côté
  * client, donc d'entretenir une seconde vérité qui mentirait la première.

@@ -21,7 +21,7 @@ import { env } from "@/lib/env";
  *      session ne peut les autoriser. À ce jour une seule : `bloquer_ip()`,
  *      appelée depuis le formulaire de connexion, donc sans session par
  *      définition, et dont le paramètre est une adresse arbitraire. L'ouvrir à
- *      `anon` laissait bloquer n'importe qui (voir la migration 0034).
+ *      `anon` laissait bloquer n'importe qui (voir le `revoke` sur `bloquer_ip`).
  *
  * Le second cas ne dilue pas la règle : une adresse IP bloquée n'est pas une
  * donnée métier, c'est de l'état d'infrastructure. Le critère reste le même,

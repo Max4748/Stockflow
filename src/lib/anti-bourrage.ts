@@ -12,7 +12,7 @@
  * rejetée sans même interroger Supabase.
  *
  * PALIER 3, bloquer l'IP. Il ne vit PAS ici : il est persistant, donc en base
- * (voir `ip_bloquees`, migration 0033). Ce module se contente de dire quand le
+ * (voir `ip_bloquees`). Ce module se contente de dire quand le
  * déclencher, via `doitBloquerIp`.
  *
  * POURQUOI LE PALIER 3 COMPTE DES ADRESSES DISTINCTES, et non des échecs.

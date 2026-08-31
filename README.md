@@ -33,15 +33,20 @@ Les trois valeurs sont lues à l'exécution : en changer ne demande aucun rebuil
 
 **2. Schéma de la base**
 
-Les 39 fichiers de `supabase/migrations/` sont du SQL ordinaire, écrits pour
-être rejoués intégralement, à appliquer dans l'ordre :
+`supabase/schema/` est du SQL ordinaire, écrit pour être rejoué intégralement,
+à appliquer dans l'ordre des dossiers puis des fichiers :
 
 ```bash
-for f in supabase/migrations/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
+for f in supabase/schema/*/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 ```
 
-`supabase/appliquer-migrations.sh` fait la même chose pour une instance
+`supabase/appliquer-schema.sh` fait la même chose pour une instance
 auto-hébergée lancée par Docker Compose, et affiche l'inventaire final.
+
+Cinq couches, dont l'ordre est la seule contrainte : `10_types_et_tables`,
+`20_fonctions`, `30_vues_et_triggers`, `40_droits`, `90_donnees`. Chaque objet
+n'est défini qu'une fois. `supabase/empreinte-schema.sh` rend une empreinte
+comparable du schéma obtenu ; la CI la confronte à `supabase/empreinte-reference.txt`.
 
 **3. Premier compte**
 
@@ -86,7 +91,7 @@ Les règles métier, elles, ont besoin d'un vrai moteur. Un fichier le fournit :
 ```bash
 docker compose -f compose.test.yaml up -d --wait
 export DATABASE_URL=postgres://postgres:test@127.0.0.1:5433/postgres
-./supabase/appliquer-migrations.sh && npm run test:sql
+./supabase/appliquer-schema.sh && npm run test:sql
 ```
 
 C'est la même image qu'en production, donc les tests s'exécutent sur le moteur

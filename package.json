@@ -11,7 +11,7 @@
     "test:db": "node supabase/tests/rejeu.test.mjs",
     "test:sql": "./supabase/tests/lancer.sh",
     "test:unit": "node --test --experimental-strip-types 'src/lib/*.test.ts'",
-    "verif:sql": "node scripts/verifier-migrations.mjs"
+    "verif:sql": "node scripts/verifier-schema.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

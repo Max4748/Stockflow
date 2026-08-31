@@ -21,7 +21,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FILTRE="${1:-}"
 
 # Une seule définition de « comment joindre la base », partagée avec
-# appliquer-migrations.sh.
+# appliquer-schema.sh.
 . "$DIR/../_connexion.sh"
 
 total=0; echecs=0; fichiers=0

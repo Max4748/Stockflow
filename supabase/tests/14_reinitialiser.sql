@@ -26,7 +26,7 @@ select creer_restock_fournisseur(
   100, 0) as _ \gset
 select transferer_stock(:'vendeur',
   jsonb_build_array(jsonb_build_object('produit_id', :'produit', 'quantite', 5))) as _ \gset
--- En superutilisateur : `bloquer_ip` est réservée à `service_role` depuis 0034,
+-- En superutilisateur : `bloquer_ip` est réservée à `service_role`,
 -- donc injoignable sous l'identité `authenticated` que pose `t_agir`.
 reset role;
 select bloquer_ip('198.51.100.77', 'à conserver') as _ \gset

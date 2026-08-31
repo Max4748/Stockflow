@@ -2,24 +2,24 @@
  * Découpage d'un fichier SQL en instructions.
  *
  * Extrait de `supabase/tests/rejeu.test.mjs`, qui en avait besoin le premier,
- * et partagé avec `scripts/verifier-migrations.mjs`. Une seule définition :
+ * et partagé avec `scripts/verifier-schema.mjs`. Une seule définition :
  * deux découpeurs divergeraient, et le contrôle statique cesserait de voir ce
  * que le rejeu exécute.
  */
 /**
  * Découpe un fichier en instructions, pour les envoyer UNE PAR UNE.
  *
- * Ce n'est pas un détail d'implémentation : envoyer tout un fichier d'un bloc
- * le fait exécuter dans une seule transaction implicite, et Postgres refuse
- * alors d'utiliser une valeur d'enum ajoutée dans cette même transaction
- * (« unsafe use of new value »). C'est le cas de 0014, qui ajoute 'sav' à
- * type_mouvement puis s'en sert. Le comportement reproduit ici est celui de
- * appliquer-migrations.sh, c'est-à-dire psql SANS -1 : autocommit par
- * instruction.
+ * Deux usages, tous deux au niveau de l'instruction : `verifier-schema.mjs`
+ * cherche un `delete` ou un `update` sans `where`, ce qu'un fichier entier ne
+ * permet pas de décider ; `rejeu.test.mjs` nomme l'instruction exacte qui a
+ * échoué, au lieu de rendre un fichier de 400 lignes.
  *
- * Corollaire à connaître : le schéma de StockFlow ne peut PAS être appliqué
- * d'un bloc dans une transaction unique. Un bundle `psql -1` échouerait à
- * 0014, sur le vrai moteur comme ici.
+ * CE QUI A CHANGÉ. Tant que le schéma vivait dans des migrations numérotées,
+ * il ne pouvait PAS être appliqué d'un bloc : `alter type type_mouvement add
+ * value 'sav'` puis un usage de 'sav' dans la même transaction font échouer
+ * Postgres (« unsafe use of new value »). La valeur est maintenant déclarée
+ * dans le `create type` lui-même, ce `alter type` a disparu, et
+ * un `psql -1` sur la concaténation des fichiers du schéma passe — vérifié.
  *
  * Le découpage respecte le dollar-quoting (`$$`, `$fn$`), sans quoi chaque
  * `;` d'un corps plpgsql couperait au mauvais endroit.

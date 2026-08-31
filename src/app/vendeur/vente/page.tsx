@@ -35,7 +35,7 @@ export default async function PageVente({
     // pas dépendre de l'horloge du téléphone.
     supabase.rpc("mes_ventes", { p_limite: 12 }),
     // `p_les_miennes` : dans l'espace vendeur, un gérant ne signale un SAV que
-    // sur SES ventes, comme n'importe quel vendeur (migration 0018). Le suivi
+    // sur SES ventes, comme n'importe quel vendeur. Le suivi
     // des dossiers, lui, a son écran : /vendeur/sav.
     supabase.rpc("ventes_savables", { p_les_miennes: true }),
   ]);

@@ -217,7 +217,7 @@ export async function signalerSav(
  *
  * `borne` est l'horodatage du dossier le plus récent AFFICHÉ, enregistré à la
  * place de `now()` : un arbitrage rendu entre le rendu et cet appel resterait
- * sinon marqué vu sans l'avoir été (voir 0021).
+ * sinon marqué vu sans l'avoir été (voir `marquer_sav_vu`).
  */
 export async function marquerSavVu(borne: string | null): Promise<void> {
   await exigerProfil();

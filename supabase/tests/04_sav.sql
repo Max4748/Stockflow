@@ -4,7 +4,7 @@
 -- Le SAV est le seul endroit où un vendeur écrit tout seul dans le stock.
 -- D'où la règle asymétrique : il agit seul sur la MARCHANDISE (un échange
 -- prend effet immédiatement), il demande pour l'ARGENT (un remboursement
--- attend l'arbitrage). Le contrepoids est revoquer_sav() (0019), qui défait
+-- attend l'arbitrage). Le contrepoids est revoquer_sav(), qui défait
 -- un échange validé et rend l'unité — c'est le chemin irréversible, donc
 -- celui qui mérite des assertions.
 --
@@ -72,7 +72,7 @@ select t_agir(:'dev') as _ \gset
 select is(sav_gestion_non_vus(), 1,
           'le gérant est averti de l''échange déclaré par le vendeur');
 
--- 0021 : ce qui est enregistré, c'est la borne de ce qui a été AFFICHÉ, pas
+-- `marquer_sav_vu` : ce qui est enregistré, c'est la borne de ce qui a été AFFICHÉ, pas
 -- l'heure du clic. Une borne antérieure au dossier le laisse donc non vu —
 -- c'est exactement le cas d'un dossier arrivé entre le rendu et le marquage.
 select marquer_sav_gestion_vu(now() - interval '1 second') as _ \gset

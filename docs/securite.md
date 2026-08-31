@@ -98,7 +98,7 @@ s'en sert pour rediriger.
 
 ## Étude de cas : la faille trouvée et fermée
 
-Avant la migration `0011`, `grant update on profils` était accordé et rien ne
+Avant la règle de niveau (`exiger_gestion_de`), `grant update on profils` était accordé et rien ne
 protégeait spécifiquement la colonne `role`. Un `PATCH` PostgREST suffisait :
 
 ```
@@ -379,7 +379,7 @@ touche à **son** stock et à **sa** dette, ce qui en fait la fonctionnalité la
 plus sensible ouverte à un non-gérant. Deux régimes, décidés **en base** :
 
 ```sql
--- declarer_sav(), migration 0015. Le régime n'est PAS un paramètre.
+-- declarer_sav(). Le régime n'est PAS un paramètre.
 v_statut := case
               when v_admin then 'valide'
               when p_resolution = 'echange' then 'valide'
@@ -400,7 +400,7 @@ l'interface lui propose.
 | retirer sa demande tant qu'elle est en attente    | retirer un dossier déjà tranché                           |
 | marquer ses SAV comme consultés (`sav_vu_le`)     | écrire quoi que ce soit d'autre sur son profil            |
 
-**Cloisonnement de l'espace vendeur** (migration `0018`) : `dossiers_sav()` et
+**Cloisonnement de l'espace vendeur** : `dossiers_sav()` et
 `ventes_savables()` prennent un drapeau `p_les_miennes`, que l'espace vendeur
 passe à `true`. Un gérant en mode vendeur ne voit et ne déclare alors que sur
 SES ventes. La bascule de mode promet exactement cela. Le paramètre ne peut que
@@ -415,17 +415,17 @@ surveillance. C'est le second qui a été retenu, parce que le vendeur a
 réellement remis l'unité au client dans le cas normal.
 
 Ce que « sous surveillance » veut dire concrètement, et ce qui a dû être ajouté
-en `0019` pour que ce soit vrai :
+pour que ce soit vrai :
 
 | Borne | Depuis |
 | --- | --- |
-| La quantité ne dépasse pas ce que la vente contenait, cumul des dossiers compris | `0015` |
-| Le dossier est nominatif, daté, motivé, et le motif est obligatoire | `0014` |
-| **Le gérant est averti** : une pastille compte les dossiers validés qu'il n'a pas encore regardés | `0019` |
-| **Le recours conserve la preuve** : révoquer rend l'unité au stock et garde le dossier au statut refusé, avec le motif du gérant | `0019` |
+| La quantité ne dépasse pas ce que la vente contenait, cumul des dossiers compris | `declarer_sav` |
+| Le dossier est nominatif, daté, motivé, et le motif est obligatoire | table `sav` |
+| **Le gérant est averti** : une pastille compte les dossiers validés qu'il n'a pas encore regardés | `sav_gestion_non_vus` |
+| **Le recours conserve la preuve** : révoquer rend l'unité au stock et garde le dossier au statut refusé, avec le motif du gérant | `revoquer_sav` |
 
 Les deux dernières lignes corrigent un défaut de conception, et il vaut d'être
-énoncé : le recours du gérant existait depuis `0014` (`supprimer_sav()`), mais
+énoncé : le recours du gérant existait déjà (`supprimer_sav()`), mais
 il était inopérant en pratique. Rien ne l'avertissait (`sav_non_vus()` filtre
 sur les ventes de l'appelant, c'est la pastille du **vendeur**), et son seul
 outil était un `delete`, qui rendait bien l'unité au stock mais effaçait le
@@ -515,7 +515,7 @@ toute mise à jour du registre.
 ## Résumé : ce qu'il faut vérifier avant de faire confiance à un nouvel écran
 
 - [ ] La table est-elle en RLS activée ? Le fichier de référence reste
-      `0009_rls_privileges.sql`, mais une table créée après lui porte sa propre
+      `supabase/schema/40_droits/`, mais une table créée après lui porte sa propre
       RLS et ses propres policies dans SA migration (c'est le cas de `sav`).
       L'inventaire du script de migration affiche « tables SANS RLS », qui doit
       valoir 0.

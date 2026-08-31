@@ -29,7 +29,7 @@ export default async function PageSavVendeur() {
   const [rDossiers, rSavables, rNonVus] = await Promise.all([
     // `p_les_miennes` : dans l'espace vendeur, un gérant est un vendeur comme
     // les autres. Sans ce drapeau il voyait ici les dossiers de TOUS ses
-    // vendeurs, sous un titre qui dit « Mes SAV » (migration 0018). Le
+    // vendeurs, sous un titre qui dit « Mes SAV ». Le
     // paramètre ne peut que restreindre — un vendeur n'obtient rien de plus en
     // le passant à false.
     supabase.rpc("dossiers_sav", { p_limite: 50, p_les_miennes: true }),

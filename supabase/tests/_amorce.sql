@@ -8,7 +8,7 @@
 --     pas contre une copie qui pourrait diverger ;
 --   • ils ne laissent rien derrière eux, pas même l'extension pgtap. C'est
 --     important : pgtap crée ~1000 fonctions dans `public`, ce qui fausserait
---     l'inventaire affiché par appliquer-migrations.sh s'il était committé.
+--     l'inventaire affiché par appliquer-schema.sh s'il était committé.
 --
 -- Le prix à payer : les tests ne doivent JAMAIS affirmer quoi que ce soit sur
 -- l'état global (« il y a 3 vendeurs »). Chaque assertion porte sur les
@@ -84,7 +84,7 @@ $$;
 -- Raccourci de lecture : le reste à verser d'un compte.
 --
 -- `security definer` DÉLIBÉRÉ : c'est un observateur, pas un sujet de test.
--- v_comptes_vendeurs est révoquée à `authenticated` (0009), donc sans ça le
+-- v_comptes_vendeurs est révoquée à `authenticated` (couche 40), donc sans ça le
 -- helper échouerait dès qu'un test endosse une identité. Le cloisonnement des
 -- lectures se teste par ma_dette() et creances(), qui sont les vrais chemins.
 -- ------------------------------------------------------------

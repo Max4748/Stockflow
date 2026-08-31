@@ -1,5 +1,5 @@
 # Résout COMMENT joindre la base, et rien d'autre. Sourcé par
-# `appliquer-migrations.sh` et par `tests/lancer.sh` : les deux doivent viser
+# `appliquer-schema.sh` et par `tests/lancer.sh` : les deux doivent viser
 # le même moteur, et deux définitions auraient divergé au premier ajustement.
 #
 # Définit une fonction `psql` et la variable `CIBLE` (pour les messages).

@@ -4,7 +4,7 @@
 -- Le drapeau `profils.stock_lie_entrepot` évite au gérant qui héberge
 -- l'entrepôt de se transférer du stock à lui-même avant chaque vente. Le
 -- transfert n'est pas supprimé pour autant : il est ÉCRIT par la vente, à
--- deux jambes, parce que la contrainte `mvt_coherence` impose depuis 0004
+-- deux jambes, parce que la contrainte `mvt_coherence` impose
 -- qu'une vente sorte d'un détenteur nommé.
 --
 -- Ce que ce fichier protège, c'est l'invariant : le stock total de la maison
@@ -77,7 +77,7 @@ select is((select vendeur_id from ventes where id = :'vente'), :'lie'::uuid,
 -- Le piège : le `on delete cascade` d'`origine_vente_id` n'efface que la
 -- sortie de vente. Les deux jambes du transfert portent un `groupe_id`, pas
 -- une origine de vente, et survivent. Sans le retour écrit par
--- `supprimer_vente` (0027), les unités restaient chez le gérant, où elles
+-- `supprimer_vente`, les unités restaient chez le gérant, où elles
 -- sont invisibles ET invendables puisque `stock_disponible()` lit l'entrepôt.
 --
 -- Le total de la maison, lui, restait juste : `verifier_coherence_stock()` ne

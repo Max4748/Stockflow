@@ -65,7 +65,7 @@ reset role;
 select is(t_du(:'vendeur'), -10.00::numeric,
           'remboursement intégral : le solde tombe à −commission, pas à 0');
 
--- ---------- Révocation (0019) : l'arbitrage se défait ----------
+-- ---------- Révocation : l'arbitrage se défait ----------
 -- refuser_sav() ne mord que sur un dossier `en_attente`. Un dossier VALIDÉ se
 -- défait par revoquer_sav(), qui exige un motif et conserve la trace.
 select t_agir(:'dev') as _ \gset

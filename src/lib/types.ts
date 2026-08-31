@@ -11,7 +11,7 @@
 /**
  * Hiérarchie stricte : dev (3) ⊃ gerant (2) ⊃ vendeur (1).
  * `admin` n'existe plus — l'ancien sommet est devenu `gerant`, et `dev` s'est
- * ajouté au-dessus (migration 0000).
+ * ajouté au-dessus.
  */
 export type RoleUtilisateur = "dev" | "gerant" | "vendeur";
 
@@ -39,7 +39,7 @@ export type Profil = {
   /**
    * Vrai quand l'entrepôt EST le stock de ce compte : ses ventes y puisent
    * directement, sans transfert préalable. Réservé à l'encadrement, et
-   * garanti par une contrainte de table (migration 0025).
+   * garanti par une contrainte de table.
    */
   stock_lie_entrepot: boolean;
   /**
@@ -167,7 +167,7 @@ export type BilanGlobal = {
 /**
  * rpc('revenus_vendeurs')
  *
- * `role` depuis 0013 : un compte d'encadrement qui a vendu sur la période y
+ * `role` : un compte d'encadrement qui a vendu sur la période y
  * figure, puisque son chiffre d'affaires compte déjà dans le bilan global.
  */
 export type RevenuVendeur = {
@@ -188,7 +188,7 @@ export type RevenuVendeur = {
 /**
  * rpc('creances')
  *
- * `role` depuis 0013 : un gérant qui vend apparaît dans la liste, avec un
+ * `role` : un gérant qui vend apparaît dans la liste, avec un
  * `reste_a_verser` toujours nul — il ne se doit rien à lui-même.
  */
 export type Creance = {
@@ -369,7 +369,7 @@ export type ResolutionSav = "echange" | "remboursement";
  * rpc('dossiers_sav') — un dossier de SAV, tel que l'écran de gestion et le
  * vendeur le voient. Le filtrage par vendeur est fait EN SQL.
  *
- * Rappel du régime (migration 0015) : un échange déclaré par un vendeur est
+ * Rappel du régime (`declarer_sav`) : un échange déclaré par un vendeur est
  * `valide` d'emblée — il a déjà remis l'unité — tandis qu'un remboursement
  * reste `en_attente` jusqu'à l'arbitrage du gérant.
  */
@@ -407,7 +407,7 @@ export type LigneVenteExistante = {
  *
  * C'est ce que les deux pastilles SAV enregistrent comme « vu jusqu'à », à la
  * place de l'heure du clic : entre le rendu de la page et l'appel de marquage,
- * un dossier peut arriver, et il doit rester non vu (voir la migration 0021).
+ * un dossier peut arriver, et il doit rester non vu (voir `marquer_sav_vu`).
  *
  * `traite_le` d'abord, `cree_le` en repli : c'est l'ordre qu'emploient
  * `sav_non_vus()` et `sav_gestion_non_vus()` pour dater un dossier, et les

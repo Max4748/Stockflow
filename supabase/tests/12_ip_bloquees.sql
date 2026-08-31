@@ -14,11 +14,11 @@ select t_compte('t-dev@test.invalid',    'T-Dev',    'dev')    as dev    \gset
 select t_compte('t-gerant@test.invalid', 'T-Gérant', 'gerant') as gerant \gset
 
 -- ---------- Poser un blocage est réservé au serveur ----------
--- Le défaut de 0033 : `bloquer_ip` était accordée à `anon` et `authenticated`,
+-- Le défaut d'origine : `bloquer_ip` était accordée à `anon` et `authenticated`,
 -- sans garde de rôle, alors que l'adresse bloquée est son PARAMÈTRE. N'importe
 -- quel détenteur de la clé publique pouvait donc bloquer l'IP de son choix, y
 -- compris celle du dev, qui ne pouvait alors plus lever son propre blocage
--- puisque `lever_blocage_ip` exige une session. Corrigé en 0034.
+-- puisque `lever_blocage_ip` exige une session. Corrigé par le `revoke` de la couche 40.
 --
 -- Les assertions de durée qui suivent tournent en superutilisateur, donc sans
 -- passer par ce droit : elles vérifient le CALCUL, celle-ci vérifie l'ACCÈS.
@@ -76,7 +76,7 @@ select is((select jusqu_a is null from ip_bloquees where ip = '198.51.100.2'), t
           'et le blocage n''a plus d''échéance');
 
 -- ---------- Une ligne éteinte depuis longtemps ne compte plus ----------
--- Le défaut fermé par 0041 : le blocage expirait, le compteur non. Une adresse
+-- Le défaut fermé par l'oubli à 30 jours : le blocage expirait, le compteur non. Une adresse
 -- vue une fois l'an dernier repartait à une heure, puis à un jour. Comme les
 -- adresses tournent, la peine finissait sur quelqu'un d'autre.
 --

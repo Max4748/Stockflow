@@ -76,7 +76,7 @@ export default async function PageVendeur() {
     }));
 
   // Un gérant vend comme les autres, mais encaisse pour la maison : sa dette
-  // vaut zéro par construction (v_comptes_vendeurs, migration 0007). Lui
+  // vaut zéro par construction (v_comptes_vendeurs). Lui
   // afficher « ce que je dois » en grand et en permanence serait un contresens.
   const encadrement = estEncadrement(profil.role);
 

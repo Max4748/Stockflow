@@ -1,12 +1,12 @@
 /**
- * Rejeu des migrations sur un Postgres neuf, trois fois de suite.
+ * Rejeu du schéma sur un Postgres neuf, trois fois de suite.
  *
  *     npm run test:db
  *
  * Moteur : PGlite (Postgres compilé en WASM). Ni Docker ni instance Supabase
  * requis, donc exécutable sur une machine de développement comme en CI.
  *
- * Ce que ce test prouve, et que `appliquer-migrations.sh` ne prouve pas :
+ * Ce que ce test prouve, et que `appliquer-schema.sh` ne prouve pas :
  *
  *   passe 1  l'installation depuis une base VIDE. Le script d'exploitation
  *            rejoue toujours sur une base déjà migrée : il ne dirait rien
@@ -25,14 +25,12 @@
  * quand la réponse est non : le schéma se rejoue-t-il ?
  */
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
 import { instructions } from "../../scripts/instructions-sql.mjs";
+import { fichiersSchema } from "../../scripts/fichiers-schema.mjs";
 
 
-const MIG = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const PASSES = 3;
 
 const db = new PGlite();
@@ -78,16 +76,14 @@ await db.exec(`
   $fn$;
 `);
 
-const fichiers = readdirSync(MIG)
-  .filter((f) => f.endsWith(".sql"))
-  .sort();
+const fichiers = fichiersSchema();
 
 if (fichiers.length === 0) {
-  console.error("Aucune migration trouvée dans supabase/migrations/.");
+  console.error("Aucun fichier trouvé dans supabase/schema/.");
   process.exit(1);
 }
 
-console.log(`\x1b[36m── Rejeu de ${fichiers.length} migrations, ${PASSES} passes\x1b[0m`);
+console.log(`\x1b[36m── Rejeu de ${fichiers.length} fichiers de schéma, ${PASSES} passes\x1b[0m`);
 
 const RAISON = {
   1: "installation depuis une base vide",
@@ -96,10 +92,11 @@ const RAISON = {
 };
 
 for (let passe = 1; passe <= PASSES; passe++) {
-  for (const f of fichiers) {
+    for (const { couche, nom, chemin } of fichiers) {
+      const f = `${couche}/${nom}`;
     let courante = "";
     try {
-      for (const s of instructions(readFileSync(join(MIG, f), "utf8"))) {
+        for (const s of instructions(readFileSync(chemin, "utf8"))) {
         courante = s;
         await db.exec(s);
       }
@@ -122,7 +119,7 @@ for (let passe = 1; passe <= PASSES; passe++) {
 }
 
 // ---------------------------------------------------------------------------
-// Inventaire : le même que celui d'appliquer-migrations.sh, pour que les deux
+// Inventaire : le même que celui d'appliquer-schema.sh, pour que les deux
 // chemins racontent la même chose. Une divergence signalerait un objet créé
 // par l'instance Supabase plutôt que par une migration.
 // ---------------------------------------------------------------------------

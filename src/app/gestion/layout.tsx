@@ -35,7 +35,7 @@ export default async function LayoutAdmin({
     // Les dossiers VALIDÉS qu'un autre a ouverts et que ce gérant n'a pas
     // encore regardés — l'échange déclaré par un vendeur prend effet d'emblée
     // et n'attend donc aucune décision : sans ce second compteur, il ne
-    // produisait aucun signal. Voir la migration 0019.
+    // produisait aucun signal. Voir `sav_gestion_non_vus`.
     supabase.rpc("sav_gestion_non_vus"),
   ]);
 

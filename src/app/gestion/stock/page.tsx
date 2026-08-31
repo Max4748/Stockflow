@@ -113,7 +113,7 @@ export default async function PageStock() {
       supabase.from("produits").select("*").eq("actif", true).order("nom"),
       // Les totaux viennent du SQL, pas d'un reduce() : sommer en TypeScript
       // des valeurs déjà arrondies au centime faisait diverger cet écran du
-      // Bilan d'un centime. Voir migration 0018.
+      // Bilan d'un centime. Voir `totaux_stock`.
       supabase.rpc("totaux_stock"),
     ],
   );
