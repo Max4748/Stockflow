@@ -512,6 +512,32 @@ Trois points de séquencement non arbitraires :
   sans grant ne serait appelable par personne. Le filet est l'inventaire de
   `appliquer-migrations.sh`, ligne « tables SANS RLS (doit valoir 0) ».
 
+### `supautils` refuse un `delete` sans `where`
+
+L'instance charge `supautils` en `session_preload_libraries`, qui arme
+`safeupdate` pour les rôles non superutilisateur. Une suppression sans clause
+`where` y échoue sur « DELETE requires a WHERE clause ».
+
+```sql
+set role authenticated;
+delete from t;             -- ERROR: DELETE requires a WHERE clause
+delete from t where true;  -- passe
+```
+
+**`security definer` n'y change rien** : il modifie l'utilisateur effectif, pas
+les réglages de session, et c'est la connexion PostgREST qui les porte. Une
+fonction propriété de `postgres` appelée par `authenticated` est donc soumise
+au garde-fou.
+
+Le seul endroit concerné est `reinitialiser_donnees` (`0038`), dont la
+suppression massive est l'objet même. Ses douze `delete` portent un
+`where true` explicite, qui dit « oui, je sais ».
+
+**Aucun test ne rattraperait sa suppression.** Le harnais pgTAP se connecte en
+`postgres` et simule le rôle par `set role`, où `safeupdate` n'est pas armé :
+le défaut n'apparaît qu'à travers l'application. C'est la seule règle de ce
+document dont la violation ne casse aucun test.
+
 ### Changer les colonnes de sortie d'une fonction
 
 `create or replace` **ne peut pas** modifier les paramètres `OUT` d'une fonction

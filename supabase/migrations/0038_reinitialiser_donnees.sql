@@ -71,20 +71,37 @@ begin
     'operations',       (select count(*) from journal_operations)
   ) into v_comptes;
 
+  -- `where true` PARTOUT, et ce n'est pas du bruit à nettoyer.
+  --
+  -- L'instance charge `supautils` en `session_preload_libraries`, qui arme
+  -- `safeupdate` pour les rôles non superutilisateur : un `delete` sans clause
+  -- `where` y est refusé par « DELETE requires a WHERE clause ». Le garde-fou
+  -- vise les suppressions massives accidentelles, et il a raison ; ici la
+  -- suppression massive est l'objet même de la fonction, d'où la clause
+  -- explicite qui dit « oui, je sais ».
+  --
+  -- `security definer` n'y change rien : il modifie l'utilisateur effectif, pas
+  -- les réglages de session, et c'est la connexion PostgREST qui les porte.
+  --
+  -- À NE PAS RETIRER : aucun test ne rattraperait la régression. Le harnais
+  -- pgTAP se connecte en `postgres` et simule le rôle par `set role`, où
+  -- `safeupdate` n'est pas armé. Le défaut n'apparaît qu'en conditions
+  -- réelles, à travers l'application.
+  --
   -- Ordre imposé par les clés étrangères en RESTRICT vers profils et produits :
   -- l'activité part avant les produits, qui partent avant tout le reste.
-  delete from sav;
-  delete from mouvements_stock;
-  delete from vente_lignes;
-  delete from ventes;
-  delete from ventes_annulees;
-  delete from versements;
-  delete from demande_lignes;
-  delete from demandes_restock;
-  delete from restock_lignes;
-  delete from restocks;
-  delete from produits;
-  delete from journal_operations;
+  delete from sav where true;
+  delete from mouvements_stock where true;
+  delete from vente_lignes where true;
+  delete from ventes where true;
+  delete from ventes_annulees where true;
+  delete from versements where true;
+  delete from demande_lignes where true;
+  delete from demandes_restock where true;
+  delete from restock_lignes where true;
+  delete from restocks where true;
+  delete from produits where true;
+  delete from journal_operations where true;
 
   -- Écrite APRÈS les suppressions : si l'une échoue, la transaction est annulée
   -- et aucune trace ne prétend qu'une remise à zéro a eu lieu.
