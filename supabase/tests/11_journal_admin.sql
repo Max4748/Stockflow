@@ -26,7 +26,11 @@ select exiger_changement_mdp(:'vendeur')                                    as _
 select changer_actif(:'vendeur', false)                                     as _ \gset
 
 reset role;
-select is((select count(*)::int from journal_admin), 4,
+-- Scopé sur `cree_le = now()` et non sur la table entière : `journal_admin`
+-- n'est jamais effacé, pas même par la remise à zéro, donc il porte les traces
+-- des exécutions réelles. Une assertion absolue serait vraie sur une base
+-- neuve et fausse sur celle d'exploitation.
+select is((select count(*)::int from journal_admin where cree_le = now()), 4,
           'quatre gestes, quatre lignes');
 
 -- Pas de `order by cree_le` : `now()` est figé dans la transaction, les
@@ -60,7 +64,7 @@ select throws_ok(
   '42501', null, 'un vendeur ne désactive personne');
 
 reset role;
-select is((select count(*)::int from journal_admin), 4,
+select is((select count(*)::int from journal_admin where cree_le = now()), 4,
           'et la tentative refusée n''a laissé aucune ligne');
 
 -- ---------- Le retrait dit LEQUEL des deux dénouements ----------

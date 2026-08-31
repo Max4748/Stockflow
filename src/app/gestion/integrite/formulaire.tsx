@@ -13,22 +13,25 @@ import type { EtatAction } from "@/lib/types";
 
 import { reinitialiserDonnees } from "./actions";
 
-const PHRASE = "REINITIALISER";
-
 /**
  * Vider les données d'exploitation.
  *
- * DEUX CONFIRMATIONS, et la seconde n'est pas un second clic.
+ * LA CONFIRMATION EST LE NOMBRE DE LIGNES à effacer, pas une phrase fixe.
  *
- * Un second bouton se clique aussi vite que le premier : l'enchaînement
- * devient un réflexe, et le geste passe sans être lu. La saisie d'une phrase
- * exacte oblige à s'arrêter, à lire ce qui est écrit au-dessus, et rend
- * impossible le déclenchement par un clic mal placé ou un double-clic.
+ * Une phrase littérale s'apprend par cœur et vaut sur toutes les instances :
+ * on la tape en croyant être sur la base d'essai. Le total, lui, diffère d'une
+ * instance à l'autre ET change dans le temps sur la même. Il ne se mémorise
+ * pas, et l'obtenir oblige à lire l'inventaire juste au-dessus, c'est-à-dire à
+ * regarder ce qu'on s'apprête à détruire.
  *
- * Le bouton reste désactivé tant que la phrase n'est pas exacte, mais ce n'est
- * QUE du confort : c'est la base qui refuse, `reinitialiser_donnees` exigeant
- * la même phrase. Un contrôle côté client seul serait contournable par un
- * appel direct.
+ * L'ORDRE DES VERROUS. `est_dev()`, en base, est le seul verrou
+ * d'autorisation. Cette confirmation n'en est pas un : sa valeur est affichée
+ * à l'écran. C'est un garde-fou contre l'erreur de contexte, et le présenter
+ * autrement donnerait une fausse assurance.
+ *
+ * Le bouton désactivé tant que la saisie ne correspond pas n'est QUE du
+ * confort : `reinitialiser_donnees` recompte le total elle-même et refuse
+ * indépendamment de ce que l'écran a affiché.
  */
 export function BoutonReinitialiser({
   inventaire,
@@ -92,6 +95,15 @@ export function BoutonReinitialiser({
           </ul>
         </div>
 
+        {total === 0 && (
+          <Alert>
+            <AlertDescription>
+              Rien à effacer : cette base ne contient aucune donnée
+              d&apos;activité.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Alert>
           <AlertDescription className="text-xs">
             Une sauvegarde quotidienne existe (voir <code>exploitation.md</code>
@@ -102,17 +114,23 @@ export function BoutonReinitialiser({
 
         <div className="space-y-2">
           <Label htmlFor="confirmation">
-            Saisir <code className="font-mono">{PHRASE}</code> pour confirmer
+            Saisir <code className="font-mono">{total}</code>, le nombre de
+            lignes que cette base va perdre
           </Label>
           <Input
             id="confirmation"
             name="confirmation"
             value={saisie}
             onChange={(e) => setSaisie(e.target.value)}
+            inputMode="numeric"
             autoComplete="off"
             spellCheck={false}
-            placeholder={PHRASE}
+            placeholder={String(total)}
           />
+          <p className="text-muted-foreground text-xs">
+            Ce nombre est propre à cette base et change à chaque écriture. Il
+            ne vaut pas sur une autre instance.
+          </p>
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -120,7 +138,7 @@ export function BoutonReinitialiser({
           <Button
             type="submit"
             variant="destructive"
-            disabled={enCours || saisie !== PHRASE}
+            disabled={enCours || total === 0 || saisie.trim() !== String(total)}
           >
             {enCours ? "Effacement…" : "Effacer les données"}
           </Button>

@@ -5,11 +5,14 @@
 -- efface : ce qu'elle CONSERVE est tout aussi important, et c'est la partie
 -- qu'une « simplification » future ferait sauter sans que rien n'échoue.
 --
--- Le verrou qui compte n'est pas `est_dev()`, c'est la phrase de confirmation
--- exigée EN BASE : elle rend un appel direct à la RPC inopérant.
+-- `est_dev()` est LE verrou d'autorisation, et le seul. La confirmation n'en
+-- est pas un : sa valeur est affichée à l'écran, et un appelant qui a déjà
+-- franchi `est_dev()` la lit en une requête. C'est un garde-fou contre
+-- l'ERREUR DE CONTEXTE — croire qu'on est sur la base d'essai — et les
+-- assertions ci-dessous vérifient cela, pas une résistance à une attaque.
 -- ------------------------------------------------------------
 
-select plan(14);
+select plan(15);
 
 select t_compte('t-dev@test.invalid',     'T-Dev',     'dev')        as dev     \gset
 select t_compte('t-gerant@test.invalid',  'T-Gérant',  'gerant')     as gerant  \gset
@@ -38,15 +41,34 @@ select enregistrer_vente(jsonb_build_array(
 -- ---------- Les deux verrous ----------
 reset role;
 select t_agir(:'gerant') as _ \gset
+-- Le total attendu, calculé comme la fonction le calcule.
+reset role;
+select (select count(*) from ventes) + (select count(*) from ventes_annulees)
+     + (select count(*) from mouvements_stock) + (select count(*) from versements)
+     + (select count(*) from sav) + (select count(*) from demandes_restock)
+     + (select count(*) from restocks) + (select count(*) from produits)
+     + (select count(*) from journal_operations) as total \gset
+
+select t_agir(:'gerant') as _ \gset
 select throws_ok(
-  $$ select reinitialiser_donnees('REINITIALISER') $$,
-  '42501', null, 'un gérant ne réinitialise pas la base');
+  format($$ select reinitialiser_donnees(%L) $$, :'total'),
+  '42501', null,
+  'un gérant est refusé AVANT même l''examen de la confirmation');
 
 reset role;
 select t_agir(:'dev') as _ \gset
 select throws_ok(
-  $$ select reinitialiser_donnees('oui') $$,
-  '22023', null, 'la phrase exacte est exigée EN BASE, pas seulement à l''écran');
+  $$ select reinitialiser_donnees('REINITIALISER') $$,
+  '22023', null,
+  'l''ancienne phrase littérale ne vaut plus rien');
+
+-- LE CŒUR DU CORRECTIF : un total valide AILLEURS est refusé ICI. C'est le
+-- scénario des deux instances, et la seule assertion qui le couvre.
+select throws_ok(
+  format($$ select reinitialiser_donnees(%L) $$, (:'total'::int + 1)::text),
+  '22023', null,
+  'un total juste pour une AUTRE base est refusé sur celle-ci');
+
 select throws_ok(
   $$ select reinitialiser_donnees(null) $$,
   '22023', null, 'et une confirmation absente est refusée comme une fausse');
@@ -64,7 +86,7 @@ select count(*)::int as profils_avant     from profils     \gset
 select count(*)::int as invitations_avant from invitations \gset
 
 select t_agir(:'dev') as _ \gset
-select reinitialiser_donnees('REINITIALISER') as comptes \gset
+select reinitialiser_donnees(:'total') as comptes \gset
 
 reset role;
 select is((select count(*)::int from ventes), 0, 'les ventes sont parties');
@@ -84,9 +106,13 @@ select ok((select count(*) from roles) > 0,
           'les rôles sont une table de référence, pas des données');
 
 -- ---------- La trace de l'effacement survit à l'effacement ----------
+-- Scopé sur `cree_le = now()` et non sur l'action seule : `journal_admin` n'est
+-- PAS effacé par la remise à zéro, c'est tout son intérêt, donc la table peut
+-- déjà porter des traces d'exécutions réelles. Une assertion absolue serait
+-- vraie sur une base neuve et fausse sur celle d'exploitation.
 select is((select count(*)::int from journal_admin
-            where action = 'réinitialisation des données'), 1,
+            where action = 'réinitialisation des données' and cree_le = now()), 1,
           'la remise à zéro est inscrite au journal d''administration');
 select is((select avant->>'ventes' from journal_admin
-            where action = 'réinitialisation des données'), '1',
+            where action = 'réinitialisation des données' and cree_le = now()), '1',
           'avec le décompte de ce qui a existé, seule trace qui en reste');
