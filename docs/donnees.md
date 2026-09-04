@@ -447,6 +447,31 @@ Conséquence à connaître : une vente annulée ne peut plus porter de SAV ni ê
 corrigée, ses lignes ayant disparu. C'est voulu, et `corrigeable` vaut faux
 pour elle.
 
+### Archive typée ou ligne de journal : la question tranchée une fois
+
+`ventes_annulees` et `journal_operations` répondent au même moment — une entité
+disparaît — et il est tentant de n'en garder qu'une. Ce serait une erreur, et
+voici la règle qui l'évite :
+
+> Une entité qui doit rester **affichable dans sa propre liste** reçoit une
+> archive typée. Une entité dont la disparition doit seulement être
+> **expliquée** reçoit une ligne de journal.
+
+Ce que la fusion coûterait, concrètement. La branche `union all` de
+`mes_ventes()` rend `a.id, a.date, a.client, a.quantite_totale, a.montant_total,
+a.cree_le, …` : une vente annulée occupe **exactement la forme de ligne d'une
+vente vivante**, et c'est ce qui lui permet de s'afficher dans le même tableau,
+barrée. `journal_operations` porte un `libelle text` déjà rédigé, dont le
+commentaire de la table dit que le reconstruire après coup serait impossible.
+Faire tenir la première dans la seconde demanderait d'ajouter quatre colonnes
+propres aux ventes à une table volontairement générique.
+
+Et il n'y a rien à dédupliquer : `supprimer_vente` n'appelle **pas**
+`tracer_operation`. Une vente annulée n'est écrite que dans `ventes_annulees`.
+Les gestes qui, eux, ne laissent qu'une ligne de journal sont ceux dont l'entité
+n'a pas de liste où revenir : suppression d'un produit, d'un versement, d'un
+achat, d'un dossier SAV.
+
 ## Organisation du schéma
 
 `supabase/schema/`, **rejoué intégralement à chaque exécution** :

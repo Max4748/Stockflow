@@ -76,6 +76,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // `sante` est exclu pour une raison DIFFÉRENTE des autres : ce n'est pas une
+  // ressource sans session, c'est le test de vivacité du conteneur. Le passer
+  // par ce proxy lui ferait appeler `getUser()`, donc joindre Supabase, et le
+  // healthcheck échouerait sur une panne de base que redémarrer ne répare pas.
+  // Voir src/app/sante/route.ts.
+  //
   // `manifest.webmanifest` et `sw.js` sont exclus au même titre que
   // `favicon.ico` : le navigateur les demande SANS session, depuis l'écran de
   // connexion, pour proposer l'installation. Les laisser passer par le proxy
@@ -84,6 +90,6 @@ export const config = {
   // contient qu'un nom et des chemins d'icônes, le service worker ne met en
   // cache que ces icônes.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|sante|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

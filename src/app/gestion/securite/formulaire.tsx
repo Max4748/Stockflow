@@ -87,29 +87,45 @@ export function GestionFacteur({
           </Alert>
         )}
 
-        <ol className="text-muted-foreground space-y-4 text-sm">
+        {/* DEUX ÉTAPES, PAS TROIS. Le QR et la clé sont deux moyens de faire
+            la MÊME chose : ajouter le compte à l'application. Les numéroter à
+            la suite faisait lire « scanner, PUIS saisir la clé », et donnait
+            l'impression qu'un enrôlement réussi demandait les deux. */}
+        <ol className="text-muted-foreground space-y-5 text-sm">
           <li>
-            <span className="text-foreground font-medium">1.</span> Scanner ce
-            QR code avec une application d&apos;authentification (Google
-            Authenticator, Aegis, Bitwarden…).
-            {/* Fond blanc imposé : un QR code sombre sur sombre ne se scanne
-                pas, et le SVG de Supabase n'a pas de fond propre. */}
-            <div
-              className="mt-3 inline-block rounded-lg bg-white p-3"
-              // Le QR est un SVG produit par Supabase, jamais une saisie.
-              dangerouslySetInnerHTML={{ __html: enrolement.qr }}
-            />
+            <span className="text-foreground font-medium">1.</span> Ajouter
+            StockFlow à une application d&apos;authentification (Google
+            Authenticator, Aegis, Bitwarden…), par l&apos;un ou l&apos;autre de
+            ces moyens.
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-4">
+              {/* Fond blanc imposé : un QR code sombre sur sombre ne se scanne
+                  pas, et le SVG de Supabase n'a pas de fond propre. */}
+              <div className="shrink-0 rounded-lg bg-white p-3">
+                {/* `qr_code` est une data URI (`data:image/svg+xml;utf-8,<svg…`),
+                    pas du SVG nu. L'injecter en innerHTML affichait le préfixe
+                    en texte au-dessus du code. Un `img` la consomme telle
+                    quelle, et supprime au passage le dangerouslySetInnerHTML. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={enrolement.qr}
+                  alt="QR code d'enrôlement de la double authentification"
+                  className="size-40"
+                />
+              </div>
+              <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                ou
+              </span>
+              <div className="min-w-50 flex-1">
+                Pas de caméra ? Saisir cette clé à la main :
+                <code className="bg-muted mt-2 block rounded-md px-3 py-2 font-mono text-xs break-all">
+                  {enrolement.secret}
+                </code>
+              </div>
+            </div>
           </li>
           <li>
-            <span className="text-foreground font-medium">2.</span> Pas de
-            caméra ? Saisir cette clé à la main :
-            <code className="bg-muted mt-2 block rounded-md px-3 py-2 font-mono text-xs break-all">
-              {enrolement.secret}
-            </code>
-          </li>
-          <li>
-            <span className="text-foreground font-medium">3.</span> Saisir le
-            code affiché pour confirmer.
+            <span className="text-foreground font-medium">2.</span> Saisir le
+            code affiché par l&apos;application pour confirmer.
           </li>
         </ol>
 

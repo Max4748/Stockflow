@@ -23,7 +23,7 @@ services:
     ports:
       - "127.0.0.1:3002:3000"
 
-    # Les trois variables sont lues à l'exécution — rien n'est gravé dans
+    # Les quatre variables sont lues à l'exécution — rien n'est gravé dans
     # l'image. SUPABASE_URL y vaut http://stockflow-kong:8000, et non le
     # 127.0.0.1:8001 du poste de développement.
     env_file:
@@ -35,6 +35,26 @@ services:
     # `restart: unless-stopped` relève aussitôt — au lieu de laisser l'OOM
     # killer désigner une victime ailleurs.
     mem_limit: 512m
+
+    # SANS CE CONTRÔLE, UNE BOUCLE OOM-KILL/REDÉMARRAGE EST INVISIBLE. Le
+    # moniteur créé par les labels ci-dessous est de type `docker` : il voit un
+    # conteneur « running », ce qu'il est l'essentiel du temps même en boucle.
+    # Or chaque tour remet à zéro les paliers 1 et 2 de l'anti-bourrage, qui
+    # vivent en mémoire du processus Next.
+    #
+    # `/sante` NE TOUCHE PAS À LA BASE et est exclu du proxy : le test échoue
+    # quand ce processus-ci ne répond plus, pas quand Supabase est tombé — sans
+    # quoi on redémarrerait en boucle pour une panne située ailleurs. `wget`
+    # vient du busybox de node:22-alpine, rien à installer.
+    #
+    # Docker saura. Que Kuma le remonte dépend de sa version et du type de
+    # moniteur : à vérifier côté Kuma, ce n'est pas garanti par ce fichier.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/sante"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
 
     networks:
       - stockflow-supabase_default

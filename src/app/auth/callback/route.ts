@@ -7,7 +7,7 @@ import { creerClient } from "@/lib/supabase/server";
 /**
  * Point d'atterrissage des liens envoyés par courriel.
  *
- * Seul route handler du projet, et il ne peut pas être autre chose : c'est ici
+ * Il ne peut pas être autre chose qu'un route handler : c'est ici
  * qu'une session est établie, donc ni un layout ni une Server Action ne
  * conviendraient. Il doit rester joignable sans session (voir CHEMINS_PUBLICS
  * dans src/proxy.ts).

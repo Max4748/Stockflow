@@ -228,6 +228,24 @@ testable directement (`npm run test:unit`).
 | Refuser | 8 échecs sur la même clé dans 15 minutes | rejet sans interroger GoTrue | mémoire |
 | Bloquer l'IP | **5 adresses e-mail distinctes** depuis la même IP | rejet, durée croissante | table `ip_bloquees` |
 
+### Ce que le premier palier coûte réellement
+
+Le délai double à partir du troisième échec et plafonne à 4 s, les deux premiers
+étant gratuits — une faute de frappe ne doit rien coûter. `evaluer()` est appelée
+**avant** l'enregistrement de l'échec, donc la n-ième tentative subit le délai dû
+aux `n - 1` précédentes :
+
+| Tentative | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9ᵉ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Délai | 0 | 0 | 250 ms | 500 ms | 1 s | 2 s | 4 s | 4 s | refus |
+
+**Soit 11,75 s cumulées** avant que le refus du palier 2 ne tombe. Le chiffre est
+écrit ici parce qu'il a été sous-estimé une fois à 3,75 s — en oubliant que le
+plafond de 4 s est atteint deux fois — et que cette erreur a servi d'argument
+pour retirer le palier. Six lignes de code, douze tests unitaires, et le prix
+d'une attaque par force brute multiplié d'autant : le rapport ne se discute
+qu'avec le bon nombre.
+
 ### Pourquoi le palier 3 compte des adresses, et non des échecs
 
 Bloquer une IP bloque **tout le monde derrière elle**. Les vendeurs sont sur
