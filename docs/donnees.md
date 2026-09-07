@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-17 tables, 4 vues, 74 fonctions, 24 politiques RLS. Le SQL fait référence : les
+19 tables, 4 vues, 81 fonctions, 26 politiques RLS. Le SQL fait référence : les
 fichiers de `supabase/schema/` sont commentés, et chaque objet n'y est défini
 qu'une fois.
 
@@ -125,8 +125,12 @@ Modèle **« commission à la vente »** : le vendeur encaisse le client, garde 
 commission, reverse le solde.
 
 ```
-dû = Σ(montant des ventes) − Σ(qté × commission figée) − Σ(versements)
+dû = Σ(ventes) − Σ(qté × commission figée) − Σ(versements)
+     − Σ(remboursements SAV) + Σ(prélèvements)
 ```
+
+**Un seul terme s'ajoute**, tous les autres retranchent : le prélèvement, seul
+cas où de la marchandise sort sans qu'un client ait payé.
 
 La dette naît **à la vente**, jamais au transfert : le stock non vendu qu'il
 détient ne lui est pas compté.
@@ -144,6 +148,41 @@ de quelqu'un qui encaisse pour la maison.
 > **Effet de bord réel** : corriger une vente à la baisse après qu'un vendeur a
 > déjà reversé son solde produit une **dette négative**, c'est-à-dire un crédit
 > en sa faveur. C'est comptablement juste.
+
+### Prélèvements : la dette monte, le chiffre d'affaires non
+
+Un vendeur repart avec de la marchandise pour lui. Il n'a rien encaissé, donc il
+doit le tarif convenu.
+
+**Ces lignes ne vivent pas dans `ventes`, et c'est le point qui compte.** Le
+chiffre d'affaires doit rester ce que des clients ont payé : y verser la
+consommation interne fausserait le CA, la marge et le nombre de ventes affichés
+à tout le monde, sans qu'aucune erreur ne se déclare. La dette, elle, ne fait pas
+la différence — de l'argent dû est de l'argent dû.
+
+Le tarif est un couple **(vendeur, produit)**. `prix_preleves` ne contient que
+les exceptions ; le repli est calculé :
+
+```
+prix_vente_conseille − commission_unitaire
+```
+
+Ce repli n'est pas arbitraire : c'est **exactement ce qu'un vendeur devrait à la
+maison après avoir vendu l'unité au prix conseillé et gardé sa commission**.
+Prélever au tarif par défaut coûte donc le même prix que vendre. Le calcul est
+plancher à 0, sans quoi une commission supérieure au prix conseillé donnerait un
+tarif négatif — une dette qui diminue en prenant de la marchandise.
+
+Le tarif est **figé à la prise**, comme la commission d'une vente : le changer
+plus tard ne réécrit aucune dette déjà constituée.
+
+Trois choix de portée, tous vérifiés par `supabase/tests/15_prelevements.sql` :
+
+| Règle | Pourquoi |
+| --- | --- |
+| Réservé au rôle `vendeur` | `mvt_coherence` exige un détenteur nommé, or un compte lié à l'entrepôt n'en a pas ; et `reste_a_verser` vaut 0 pour un non-vendeur, donc la dette ne serait comptée nulle part |
+| La sortie vient du stock **détenu**, jamais de l'entrepôt | un prélèvement n'est pas un réassort déguisé |
+| L'annulation est réservée aux gérants | laisser un débiteur effacer sa propre dette n'a pas de sens |
 
 ## Le service après-vente
 
@@ -483,9 +522,9 @@ tenue à jour à côté.
 | Couche | Contenu | Ce que sa position garantit |
 | --- | --- | --- |
 | `10_types_et_tables/` | types énumérés, tables, contraintes, index, RLS | rien n'existe avant |
-| `20_fonctions/` | les 74 fonctions, une seule définition chacune | après les tables qu'elles lisent |
+| `20_fonctions/` | les 81 fonctions, une seule définition chacune | après les tables qu'elles lisent |
 | `30_vues_et_triggers/` | les 4 vues, le trigger d'inscription | `v_lignes_vente` appelle `est_admin()`, le trigger appelle `gerer_nouvel_utilisateur()` |
-| `40_droits/` | policies, grants et revokes, commentaires | les 24 policies citent `est_admin` / `est_dev` / `est_actif` |
+| `40_droits/` | policies, grants et revokes, commentaires | les 26 policies citent `est_admin` / `est_dev` / `est_actif` |
 | `90_donnees/` | amorçage, reprises de données | tout le schéma est en place |
 
 À l'intérieur d'une couche, l'ordre alphabétique suffit — sauf dans `10`, où les

@@ -1050,3 +1050,71 @@ export async function changerStockLie(
     jeton: jeton(),
   };
 }
+
+/**
+ * Fixer le tarif auquel un vendeur prélève un produit donné.
+ *
+ * Champ vide = retour au repli calculé en base (`prix conseillé − commission`).
+ * C'est un cas nommé, pas un accident : sans lui, un tarif posé une fois ne
+ * pourrait plus jamais suivre l'évolution du prix conseillé.
+ */
+export async function definirPrixPreleve(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const vendeurId = String(formData.get("vendeur_id") ?? "").trim();
+  const produitId = String(formData.get("produit_id") ?? "").trim();
+  const brut = String(formData.get("prix") ?? "").trim();
+  if (!vendeurId || !produitId) return { erreur: "Cible introuvable." };
+
+  let prix: number | null = null;
+  if (brut !== "") {
+    prix = Number(brut.replace(",", "."));
+    if (!Number.isFinite(prix) || prix < 0) {
+      return { erreur: "Tarif invalide." };
+    }
+  }
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("definir_prix_preleve", {
+    p_vendeur: vendeurId,
+    p_produit: produitId,
+    p_prix: prix,
+  });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return {
+    succes:
+      prix === null
+        ? "Tarif remis au défaut : prix conseillé moins la commission."
+        : "Tarif enregistré. Les prises déjà faites gardent leur ancien tarif.",
+    jeton: jeton(),
+  };
+}
+
+/**
+ * Annuler une prise. La marchandise revient au stock du vendeur par la cascade,
+ * et sa dette retombe d'autant.
+ */
+export async function supprimerPrelevement(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("prelevement_id") ?? "").trim();
+  if (!id) return { erreur: "Prélèvement introuvable." };
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("supprimer_prelevement", { p_id: id });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return {
+    succes: "Prélèvement annulé : stock rendu et dette corrigée.",
+    jeton: jeton(),
+  };
+}

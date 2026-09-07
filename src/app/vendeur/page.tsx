@@ -161,6 +161,17 @@ export default async function PageVendeur() {
                     </dd>
                   </div>
                 )}
+                {/* Le SEUL terme qui s'ajoute, d'où le « + » explicite : de la
+                    marchandise partie sans qu'un client ait payé. Sans cette ligne,
+                    une dette qui monte sans vente serait un mystère. */}
+                {Number(dette?.preleve ?? 0) > 0 && (
+                  <div>
+                    <dt>Pris pour moi</dt>
+                    <dd className="text-foreground font-medium tabular-nums">
+                      + {euros(dette?.preleve ?? 0)}
+                    </dd>
+                  </div>
+                )}
               </dl>
             )}
           </CardContent>

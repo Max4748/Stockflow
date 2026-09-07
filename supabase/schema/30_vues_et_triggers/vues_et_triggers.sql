@@ -26,10 +26,18 @@ select
   coalesce(c.commissions, 0)::numeric(12,2)   as commissions,
   coalesce(ve.verse, 0)::numeric(12,2)        as verse,
   coalesce(sv.rembourse, 0)::numeric(12,2)    as rembourse,
+  -- Le prélèvement s'AJOUTE : le vendeur est reparti avec la marchandise sans
+  -- avoir encaissé de client, il doit donc ce montant en plus. Tous les autres
+  -- termes réduisent la dette, celui-ci l'augmente.
   case when pr.role <> 'vendeur' then 0::numeric(12,2)
        else (coalesce(v.ca, 0) - coalesce(c.commissions, 0)
-             - coalesce(ve.verse, 0) - coalesce(sv.rembourse, 0))::numeric(12,2)
-  end                                         as reste_a_verser
+             - coalesce(ve.verse, 0) - coalesce(sv.rembourse, 0)
+             + coalesce(pl.preleve, 0))::numeric(12,2)
+  end                                         as reste_a_verser,
+  -- EN DERNIÈRE POSITION, et ce n'est pas cosmétique : `create or replace view`
+  -- ne sait qu'ajouter des colonnes en fin de liste. L'insérer plus haut
+  -- imposerait un `drop view` sur toute base déjà en service.
+  coalesce(pl.preleve, 0)::numeric(12,2)      as preleve
 from profils pr
 left join (
   select vendeur_id,
@@ -54,7 +62,11 @@ left join (
     from sav s join ventes v3 on v3.id = s.vente_id
    where s.statut = 'valide'
    group by v3.vendeur_id
-) sv on sv.vendeur_id = pr.id;
+) sv on sv.vendeur_id = pr.id
+left join (
+  select vendeur_id, sum(quantite * prix_unitaire) as preleve
+    from prelevements group by vendeur_id
+) pl on pl.vendeur_id = pr.id;
 
 -- ============================================================
 -- Lectures : stock, tableau de bord, journal comptable.

@@ -89,6 +89,8 @@ begin
     null, v_montant, null);
 end $$;
 
+drop function if exists creances();
+
 create or replace function creances()
 returns table (
   vendeur_id     uuid,
@@ -100,7 +102,8 @@ returns table (
   verse          numeric(12,2),
   rembourse      numeric(12,2),
   reste_a_verser numeric(12,2),
-  nb_ventes      int
+  nb_ventes      int,
+  preleve        numeric(12,2)
 )
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 begin
@@ -110,11 +113,17 @@ begin
 
   return query
     select c.vendeur_id, c.nom, c.role, c.actif, c.ca, c.commissions, c.verse,
-           c.rembourse, c.reste_a_verser, c.nb_ventes
+           c.rembourse, c.reste_a_verser, c.nb_ventes, c.preleve
       from v_comptes_vendeurs c
      where c.role = 'vendeur' or c.nb_ventes > 0
      order by c.reste_a_verser desc, c.nom;
 end $$;
+
+-- `drop` obligatoire : ajouter une colonne de sortie change le type de retour,
+-- et `create or replace` refuse (« cannot change return type »). Le droit
+-- d'exécution part avec, et la couche 40 le repose — c'est justement ce qui
+-- rend l'opération sans danger ici.
+drop function if exists ma_dette();
 
 create or replace function ma_dette()
 returns table (
@@ -124,7 +133,10 @@ returns table (
   rembourse      numeric(12,2),
   reste_a_verser numeric(12,2),
   nb_ventes      int,
-  qte_vendue     int
+  qte_vendue     int,
+  -- En dernier, comme dans la vue : le vendeur doit pouvoir expliquer un
+  -- `reste_a_verser` qui monte sans qu'il ait vendu.
+  preleve        numeric(12,2)
 )
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 begin
@@ -134,7 +146,7 @@ begin
 
   return query
     select c.ca, c.commissions, c.verse, c.rembourse, c.reste_a_verser,
-           c.nb_ventes, c.qte_vendue
+           c.nb_ventes, c.qte_vendue, c.preleve
       from v_comptes_vendeurs c
      where c.vendeur_id = auth.uid();
 end $$;

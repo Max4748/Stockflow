@@ -84,12 +84,18 @@ export type MaDette = {
   reste_a_verser: number;
   nb_ventes: number;
   qte_vendue: number;
+  /**
+   * Marchandise reprise pour lui-même. SEUL terme qui AUGMENTE la dette : il
+   * est reparti avec sans avoir encaissé de client. Sans cette colonne, un
+   * `reste_a_verser` qui monte sans vente serait incompréhensible.
+   */
+  preleve: number;
 };
 
 /** rpc('mon_journal') */
 export type LigneJournalVendeur = {
   horodatage: string;
-  type: "vente" | "reception" | "versement";
+  type: "vente" | "reception" | "versement" | "prelevement";
   libelle: string;
   quantite: number | null;
   montant: number | null;
@@ -203,6 +209,8 @@ export type Creance = {
   rembourse: number;
   reste_a_verser: number;
   nb_ventes: number;
+  /** Ce qu'il a repris pour lui : le seul terme qui augmente sa dette. */
+  preleve: number;
 };
 
 /**
@@ -432,3 +440,33 @@ export function borneVue(dossiers: DossierSav[]): string | null {
  * l'autre.
  */
 export type Compteurs = Record<string, number>;
+
+// ---------------------------------------------------------------------------
+// Prélèvements personnels
+// ---------------------------------------------------------------------------
+
+/** rpc('mes_prelevements') et rpc('prelevements_vendeur') */
+export type LignePrelevement = {
+  id: string;
+  produit: string;
+  quantite: number;
+  prix_unitaire: number;
+  montant: number;
+  cree_le: string;
+};
+
+/**
+ * rpc('tarifs_preleves') — le tarif applicable à chaque produit pour UN
+ * vendeur.
+ *
+ * `personnalise` distingue un tarif choisi d'un tarif qui suit le repli
+ * `prix_vente_conseille - commission_unitaire`. Sans lui, l'écran ne saurait
+ * pas quoi proposer de remettre à zéro.
+ */
+export type TarifPreleve = {
+  produit_id: string;
+  produit: string;
+  prix_vente_conseille: number;
+  prix_effectif: number;
+  personnalise: boolean;
+};

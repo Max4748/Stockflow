@@ -153,6 +153,16 @@ begin
            pr.nom, a.quantite_totale, a.montant_total::numeric(12,2), a.id
       from ventes_annulees a join profils pr on pr.id = a.vendeur_id
     union all
+    -- Un prélèvement n'est pas une vente, mais c'est de la marchandise qui
+    -- sort contre une dette : l'absenter rendrait un stock décroissant
+    -- inexplicable pour l'encadrement.
+    select pl.cree_le, pl.cree_le::date, 'prelevement'::text,
+           'Prélèvement · ' || pv.nom || ' · ' || pl.quantite || ' × ' || pr.nom,
+           pv.nom, pl.quantite, (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.id
+      from prelevements pl
+      join produits pr on pr.id = pl.produit_id
+      join profils  pv on pv.id = pl.vendeur_id
+    union all
     select r.cree_le, r.date, 'achat'::text,
            'Achat ' || coalesce(r.reference, '(sans référence)'), null::text,
            r.quantite_totale, (r.prix_achat_base + r.frais_port)::numeric(12,2), r.id

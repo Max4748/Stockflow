@@ -9,10 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exigerAdmin } from "@/lib/auth";
 import { date, euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
+
+import { ListePrelevements, TarifsPrelevement } from "./prelevements";
 import type {
   Creance,
+  LignePrelevement,
   Profil,
   StockDetenteur,
+  TarifPreleve,
   VenteVendeur,
 } from "@/lib/types";
 
@@ -100,13 +104,16 @@ export default async function PageFicheVendeur({
   const { id } = await params;
   const supabase = await creerClient();
 
-  const [rProfil, rCreances, rStock, rVentes, rVersements] = await Promise.all([
+  const [rProfil, rCreances, rStock, rVentes, rPrelevements, rTarifs, rVersements] =
+    await Promise.all([
     supabase.from("profils").select("*").eq("id", id).maybeSingle(),
     supabase.rpc("creances"),
     supabase.rpc("stock_detenteurs", { p_vendeur_id: id }),
     // RPC plutôt que la table : elle agrège le SAV de chaque vente, qu'un
     // simple select sur `ventes` ne porte pas.
     supabase.rpc("ventes_vendeur", { p_vendeur_id: id, p_limite: 50 }),
+    supabase.rpc("prelevements_vendeur", { p_vendeur_id: id, p_limite: 50 }),
+    supabase.rpc("tarifs_preleves", { p_vendeur_id: id }),
     supabase
       .from("versements")
       .select("id, date, montant, note")
@@ -124,6 +131,8 @@ export default async function PageFicheVendeur({
   const stock = (rStock.data as StockDetenteur[] | null) ?? [];
   const ventes = (rVentes.data as VenteVendeur[] | null) ?? [];
   const versements = (rVersements.data as Versement[] | null) ?? [];
+  const prelevements = (rPrelevements.data as LignePrelevement[] | null) ?? [];
+  const tarifs = (rTarifs.data as TarifPreleve[] | null) ?? [];
   const erreur = rCreances.error ?? rStock.error ?? rVentes.error;
 
   const unitesDetenues = stock.reduce((s, l) => s + l.quantite, 0);
@@ -228,6 +237,26 @@ export default async function PageFicheVendeur({
           />
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Ce qu&apos;il a pris pour lui</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ListePrelevements prelevements={prelevements} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Tarifs de prélèvement</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TarifsPrelevement vendeurId={id} tarifs={tarifs} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -51,12 +51,25 @@ COLONNE   mouvements_stock.groupe_id  #6  uuid  NULL  defaut=-
 COLONNE   mouvements_stock.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
 COLONNE   mouvements_stock.motif  #10  text  NULL  defaut=-
 COLONNE   mouvements_stock.origine_demande_id  #9  uuid  NULL  defaut=-
+COLONNE   mouvements_stock.origine_prelevement_id  #14  uuid  NULL  defaut=-
 COLONNE   mouvements_stock.origine_restock_id  #8  uuid  NULL  defaut=-
 COLONNE   mouvements_stock.origine_sav_id  #13  uuid  NULL  defaut=-
 COLONNE   mouvements_stock.origine_vente_id  #7  uuid  NULL  defaut=-
 COLONNE   mouvements_stock.produit_id  #2  uuid  NOT NULL  defaut=-
 COLONNE   mouvements_stock.quantite  #4  integer  NOT NULL  defaut=-
 COLONNE   mouvements_stock.type  #5  type_mouvement  NOT NULL  defaut=-
+COLONNE   prelevements.cree_le  #6  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   prelevements.cree_par  #7  uuid  NULL  defaut=-
+COLONNE   prelevements.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
+COLONNE   prelevements.prix_unitaire  #5  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   prelevements.produit_id  #3  uuid  NOT NULL  defaut=-
+COLONNE   prelevements.quantite  #4  integer  NOT NULL  defaut=-
+COLONNE   prelevements.vendeur_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   prix_preleves.defini_le  #4  timestamp with time zone  NOT NULL  defaut=now()
+COLONNE   prix_preleves.defini_par  #5  uuid  NULL  defaut=-
+COLONNE   prix_preleves.prix  #3  numeric(10,2)  NOT NULL  defaut=-
+COLONNE   prix_preleves.produit_id  #2  uuid  NOT NULL  defaut=-
+COLONNE   prix_preleves.vendeur_id  #1  uuid  NOT NULL  defaut=-
 COLONNE   produits.actif  #6  boolean  NOT NULL  defaut=true
 COLONNE   produits.cree_le  #7  timestamp with time zone  NOT NULL  defaut=now()
 COLONNE   produits.id  #1  uuid  NOT NULL  defaut=gen_random_uuid()
@@ -160,6 +173,7 @@ CONTRAINTE journal_operations  journal_operations_pkey  PRIMARY KEY (id)
 CONTRAINTE mouvements_stock  mouvements_stock_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id)
 CONTRAINTE mouvements_stock  mouvements_stock_detenteur_id_fkey  FOREIGN KEY (detenteur_id) REFERENCES profils(id) ON DELETE RESTRICT
 CONTRAINTE mouvements_stock  mouvements_stock_origine_demande_id_fkey  FOREIGN KEY (origine_demande_id) REFERENCES demandes_restock(id) ON DELETE SET NULL
+CONTRAINTE mouvements_stock  mouvements_stock_origine_prelevement_id_fkey  FOREIGN KEY (origine_prelevement_id) REFERENCES prelevements(id) ON DELETE CASCADE
 CONTRAINTE mouvements_stock  mouvements_stock_origine_restock_id_fkey  FOREIGN KEY (origine_restock_id) REFERENCES restock_lignes(id) ON DELETE CASCADE
 CONTRAINTE mouvements_stock  mouvements_stock_origine_sav_id_fkey  FOREIGN KEY (origine_sav_id) REFERENCES sav(id) ON DELETE CASCADE
 CONTRAINTE mouvements_stock  mouvements_stock_origine_vente_id_fkey  FOREIGN KEY (origine_vente_id) REFERENCES ventes(id) ON DELETE CASCADE
@@ -174,8 +188,20 @@ CASE type
     WHEN 'retour'::type_mouvement THEN (groupe_id IS NOT NULL)
     WHEN 'ajustement'::type_mouvement THEN (motif IS NOT NULL)
     WHEN 'sav'::type_mouvement THEN ((quantite < 0) AND (origine_sav_id IS NOT NULL))
+    WHEN 'prelevement'::type_mouvement THEN ((detenteur_id IS NOT NULL) AND (quantite < 0) AND (origine_prelevement_id IS NOT NULL))
     ELSE NULL::boolean
 END)
+CONTRAINTE prelevements  prelevements_cree_par_fkey  FOREIGN KEY (cree_par) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE prelevements  prelevements_pkey  PRIMARY KEY (id)
+CONTRAINTE prelevements  prelevements_prix_unitaire_check  CHECK ((prix_unitaire >= (0)::numeric))
+CONTRAINTE prelevements  prelevements_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE RESTRICT
+CONTRAINTE prelevements  prelevements_quantite_check  CHECK ((quantite > 0))
+CONTRAINTE prelevements  prelevements_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE RESTRICT
+CONTRAINTE prix_preleves  prix_preleves_defini_par_fkey  FOREIGN KEY (defini_par) REFERENCES profils(id) ON DELETE SET NULL
+CONTRAINTE prix_preleves  prix_preleves_pkey  PRIMARY KEY (vendeur_id, produit_id)
+CONTRAINTE prix_preleves  prix_preleves_prix_check  CHECK ((prix >= (0)::numeric))
+CONTRAINTE prix_preleves  prix_preleves_produit_id_fkey  FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE CASCADE
+CONTRAINTE prix_preleves  prix_preleves_vendeur_id_fkey  FOREIGN KEY (vendeur_id) REFERENCES profils(id) ON DELETE CASCADE
 CONTRAINTE produits  produits_pkey  PRIMARY KEY (id)
 CONTRAINTE produits  produits_prix_vente_conseille_check  CHECK ((prix_vente_conseille >= (0)::numeric))
 CONTRAINTE produits  produits_seuil_alerte_check  CHECK ((seuil_alerte >= 0))
@@ -248,6 +274,8 @@ INDEX     CREATE INDEX idx_vente_lignes_produit ON public.vente_lignes USING btr
 INDEX     CREATE INDEX idx_ventes_annulees_vendeur ON public.ventes_annulees USING btree (vendeur_id, date DESC)
 INDEX     CREATE INDEX idx_ventes_vendeur ON public.ventes USING btree (vendeur_id, date DESC)
 INDEX     CREATE INDEX idx_versements_vendeur ON public.versements USING btree (vendeur_id, date DESC)
+INDEX     CREATE INDEX prelevements_produit_idx ON public.prelevements USING btree (produit_id)
+INDEX     CREATE INDEX prelevements_vendeur_idx ON public.prelevements USING btree (vendeur_id, cree_le DESC)
 INDEX     CREATE UNIQUE INDEX demande_lignes_demande_id_produit_id_key ON public.demande_lignes USING btree (demande_id, produit_id)
 INDEX     CREATE UNIQUE INDEX demande_lignes_pkey ON public.demande_lignes USING btree (id)
 INDEX     CREATE UNIQUE INDEX demandes_restock_pkey ON public.demandes_restock USING btree (id)
@@ -259,6 +287,8 @@ INDEX     CREATE UNIQUE INDEX ip_bloquees_pkey ON public.ip_bloquees USING btree
 INDEX     CREATE UNIQUE INDEX journal_admin_pkey ON public.journal_admin USING btree (id)
 INDEX     CREATE UNIQUE INDEX journal_operations_pkey ON public.journal_operations USING btree (id)
 INDEX     CREATE UNIQUE INDEX mouvements_stock_pkey ON public.mouvements_stock USING btree (id)
+INDEX     CREATE UNIQUE INDEX prelevements_pkey ON public.prelevements USING btree (id)
+INDEX     CREATE UNIQUE INDEX prix_preleves_pkey ON public.prix_preleves USING btree (vendeur_id, produit_id)
 INDEX     CREATE UNIQUE INDEX produits_pkey ON public.produits USING btree (id)
 INDEX     CREATE UNIQUE INDEX profils_pkey ON public.profils USING btree (id)
 INDEX     CREATE UNIQUE INDEX restock_lignes_pkey ON public.restock_lignes USING btree (id)
@@ -273,7 +303,7 @@ INDEX     CREATE UNIQUE INDEX ventes_annulees_pkey ON public.ventes_annulees USI
 INDEX     CREATE UNIQUE INDEX ventes_pkey ON public.ventes USING btree (id)
 INDEX     CREATE UNIQUE INDEX versements_pkey ON public.versements USING btree (id)
 ENUM      statut_demande = en_attente, approuvee, partielle, refusee, annulee
-ENUM      type_mouvement = entree_achat, transfert, vente, retour, ajustement, sav
+ENUM      type_mouvement = entree_achat, transfert, vente, retour, ajustement, sav, prelevement
 FONCTION  ajuster_stock(uuid,integer,text,uuid)
 CREATE OR REPLACE FUNCTION public.ajuster_stock(p_produit_id uuid, p_delta integer, p_motif text, p_detenteur_id uuid DEFAULT NULL::uuid)
  RETURNS uuid
@@ -729,7 +759,7 @@ end $function$
 
 FONCTION  creances()
 CREATE OR REPLACE FUNCTION public.creances()
- RETURNS TABLE(vendeur_id uuid, nom text, role text, actif boolean, ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer)
+ RETURNS TABLE(vendeur_id uuid, nom text, role text, actif boolean, ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer, preleve numeric)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
@@ -741,7 +771,7 @@ begin
 
   return query
     select c.vendeur_id, c.nom, c.role, c.actif, c.ca, c.commissions, c.verse,
-           c.rembourse, c.reste_a_verser, c.nb_ventes
+           c.rembourse, c.reste_a_verser, c.nb_ventes, c.preleve
       from v_comptes_vendeurs c
      where c.role = 'vendeur' or c.nb_ventes > 0
      order by c.reste_a_verser desc, c.nom;
@@ -989,6 +1019,57 @@ begin
   return v_sav_id;
 end $function$
 
+FONCTION  definir_prix_preleve(uuid,uuid,numeric)
+CREATE OR REPLACE FUNCTION public.definir_prix_preleve(p_vendeur uuid, p_produit uuid, p_prix numeric DEFAULT NULL::numeric)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role    text;
+  v_nom     text;
+  v_produit text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select role, nom into v_role, v_nom from profils where id = p_vendeur;
+  if not found then
+    raise exception 'Compte inconnu.' using errcode = '22023';
+  end if;
+  perform exiger_gestion_de(v_role);
+  if v_role <> 'vendeur' then
+    raise exception 'Seul un vendeur prélève de la marchandise.' using errcode = '22023';
+  end if;
+
+  select nom into v_produit from produits where id = p_produit;
+  if not found then
+    raise exception 'Produit inconnu.' using errcode = '22023';
+  end if;
+
+  if p_prix is null then
+    delete from prix_preleves
+     where vendeur_id = p_vendeur and produit_id = p_produit;
+    perform tracer_admin('tarif de prélèvement remis au défaut', p_vendeur,
+      jsonb_build_object('produit', v_produit), null);
+    return;
+  end if;
+
+  if p_prix < 0 then
+    raise exception 'Un tarif ne peut pas être négatif.' using errcode = '22023';
+  end if;
+
+  insert into prix_preleves (vendeur_id, produit_id, prix, defini_par)
+  values (p_vendeur, p_produit, p_prix, auth.uid())
+  on conflict (vendeur_id, produit_id) do update
+    set prix = excluded.prix, defini_le = now(), defini_par = auth.uid();
+
+  perform tracer_admin('tarif de prélèvement', p_vendeur, null,
+    jsonb_build_object('produit', v_produit, 'prix', p_prix));
+end $function$
+
 FONCTION  dossiers_sav(integer,boolean)
 CREATE OR REPLACE FUNCTION public.dossiers_sav(p_limite integer DEFAULT 100, p_les_miennes boolean DEFAULT false)
  RETURNS TABLE(id uuid, vente_id uuid, date date, statut text, resolution text, quantite integer, montant_rembourse numeric, motif text, motif_refus text, produit text, client text, vendeur text, vendeur_id uuid, declare_par text, traite_par text, traite_le timestamp with time zone, cree_le timestamp with time zone)
@@ -1062,6 +1143,72 @@ begin
   end if;
 
   return true;
+end $function$
+
+FONCTION  enregistrer_prelevement(uuid,integer,uuid)
+CREATE OR REPLACE FUNCTION public.enregistrer_prelevement(p_produit_id uuid, p_quantite integer, p_vendeur_id uuid DEFAULT NULL::uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_vendeur uuid;
+  v_role    text;
+  v_prix    numeric(10,2);
+  v_dispo   int;
+  v_id      uuid;
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+
+  v_vendeur := coalesce(p_vendeur_id, auth.uid());
+  if v_vendeur <> auth.uid() and not est_admin() then
+    raise exception 'Prélever pour un autre compte est réservé aux gérants.'
+      using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = v_vendeur and actif;
+  if not found then
+    raise exception 'Compte inconnu ou inactif.' using errcode = '42501';
+  end if;
+  if v_role <> 'vendeur' then
+    raise exception 'Seul un vendeur prélève de la marchandise.' using errcode = '22023';
+  end if;
+  if v_vendeur <> auth.uid() then
+    perform exiger_gestion_de(v_role);
+  end if;
+
+  if p_quantite is null or p_quantite <= 0 then
+    raise exception 'Quantité invalide.' using errcode = '22023';
+  end if;
+  if not exists (select 1 from produits where id = p_produit_id) then
+    raise exception 'Produit inconnu.' using errcode = '22023';
+  end if;
+
+  -- Même verrou que pour une vente : deux prises simultanées se croiraient
+  -- toutes deux légitimes sur le dernier exemplaire.
+  perform verrouiller_stock(p_produit_id, v_vendeur);
+  v_dispo := stock_detenu(p_produit_id, v_vendeur);
+  if v_dispo < p_quantite then
+    raise exception 'Stock insuffisant pour % : % demandée(s), % disponible(s).',
+      coalesce((select nom from produits where id = p_produit_id), 'produit inconnu'),
+      p_quantite, v_dispo
+      using errcode = '23514';
+  end if;
+
+  v_prix := prix_preleve(v_vendeur, p_produit_id);
+
+  insert into prelevements (vendeur_id, produit_id, quantite, prix_unitaire, cree_par)
+  values (v_vendeur, p_produit_id, p_quantite, v_prix, auth.uid())
+  returning id into v_id;
+
+  insert into mouvements_stock (produit_id, detenteur_id, quantite, type,
+                                origine_prelevement_id, cree_par)
+  values (p_produit_id, v_vendeur, -p_quantite, 'prelevement', v_id, auth.uid());
+
+  return v_id;
 end $function$
 
 FONCTION  enregistrer_vente(jsonb,text,date,uuid)
@@ -1555,6 +1702,16 @@ begin
            pr.nom, a.quantite_totale, a.montant_total::numeric(12,2), a.id
       from ventes_annulees a join profils pr on pr.id = a.vendeur_id
     union all
+    -- Un prélèvement n'est pas une vente, mais c'est de la marchandise qui
+    -- sort contre une dette : l'absenter rendrait un stock décroissant
+    -- inexplicable pour l'encadrement.
+    select pl.cree_le, pl.cree_le::date, 'prelevement'::text,
+           'Prélèvement · ' || pv.nom || ' · ' || pl.quantite || ' × ' || pr.nom,
+           pv.nom, pl.quantite, (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.id
+      from prelevements pl
+      join produits pr on pr.id = pl.produit_id
+      join profils  pv on pv.id = pl.vendeur_id
+    union all
     select r.cree_le, r.date, 'achat'::text,
            'Achat ' || coalesce(r.reference, '(sans référence)'), null::text,
            r.quantite_totale, (r.prix_achat_base + r.frais_port)::numeric(12,2), r.id
@@ -1633,7 +1790,7 @@ end $function$
 
 FONCTION  ma_dette()
 CREATE OR REPLACE FUNCTION public.ma_dette()
- RETURNS TABLE(ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer, qte_vendue integer)
+ RETURNS TABLE(ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer, qte_vendue integer, preleve numeric)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
@@ -1645,7 +1802,7 @@ begin
 
   return query
     select c.ca, c.commissions, c.verse, c.rembourse, c.reste_a_verser,
-           c.nb_ventes, c.qte_vendue
+           c.nb_ventes, c.qte_vendue, c.preleve
       from v_comptes_vendeurs c
      where c.vendeur_id = auth.uid();
 end $function$
@@ -1698,6 +1855,26 @@ begin
      set sav_vu_le = greatest(coalesce(sav_vu_le, '-infinity'::timestamptz),
                               least(coalesce(p_vu_jusqu_a, now()), now()))
    where id = auth.uid();
+end $function$
+
+FONCTION  mes_prelevements(integer)
+CREATE OR REPLACE FUNCTION public.mes_prelevements(p_limite integer DEFAULT 20)
+ RETURNS TABLE(id uuid, produit text, quantite integer, prix_unitaire numeric, montant numeric, cree_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+  return query
+    select pl.id, pr.nom, pl.quantite, pl.prix_unitaire,
+           (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.cree_le
+      from prelevements pl join produits pr on pr.id = pl.produit_id
+     where pl.vendeur_id = auth.uid()
+     order by pl.cree_le desc
+     limit least(greatest(coalesce(p_limite, 20), 1), 100);
 end $function$
 
 FONCTION  mes_ventes(integer)
@@ -2005,6 +2182,12 @@ begin
       from mouvements_stock m join produits p on p.id = m.produit_id
      where m.detenteur_id = auth.uid() and m.type = 'transfert' and m.quantite > 0
     union all
+    select pl.cree_le, 'prelevement'::text,
+           'Prélèvement · ' || pr.nom,
+           pl.quantite, (pl.quantite * pl.prix_unitaire)::numeric(12,2)
+      from prelevements pl join produits pr on pr.id = pl.produit_id
+     where pl.vendeur_id = auth.uid()
+    union all
     select ver.cree_le, 'versement'::text, 'Versement effectué',
            null::int, ver.montant::numeric(12,2)
       from versements ver where ver.vendeur_id = auth.uid()
@@ -2034,6 +2217,44 @@ CREATE OR REPLACE FUNCTION public.niveau_de(p_role text)
  SET search_path TO 'public', 'pg_temp'
 AS $function$
   select niveau from roles where cle = p_role;
+$function$
+
+FONCTION  prelevements_vendeur(uuid,integer)
+CREATE OR REPLACE FUNCTION public.prelevements_vendeur(p_vendeur_id uuid, p_limite integer DEFAULT 20)
+ RETURNS TABLE(id uuid, produit text, quantite integer, prix_unitaire numeric, montant numeric, cree_le timestamp with time zone)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+  return query
+    select pl.id, pr.nom, pl.quantite, pl.prix_unitaire,
+           (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.cree_le
+      from prelevements pl join produits pr on pr.id = pl.produit_id
+     where pl.vendeur_id = p_vendeur_id
+     order by pl.cree_le desc
+     limit least(greatest(coalesce(p_limite, 20), 1), 100);
+end $function$
+
+FONCTION  prix_preleve(uuid,uuid)
+CREATE OR REPLACE FUNCTION public.prix_preleve(p_vendeur uuid, p_produit uuid)
+ RETURNS numeric
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select coalesce(
+    (select pp.prix from prix_preleves pp
+      where pp.vendeur_id = p_vendeur and pp.produit_id = p_produit),
+    greatest(
+      0,
+      coalesce((select pr.prix_vente_conseille from produits pr where pr.id = p_produit), 0)
+      - coalesce((select p.commission_unitaire from profils p where p.id = p_vendeur), 0)
+    )
+  )::numeric(10,2);
 $function$
 
 FONCTION  refuser_sav(uuid,text)
@@ -2091,6 +2312,7 @@ begin
     'mouvements',       (select count(*) from mouvements_stock),
     'versements',       (select count(*) from versements),
     'sav',              (select count(*) from sav),
+    'prelevements',     (select count(*) from prelevements),
     'demandes',         (select count(*) from demandes_restock),
     'achats',           (select count(*) from restocks),
     'produits',         (select count(*) from produits),
@@ -2133,6 +2355,7 @@ begin
   -- Ordre imposé par les clés étrangères en RESTRICT vers profils et produits :
   -- l'activité part avant les produits, qui partent avant tout le reste.
   delete from sav where true;
+  delete from prelevements where true;
   delete from mouvements_stock where true;
   delete from vente_lignes where true;
   delete from ventes where true;
@@ -2263,6 +2486,10 @@ begin
        + (select count(*) from restock_lignes   where produit_id = p_id)
        + (select count(*) from sav              where produit_id = p_id)
        + (select count(*) from demande_lignes   where produit_id = p_id)
+       -- Redondant avec mouvements_stock en pratique, explicite par choix : la
+       -- clé étrangère est `restrict`, et sans ce terme la suppression
+       -- échouerait sur une erreur brute au lieu de désactiver proprement.
+       + (select count(*) from prelevements     where produit_id = p_id)
     into v_refs;
 
   if v_refs = 0 then
@@ -2639,6 +2866,41 @@ begin
      order by s.nom;
 end $function$
 
+FONCTION  supprimer_prelevement(uuid)
+CREATE OR REPLACE FUNCTION public.supprimer_prelevement(p_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_p record;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select pl.*, pr.nom as produit_nom, po.nom as vendeur_nom, po.role as vendeur_role
+    into v_p
+    from prelevements pl
+    join produits pr on pr.id = pl.produit_id
+    join profils  po on po.id = pl.vendeur_id
+   where pl.id = p_id;
+  if not found then
+    raise exception 'Prélèvement introuvable.' using errcode = '22023';
+  end if;
+  perform exiger_gestion_de(v_p.vendeur_role);
+
+  -- Tracé AVANT la suppression : le libellé cite un produit et un vendeur que
+  -- la ligne effacée ne dira plus.
+  perform tracer_operation(
+    'prelevement', p_id, 'suppression',
+    format('Prélèvement annulé · %s · %s × %s', v_p.vendeur_nom, v_p.quantite, v_p.produit_nom),
+    v_p.quantite, (v_p.quantite * v_p.prix_unitaire)::numeric(12,2));
+
+  delete from prelevements where id = p_id;
+end $function$
+
 FONCTION  supprimer_restock(uuid)
 CREATE OR REPLACE FUNCTION public.supprimer_restock(p_restock_id uuid)
  RETURNS void
@@ -2830,6 +3092,31 @@ begin
     'versement', p_versement_id, 'suppression',
     format('Versement supprimé · %s', coalesce(v_nom, '?')),
     null, v_montant, null);
+end $function$
+
+FONCTION  tarifs_preleves(uuid)
+CREATE OR REPLACE FUNCTION public.tarifs_preleves(p_vendeur_id uuid)
+ RETURNS TABLE(produit_id uuid, produit text, prix_vente_conseille numeric, prix_effectif numeric, personnalise boolean)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if p_vendeur_id <> auth.uid() and not est_admin() then
+    raise exception 'Consulter les tarifs d''un autre compte est réservé aux gérants.'
+      using errcode = '42501';
+  end if;
+  if not est_actif() then
+    raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
+  end if;
+  return query
+    select pr.id, pr.nom, pr.prix_vente_conseille,
+           prix_preleve(p_vendeur_id, pr.id),
+           exists (select 1 from prix_preleves pp
+                    where pp.vendeur_id = p_vendeur_id and pp.produit_id = pr.id)
+      from produits pr
+     where pr.actif
+     order by pr.nom;
 end $function$
 
 FONCTION  totaux_stock()
@@ -3271,8 +3558,9 @@ VUE       v_comptes_vendeurs
     COALESCE(sv.rembourse, 0::numeric)::numeric(12,2) AS rembourse,
         CASE
             WHEN pr.role <> 'vendeur'::text THEN 0::numeric(12,2)
-            ELSE (COALESCE(v.ca, 0::numeric) - COALESCE(c.commissions, 0::numeric) - COALESCE(ve.verse, 0::numeric) - COALESCE(sv.rembourse, 0::numeric))::numeric(12,2)
-        END AS reste_a_verser
+            ELSE (COALESCE(v.ca, 0::numeric) - COALESCE(c.commissions, 0::numeric) - COALESCE(ve.verse, 0::numeric) - COALESCE(sv.rembourse, 0::numeric) + COALESCE(pl.preleve, 0::numeric))::numeric(12,2)
+        END AS reste_a_verser,
+    COALESCE(pl.preleve, 0::numeric)::numeric(12,2) AS preleve
    FROM profils pr
      LEFT JOIN ( SELECT ventes.vendeur_id,
             sum(ventes.montant_total) AS ca,
@@ -3294,7 +3582,11 @@ VUE       v_comptes_vendeurs
            FROM sav s
              JOIN ventes v3 ON v3.id = s.vente_id
           WHERE s.statut = 'valide'::text
-          GROUP BY v3.vendeur_id) sv ON sv.vendeur_id = pr.id;
+          GROUP BY v3.vendeur_id) sv ON sv.vendeur_id = pr.id
+     LEFT JOIN ( SELECT prelevements.vendeur_id,
+            sum(prelevements.quantite::numeric * prelevements.prix_unitaire) AS preleve
+           FROM prelevements
+          GROUP BY prelevements.vendeur_id) pl ON pl.vendeur_id = pr.id;
 VUE       v_lignes_vente
  SELECT vl.id,
     vl.vente_id,
@@ -3336,6 +3628,8 @@ RLS       ip_bloquees  enabled=t  forced=f
 RLS       journal_admin  enabled=t  forced=f
 RLS       journal_operations  enabled=t  forced=f
 RLS       mouvements_stock  enabled=t  forced=f
+RLS       prelevements  enabled=t  forced=f
+RLS       prix_preleves  enabled=t  forced=f
 RLS       produits  enabled=t  forced=f
 RLS       profils  enabled=t  forced=f
 RLS       restock_lignes  enabled=t  forced=f
@@ -3358,6 +3652,8 @@ POLICY    journal_admin.journal_admin_select  cmd=r  roles=PUBLIC  using=est_dev
 POLICY    journal_operations.journal_operations_select  cmd=r  roles=PUBLIC  using=est_admin()  check=-
 POLICY    mouvements_stock.mvt_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
 POLICY    mouvements_stock.mvt_select  cmd=r  roles=PUBLIC  using=((detenteur_id = auth.uid()) OR est_admin())  check=-
+POLICY    prelevements.prelevements_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
+POLICY    prix_preleves.prix_preleves_select  cmd=r  roles=PUBLIC  using=((vendeur_id = auth.uid()) OR est_admin())  check=-
 POLICY    produits.produits_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
 POLICY    produits.produits_select  cmd=r  roles=PUBLIC  using=est_actif()  check=-
 POLICY    profils.profils_admin_all  cmd=*  roles=PUBLIC  using=est_admin()  check=est_admin()
@@ -3390,8 +3686,10 @@ DROIT-FN  creances()  =X/postgres | anon=X/postgres | authenticated=X/postgres |
 DROIT-FN  creer_demande_restock(jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  creer_restock_fournisseur(jsonb,numeric,numeric,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  declarer_sav(uuid,uuid,integer,text,text,numeric,uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  definir_prix_preleve(uuid,uuid,numeric)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  dossiers_sav(integer,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  droit_correction(uuid)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  enregistrer_prelevement(uuid,integer,uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  enregistrer_vente(jsonb,text,date,uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  enregistrer_versement(uuid,numeric,date,text,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  est_actif()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
@@ -3412,6 +3710,7 @@ DROIT-FN  ma_dette()  =X/postgres | anon=X/postgres | authenticated=X/postgres |
 DROIT-FN  marquer_mdp_change()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  marquer_sav_gestion_vu(timestamp with time zone)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  marquer_sav_vu(timestamp with time zone)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  mes_prelevements(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  mes_ventes(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  modifier_compte(uuid,text,numeric)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  modifier_restock(uuid,jsonb,numeric,numeric,text,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
@@ -3419,6 +3718,8 @@ DROIT-FN  modifier_vente(uuid,jsonb,text,date)  =X/postgres | anon=X/postgres | 
 DROIT-FN  mon_journal(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  niveau_courant()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  niveau_de(text)  postgres=X/postgres | service_role=X/postgres
+DROIT-FN  prelevements_vendeur(uuid,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  prix_preleve(uuid,uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  refuser_sav(uuid,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  reinitialiser_donnees(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  retirer_compte(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
@@ -3434,10 +3735,12 @@ DROIT-FN  stock_detenu(uuid,uuid)  postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_disponible()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_entrepot()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_valorise()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  supprimer_prelevement(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_restock(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_vente(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_versement(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  tarifs_preleves(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  totaux_stock()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  tracer_admin(text,uuid,jsonb,jsonb)  postgres=X/postgres | service_role=X/postgres
 DROIT-FN  tracer_operation(text,uuid,text,text,integer,numeric,jsonb)  postgres=X/postgres | service_role=X/postgres
@@ -3455,6 +3758,8 @@ DROIT-TB  ip_bloquees  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres
 DROIT-TB  journal_admin  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
 DROIT-TB  journal_operations  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
 DROIT-TB  mouvements_stock  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  prelevements  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
+DROIT-TB  prix_preleves  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
 DROIT-TB  produits  authenticated=arwdDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
 DROIT-TB  profils  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
 DROIT-TB  restock_lignes  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres | service_role=arwdDxtm/postgres
@@ -3472,6 +3777,8 @@ DROIT-TB  versements  authenticated=rDxtm/postgres | postgres=arwdDxtm/postgres 
 COMMENT-O ip_bloquees  Palier 3 de l'anti-bourrage. jusqu_a NULL = blocage définitif, posé à la main.
 COMMENT-O journal_admin  Trace des actions d'administration de comptes. Écriture par tracer_admin() uniquement, lecture réservée au dev.
 COMMENT-O journal_operations  Trace des opérations qui effacent ou corrigent une écriture. Le journal comptable étant dérivé de l'état courant, sans elle une suppression est invisible.
+COMMENT-O prelevements  Marchandise reprise par un vendeur pour lui-même. Pèse sur sa dette, jamais sur le chiffre d'affaires.
+COMMENT-O prix_preleves  Exceptions au tarif de prélèvement. Sans ligne, le repli est prix_vente_conseille - commission_unitaire.
 COMMENT-C profils.commission_unitaire  Valeur COURANTE. La valeur historique d'une vente est figée dans vente_lignes.
 COMMENT-C profils.sav_gestion_vu_le  Dernière ouverture de l'écran Gestion → SAV. Sert uniquement à la pastille de nouveauté, jamais à une décision d'autorisation.
 COMMENT-C profils.sav_vu_le  Dernière ouverture de l'écran SAV par ce compte. Sert uniquement à la pastille de nouveauté, jamais à une décision d'autorisation.

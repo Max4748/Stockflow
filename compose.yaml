@@ -60,12 +60,14 @@ services:
       - stockflow-supabase_default
 
     # AutoKuma crée le moniteur à partir de ces labels ; rien à faire dans l'UI.
-    # ⚠️ Un moniteur créé après coup n'hérite d'AUCUNE notification : rouvrir
-    # Settings → Notifications → Ntfy et resauvegarder.
+    # Notification et intervalle définis par label (2026-09-06) : plus besoin
+    # de resauvegarder Ntfy à la main après coup, voir §8 de la doc.
     labels:
       - "kuma.stockflow.docker.name=StockFlow"
       - "kuma.stockflow.docker.docker_container=stockflow"
       - "kuma.stockflow.docker.docker_host_name=local"
+      - "kuma.stockflow.docker.notification_name_list=[\"ntfy\"]"
+      - "kuma.stockflow.docker.interval=20"
 
 networks:
   stockflow-supabase_default:

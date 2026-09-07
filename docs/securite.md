@@ -15,7 +15,7 @@ sécurité, seulement du confort.** Toute règle qui compte est vérifiée en ba
 
 ### 1. RLS : qui voit quelle _ligne_
 
-24 politiques. Le motif qui revient partout :
+26 politiques. Le motif qui revient partout :
 
 ```sql
 create policy ventes_select on ventes for select

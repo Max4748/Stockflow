@@ -27,6 +27,10 @@ begin
        + (select count(*) from restock_lignes   where produit_id = p_id)
        + (select count(*) from sav              where produit_id = p_id)
        + (select count(*) from demande_lignes   where produit_id = p_id)
+       -- Redondant avec mouvements_stock en pratique, explicite par choix : la
+       -- clé étrangère est `restrict`, et sans ce terme la suppression
+       -- échouerait sur une erreur brute au lieu de désactiver proprement.
+       + (select count(*) from prelevements     where produit_id = p_id)
     into v_refs;
 
   if v_refs = 0 then

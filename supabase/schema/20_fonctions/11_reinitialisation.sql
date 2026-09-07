@@ -39,6 +39,7 @@ begin
     'mouvements',       (select count(*) from mouvements_stock),
     'versements',       (select count(*) from versements),
     'sav',              (select count(*) from sav),
+    'prelevements',     (select count(*) from prelevements),
     'demandes',         (select count(*) from demandes_restock),
     'achats',           (select count(*) from restocks),
     'produits',         (select count(*) from produits),
@@ -81,6 +82,7 @@ begin
   -- Ordre imposé par les clés étrangères en RESTRICT vers profils et produits :
   -- l'activité part avant les produits, qui partent avant tout le reste.
   delete from sav where true;
+  delete from prelevements where true;
   delete from mouvements_stock where true;
   delete from vente_lignes where true;
   delete from ventes where true;

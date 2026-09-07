@@ -487,6 +487,12 @@ begin
       from mouvements_stock m join produits p on p.id = m.produit_id
      where m.detenteur_id = auth.uid() and m.type = 'transfert' and m.quantite > 0
     union all
+    select pl.cree_le, 'prelevement'::text,
+           'Prélèvement · ' || pr.nom,
+           pl.quantite, (pl.quantite * pl.prix_unitaire)::numeric(12,2)
+      from prelevements pl join produits pr on pr.id = pl.produit_id
+     where pl.vendeur_id = auth.uid()
+    union all
     select ver.cree_le, 'versement'::text, 'Versement effectué',
            null::int, ver.montant::numeric(12,2)
       from versements ver where ver.vendeur_id = auth.uid()

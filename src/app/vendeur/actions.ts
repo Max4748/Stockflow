@@ -329,3 +329,42 @@ export async function annulerMaVente(
       encodeURIComponent("Vente annulée, stock remis dans le vôtre."),
   );
 }
+
+/**
+ * Prendre de la marchandise pour soi.
+ *
+ * Le TARIF N'EST PAS DANS LE FORMULAIRE, et c'est délibéré : le laisser saisir
+ * reviendrait à laisser un vendeur choisir combien il doit. `prix_preleve()`
+ * le calcule en base, à partir du tarif posé par l'encadrement ou du repli
+ * `prix conseillé − commission`. Le formulaire ne fait que l'afficher.
+ */
+export async function enregistrerPrelevement(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerProfil();
+
+  const produitId = String(formData.get("produit_id") ?? "").trim();
+  const brut = String(formData.get("quantite") ?? "").trim();
+  if (!produitId) return { erreur: "Choisir un produit." };
+
+  // `Number("")` vaut 0 et non NaN : sans le test sur la chaîne, un champ vide
+  // partirait comme une quantité nulle.
+  const quantite = brut === "" ? NaN : Number(brut);
+  if (!Number.isInteger(quantite) || quantite <= 0) {
+    return { erreur: "Quantité invalide." };
+  }
+
+  const supabase = await creerClient();
+  const { error } = await supabase.rpc("enregistrer_prelevement", {
+    p_produit_id: produitId,
+    p_quantite: quantite,
+  });
+  if (error) return { erreur: error.message };
+
+  revalidatePath("/vendeur", "layout");
+  return {
+    succes: "Prélèvement enregistré : le montant s'ajoute à ce que tu dois.",
+    jeton: crypto.randomUUID(),
+  };
+}

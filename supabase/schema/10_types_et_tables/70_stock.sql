@@ -23,8 +23,14 @@
 
 do $$ begin
   create type type_mouvement as enum
-    ('entree_achat','transfert','vente','retour','ajustement','sav');
+    ('entree_achat','transfert','vente','retour','ajustement','sav','prelevement');
 exception when duplicate_object then null; end $$;
+
+-- POUR LES BASES QUI EXISTENT DÉJÀ. Le bloc ci-dessus ne fait rien quand le
+-- type est là, donc une valeur ajoutée après coup n'y arriverait jamais. Sur
+-- une base neuve cet `alter` est un no-op — la valeur vient du `create type` —
+-- et il ne bloque donc pas l'application du schéma en une seule transaction.
+alter type type_mouvement add value if not exists 'prelevement';
 
 create table if not exists mouvements_stock (
   id           uuid primary key default gen_random_uuid(),
@@ -84,6 +90,12 @@ create table if not exists mouvements_stock (
 alter table mouvements_stock
   add column if not exists origine_sav_id uuid references sav(id) on delete cascade;
 
+-- Même mécanique pour un prélèvement : annuler la prise rend l'unité au stock
+-- du vendeur par la cascade, sans écriture compensatoire.
+alter table mouvements_stock
+  add column if not exists origine_prelevement_id uuid
+    references prelevements(id) on delete cascade;
+
 -- La contrainte de cohérence par type doit connaître le nouveau cas. Elle est
 -- reconstruite en entier plutôt que complétée : une contrainte partielle serait
 -- pire que pas de contrainte du tout.
@@ -101,6 +113,11 @@ alter table mouvements_stock add constraint mvt_coherence check (
     -- Un SAV ne fait que SORTIR de la marchandise, et toujours au titre d'un
     -- dossier identifié.
     when 'sav' then quantite < 0 and origine_sav_id is not null
+    -- Un prélèvement aussi, et il sort forcément d'un détenteur nommé : la
+    -- marchandise part chez quelqu'un, pas dans les limbes.
+    when 'prelevement' then
+      detenteur_id is not null and quantite < 0
+      and origine_prelevement_id is not null
   end
 );
 

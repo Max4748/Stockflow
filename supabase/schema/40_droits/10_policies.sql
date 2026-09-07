@@ -151,3 +151,19 @@ drop policy if exists journal_operations_select on journal_operations;
 
 create policy journal_operations_select on journal_operations
   for select using (est_admin());
+
+-- ------------------------------------------------------------
+-- Prélèvements personnels.
+--
+-- Un vendeur voit ce qu'il a pris et à quel tarif : c'est sa dette, la lui
+-- cacher rendrait `reste_a_verser` inexplicable de son point de vue.
+-- ------------------------------------------------------------
+drop policy if exists prelevements_select on prelevements;
+
+create policy prelevements_select on prelevements
+  for select using (vendeur_id = auth.uid() or est_admin());
+
+drop policy if exists prix_preleves_select on prix_preleves;
+
+create policy prix_preleves_select on prix_preleves
+  for select using (vendeur_id = auth.uid() or est_admin());

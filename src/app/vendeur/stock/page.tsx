@@ -8,7 +8,9 @@ import { exigerProfil } from "@/lib/auth";
 import { creerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { niveauStock } from "@/lib/format";
-import type { LigneStock } from "@/lib/types";
+import type { LigneStock, TarifPreleve } from "@/lib/types";
+
+import { FormulairePrelevement } from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon stock — StockFlow" };
@@ -19,17 +21,27 @@ export default async function PageStock() {
 
   // stock_disponible() ne renvoie que le stock DÉTENU par l'appelant, et
   // jamais de valorisation : le coût d'achat n'est pas une information vendeur.
-  const { data, error } = await supabase.rpc("stock_disponible");
+  // Les deux en parallèle : l'un ne dépend pas de l'autre, et les enchaîner
+  // ajouterait un aller-retour pour rien.
+  const [{ data, error }, { data: tarifsBruts }] = await Promise.all([
+    supabase.rpc("stock_disponible"),
+    // Ses PROPRES tarifs : `tarifs_preleves` refuse ceux d'un autre compte.
+    supabase.rpc("tarifs_preleves", { p_vendeur_id: profil.id }),
+  ]);
   const stock = (data as LigneStock[] | null) ?? [];
+  const tarifs = (tarifsBruts as TarifPreleve[] | null) ?? [];
   const total = stock.reduce((s, l) => s + l.quantite, 0);
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-baseline justify-between">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-xl font-semibold">Mon stock</h1>
-        <span className="text-muted-foreground text-sm tabular-nums">
-          {total} unité(s)
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {total} unité(s)
+          </span>
+          <FormulairePrelevement stock={stock} tarifs={tarifs} />
+        </div>
       </div>
 
       {error && (

@@ -432,3 +432,23 @@ revoke execute on function tracer_operation(text, uuid, text, text, int, numeric
   from public, authenticated, anon;
 
 grant execute on function reinitialiser_donnees(text) to authenticated;
+
+-- ------------------------------------------------------------
+-- Prélèvements personnels.
+--
+-- Lecture par la RLS, écriture par les fonctions seules : une ligne de
+-- `prelevements` pèse sur une dette, un INSERT direct la falsifierait.
+-- ------------------------------------------------------------
+grant select on prelevements  to authenticated;
+grant select on prix_preleves to authenticated;
+
+revoke insert, update, delete on prelevements  from authenticated, anon;
+revoke insert, update, delete on prix_preleves from authenticated, anon;
+
+grant execute on function prix_preleve(uuid, uuid)                        to authenticated;
+grant execute on function definir_prix_preleve(uuid, uuid, numeric)       to authenticated;
+grant execute on function enregistrer_prelevement(uuid, integer, uuid)    to authenticated;
+grant execute on function supprimer_prelevement(uuid)                     to authenticated;
+grant execute on function mes_prelevements(integer)                       to authenticated;
+grant execute on function prelevements_vendeur(uuid, integer)             to authenticated;
+grant execute on function tarifs_preleves(uuid)                           to authenticated;
