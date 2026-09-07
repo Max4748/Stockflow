@@ -294,6 +294,14 @@ export type Invitation = {
 export type EtatActionSecret = EtatAction & {
   motDePasse?: string;
   email?: string;
+  /**
+   * Le lien d'invitation, pour le transmettre autrement que par courriel.
+   *
+   * C'est le MÊME que celui parti par e-mail, reconstruit depuis le jeton en
+   * base — pas un second : en fabriquer un nouveau invaliderait le premier.
+   * Absent si le compte a déjà servi son invitation.
+   */
+  lienInvitation?: string;
 };
 
 /**

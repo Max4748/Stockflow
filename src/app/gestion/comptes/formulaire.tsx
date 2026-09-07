@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import type { EtatAction, EtatActionSecret } from "@/lib/types";
 
 import { changerRole, changerStockLie, creerVendeur } from "../actions";
-import { MotDePasseProvisoire } from "../vendeurs/formulaire";
+import { LienInvitation, MotDePasseProvisoire } from "../vendeurs/formulaire";
 
 /**
  * Création d'un compte gérant.
@@ -92,6 +92,22 @@ export function FormulaireCreationGerant() {
               motDePasse={etat.motDePasse}
             />
           </div>
+        )}
+
+        {/* Chemin normal depuis le passage à l'invitation : pas de mot de passe,
+            un lien. Sans ce bloc, créer un gérant ne rendait rien à l'écran. */}
+        {etat.email && !etat.motDePasse && (
+          <Alert className="sm:col-span-2">
+            <AlertDescription className="space-y-2">
+              <p>
+                Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
+                valable une heure.
+              </p>
+              {etat.lienInvitation && (
+                <LienInvitation lien={etat.lienInvitation} />
+              )}
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">

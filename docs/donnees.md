@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-19 tables, 4 vues, 81 fonctions, 26 politiques RLS. Le SQL fait référence : les
+19 tables, 4 vues, 82 fonctions, 26 politiques RLS. Le SQL fait référence : les
 fichiers de `supabase/schema/` sont commentés, et chaque objet n'y est défini
 qu'une fois.
 
@@ -522,7 +522,7 @@ tenue à jour à côté.
 | Couche | Contenu | Ce que sa position garantit |
 | --- | --- | --- |
 | `10_types_et_tables/` | types énumérés, tables, contraintes, index, RLS | rien n'existe avant |
-| `20_fonctions/` | les 81 fonctions, une seule définition chacune | après les tables qu'elles lisent |
+| `20_fonctions/` | les 82 fonctions, une seule définition chacune | après les tables qu'elles lisent |
 | `30_vues_et_triggers/` | les 4 vues, le trigger d'inscription | `v_lignes_vente` appelle `est_admin()`, le trigger appelle `gerer_nouvel_utilisateur()` |
 | `40_droits/` | policies, grants et revokes, commentaires | les 26 policies citent `est_admin` / `est_dev` / `est_actif` |
 | `90_donnees/` | amorçage, reprises de données | tout le schéma est en place |

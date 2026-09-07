@@ -41,7 +41,7 @@ export function FormulaireCreationVendeur() {
       libelle="Créer un compte vendeur"
       variante="default"
       titre="Créer un compte vendeur"
-      description="Le mot de passe provisoire s'affiche ici une seule fois : aucun e-mail n'est envoyé, il se transmet de la main à la main."
+      description="Un lien d'accès part par e-mail. Il s'affiche aussi ici après la création, pour le transmettre autrement si besoin."
     >
       <form
         action={action}
@@ -97,10 +97,19 @@ export function FormulaireCreationVendeur() {
             information que le gérant doive vérifier avant de fermer. */}
         {etat.email && !etat.motDePasse && (
           <Alert className="sm:col-span-2">
-            <AlertDescription>
-              Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
-              valable une heure. Sans réception, la fiche du vendeur permet de
-              lui attribuer un mot de passe provisoire.
+            <AlertDescription className="space-y-2">
+              <p>
+                Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
+                valable une heure.
+              </p>
+              {etat.lienInvitation ? (
+                <LienInvitation lien={etat.lienInvitation} />
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  Sans réception, la fiche du vendeur permet de lui attribuer un
+                  mot de passe provisoire.
+                </p>
+              )}
             </AlertDescription>
           </Alert>
         )}
@@ -113,6 +122,46 @@ export function FormulaireCreationVendeur() {
         </div>
       </form>
     </DialogueAction>
+  );
+}
+
+/**
+ * Le lien d'invitation, pour le transmettre hors courriel.
+ *
+ * C'est LE MÊME lien que celui parti par e-mail, pas un second : en fabriquer
+ * un nouveau invaliderait le premier, et le vendeur qui cliquerait dans son
+ * courriel tomberait sur « lien invalide ». Les deux chemins mènent donc au
+ * même jeton, et le premier utilisé consomme l'autre.
+ *
+ * Affiché une seule fois, comme un mot de passe provisoire : il vaut une
+ * session pour ce compte tant qu'il n'a pas servi.
+ */
+export function LienInvitation({ lien }: { lien: string }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="bg-muted min-w-0 flex-1 truncate rounded px-2 py-1.5 font-mono text-xs select-all">
+          {lien}
+        </code>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            navigator.clipboard
+              .writeText(lien)
+              .then(() => toast.success("Lien copié."))
+              .catch(() => toast.error("Copie impossible, le sélectionner."));
+          }}
+        >
+          Copier
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Même lien que celui du courriel. Le transmettre par un autre canal si
+        besoin — le premier des deux chemins utilisé consomme l&apos;autre.
+      </p>
+    </div>
   );
 }
 

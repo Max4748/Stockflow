@@ -17,7 +17,7 @@ Navigateur ──HTTP──▶ Next.js (Server Components + Server Actions)
                    ┌──────┴──────┐
                    ▼             ▼
               PostgREST       GoTrue        Postgres
-              (données)       (auth)        RLS + 81 fonctions
+              (données)       (auth)        RLS + 82 fonctions
 ```
 
 Le navigateur ne connaît que du HTML et les Server Actions. Il n'a **aucune clé
@@ -123,7 +123,7 @@ supabase/
 ├── schema/                     chaque objet défini UNE fois
 │   ├── 10_types_et_tables/     types, tables, index, RLS — numérotés selon
 │   │                           les clés étrangères, pas selon le domaine
-│   ├── 20_fonctions/           les 81 fonctions, groupées par domaine
+│   ├── 20_fonctions/           les 82 fonctions, groupées par domaine
 │   ├── 30_vues_et_triggers/    après 20 : leurs corps citent des fonctions
 │   ├── 40_droits/              policies, grants, commentaires — après 20 :
 │   │                           les 26 policies citent est_admin / est_dev

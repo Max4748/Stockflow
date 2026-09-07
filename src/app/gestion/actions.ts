@@ -773,10 +773,10 @@ export async function creerVendeur(
   //
   // clientAdmin() porte la clé service_role : c'est le SEUL usage légitime,
   // `auth.admin.*` n'étant pas accessible autrement.
-  const { error: erreurCompte } = await clientAdmin().auth.admin.inviteUserByEmail(
-    email,
-    { redirectTo: `${env.APP_URL}/auth/callback?next=/changer-mot-de-passe` },
-  );
+  const { data: invite, error: erreurCompte } =
+    await clientAdmin().auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${env.APP_URL}/auth/callback?next=/changer-mot-de-passe`,
+    });
 
   if (erreurCompte) {
     // Les deux étapes ne sont PAS atomiques. L'invitation subsiste, inoffensive
@@ -789,10 +789,28 @@ export async function creerVendeur(
     };
   }
 
+  // ÉTAPE 3 — récupérer le lien pour pouvoir le transmettre autrement.
+  //
+  // On LIT le jeton posé à l'étape 2, on n'en fabrique pas un nouveau :
+  // `generateLink` de l'API d'administration remplacerait celui du courriel, qui
+  // deviendrait invalide sans que rien ne le dise. Le lien reconstruit ici est
+  // donc exactement celui que le vendeur a reçu, pas un second.
+  //
+  // Un échec n'annule rien : le compte existe, le courriel est parti. On
+  // l'annonce sans le lien plutôt que de prétendre que la création a raté.
+  // L'identifiant vient de l'invitation elle-même : `profils` ne porte pas
+  // l'adresse e-mail, elle ne vit que dans `auth.users`.
+  const { data: jetonLien } = invite?.user?.id
+    ? await supabase.rpc("lien_invitation", { p_id: invite.user.id })
+    : { data: null };
+
   rafraichir();
   return {
     succes: `Compte créé pour ${nom}. Un lien vient d'être envoyé à ${email}.`,
     email,
+    lienInvitation: jetonLien
+      ? `${env.APP_URL}/auth/callback?token_hash=${jetonLien}&type=invite&next=/changer-mot-de-passe`
+      : undefined,
     jeton: jeton(),
   };
 }

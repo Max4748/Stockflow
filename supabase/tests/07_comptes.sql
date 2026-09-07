@@ -11,7 +11,7 @@
 -- doit continuer de dire qui l'a tranché.
 -- ------------------------------------------------------------
 
-select plan(16);
+select plan(20);
 
 select t_compte('t-dev@test.invalid',     'T-Dev',      'dev')       as dev     \gset
 select t_compte('t-gerant@test.invalid',  'T-Gérant',   'gerant')    as gerant  \gset
@@ -120,3 +120,39 @@ select t_agir(:'gerant2') as _ \gset
 select throws_ok(
   $$ select retirer_compte('00000000-0000-0000-0000-000000000000') $$,
   '02000', null, 'un identifiant inconnu est refusé, pas ignoré en silence');
+
+-- ---------- Le lien d'invitation, transmissible hors courriel ----------
+-- La fonction LIT le jeton posé par l'invitation, elle n'en fabrique pas :
+-- `generateLink` de l'API d'administration remplacerait celui du courriel, qui
+-- deviendrait invalide sans que rien ne le signale.
+-- Comptes dédiés : les assertions précédentes ont modifié `gerant` et
+-- `vendeur`, et ce fichier interdit de supposer quoi que ce soit de l'état
+-- laissé par les autres.
+reset role;
+select t_compte('t-ger-lien@test.invalid', 'T-Gérant-Lien', 'gerant')     as gl \gset
+select t_compte('t-ven-lien@test.invalid', 'T-Vendeur-Lien', 'vendeur', 5) as vl \gset
+update auth.users set confirmation_token = 'jeton-essai-vendeur'
+ where id = :'vl';
+
+select t_agir(:'gl') as _ \gset
+select is(lien_invitation(:'vl'), 'jeton-essai-vendeur',
+          'un gérant obtient le jeton d''un vendeur qu''il gère');
+
+select throws_ok(
+  format($$ select lien_invitation(%L) $$, :'dev'),
+  '42501', null,
+  'mais jamais celui d''un niveau supérieur : ce jeton vaut une session');
+
+reset role;
+select t_agir(:'vl') as _ \gset
+select throws_ok(
+  format($$ select lien_invitation(%L) $$, :'vierge'),
+  '42501', null, 'un vendeur ne peut pas l''appeler du tout');
+
+-- Le jeton disparaît quand le compte a servi son invitation : l'écran doit dire
+-- qu'il n'y a plus de lien plutôt que d'en afficher un mort.
+reset role;
+update auth.users set confirmation_token = '' where id = :'vl';
+select t_agir(:'gl') as _ \gset
+select is(lien_invitation(:'vl'), null,
+          'lien déjà consommé : plus rien à donner, pas un lien mort');

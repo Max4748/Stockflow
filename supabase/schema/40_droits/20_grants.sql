@@ -452,3 +452,7 @@ grant execute on function supprimer_prelevement(uuid)                     to aut
 grant execute on function mes_prelevements(integer)                       to authenticated;
 grant execute on function prelevements_vendeur(uuid, integer)             to authenticated;
 grant execute on function tarifs_preleves(uuid)                           to authenticated;
+
+-- Le lien d'invitation, pour le transmettre hors courriel. Gardée par
+-- `est_admin()` + `exiger_gestion_de()` dans son corps.
+grant execute on function lien_invitation(uuid) to authenticated;

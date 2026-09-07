@@ -367,3 +367,56 @@ begin
      where r.niveau >= 2
      order by r.niveau desc, p.nom;
 end $$;
+
+-- ------------------------------------------------------------
+-- Le jeton du lien d'invitation d'un compte, pour le transmettre autrement que
+-- par courriel.
+--
+-- POURQUOI LIRE LE JETON EXISTANT PLUTÔT QUE D'EN FABRIQUER UN. `generateLink`
+-- de l'API d'administration REMPLACE le jeton en base : mesuré, le lien déjà
+-- parti par courriel devient invalide sans que rien ne le signale, et le
+-- vendeur tombe sur « lien invalide » en cliquant. Le jeton stocké est
+-- exactement celui que le gabarit d'e-mail place dans `{{ .TokenHash }}` :
+-- l'application reconstruit donc LE MÊME lien, et les deux chemins restent
+-- valides.
+--
+-- CE QUE ÇA N'OUVRE PAS. Le jeton vaut une session pour le compte visé, d'où
+-- les trois gardes : gérant, `exiger_gestion_de` (donc un niveau strictement
+-- inférieur au sien), et compte encore non confirmé. Un gérant qui obtient ce
+-- lien pouvait déjà prendre la main sur le même compte par
+-- `reinitialiserMotDePasse` : aucun pouvoir nouveau, un aller-retour de moins.
+--
+-- Le jeton disparaît de lui-même dès que le lien est consommé — vérifié contre
+-- GoTrue, pas supposé : la fonction rend alors NULL, et l'écran n'affiche pas
+-- de lien mort.
+-- ------------------------------------------------------------
+create or replace function lien_invitation(p_id uuid)
+returns text
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  v_role  text;
+  v_jeton text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte inconnu.' using errcode = '22023';
+  end if;
+  perform exiger_gestion_de(v_role);
+
+  -- `confirmation_token` SEUL fait foi. Mesuré : GoTrue le vide dès que le lien
+  -- est consommé, donc un compte qui a servi son invitation rend NULL sans
+  -- qu'on ait à interroger une colonne de confirmation. C'est aussi la seule
+  -- colonne présente à la fois sur le schéma `auth` de l'image de test et sur
+  -- celui, plus récent, de l'instance en service : `email_confirmed_at`
+  -- n'existe pas sur le premier.
+  select nullif(u.confirmation_token, '')
+    into v_jeton
+    from auth.users u
+   where u.id = p_id;
+
+  return v_jeton;
+end $$;

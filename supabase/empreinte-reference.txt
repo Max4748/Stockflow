@@ -1788,6 +1788,41 @@ begin
     jsonb_build_object('ip', p_ip), null);
 end $function$
 
+FONCTION  lien_invitation(uuid)
+CREATE OR REPLACE FUNCTION public.lien_invitation(p_id uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_role  text;
+  v_jeton text;
+begin
+  if not est_admin() then
+    raise exception 'Réservé aux gérants.' using errcode = '42501';
+  end if;
+
+  select role into v_role from profils where id = p_id;
+  if not found then
+    raise exception 'Compte inconnu.' using errcode = '22023';
+  end if;
+  perform exiger_gestion_de(v_role);
+
+  -- `confirmation_token` SEUL fait foi. Mesuré : GoTrue le vide dès que le lien
+  -- est consommé, donc un compte qui a servi son invitation rend NULL sans
+  -- qu'on ait à interroger une colonne de confirmation. C'est aussi la seule
+  -- colonne présente à la fois sur le schéma `auth` de l'image de test et sur
+  -- celui, plus récent, de l'instance en service : `email_confirmed_at`
+  -- n'existe pas sur le premier.
+  select nullif(u.confirmation_token, '')
+    into v_jeton
+    from auth.users u
+   where u.id = p_id;
+
+  return v_jeton;
+end $function$
+
 FONCTION  ma_dette()
 CREATE OR REPLACE FUNCTION public.ma_dette()
  RETURNS TABLE(ca numeric, commissions numeric, verse numeric, rembourse numeric, reste_a_verser numeric, nb_ventes integer, qte_vendue integer, preleve numeric)
@@ -3711,6 +3746,7 @@ DROIT-FN  ip_est_bloquee(text)  =X/postgres | anon=X/postgres | authenticated=X/
 DROIT-FN  journal_admin(date,date,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  journal_transactions(date,date,text,uuid,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  lever_blocage_ip(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  lien_invitation(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  ma_dette()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  marquer_mdp_change()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  marquer_sav_gestion_vu(timestamp with time zone)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
