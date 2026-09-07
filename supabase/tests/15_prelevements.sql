@@ -12,7 +12,7 @@
 -- conseillé. Prélever au tarif par défaut coûte donc le même prix que vendre.
 -- ------------------------------------------------------------
 
-select plan(18);
+select plan(23);
 
 select t_compte('t-dev@test.invalid',     'T-Dev',     'dev')         as dev     \gset
 select t_compte('t-gerant@test.invalid',  'T-Gérant',  'gerant')      as gerant  \gset
@@ -105,3 +105,33 @@ select is((select stock_detenu(:'produit', :'vendeur')), 9,
 select is((select count(*)::int from journal_operations
             where entite = 'prelevement' and entite_id = :'prise'), 1,
           'la suppression laisse une trace, comme toute écriture effacée');
+
+-- ---------- Le parcours d'annulation, jusqu'aux bords ----------
+-- Trois cas qui ne se voient pas en annulant une prise isolée : annuler deux
+-- fois, retirer le produit pris, retirer le compte qui a pris. Les deux
+-- derniers portent une clé étrangère `restrict` — sans garde-fou ils
+-- rendraient une erreur brute au lieu de désactiver proprement.
+select t_agir(:'gerant') as _ \gset
+select throws_ok(
+  format($$ select supprimer_prelevement(%L) $$, :'prise'),
+  '22023', null,
+  'annuler deux fois rend un message lisible, pas une erreur de contrainte');
+
+reset role;
+select t_agir(:'vendeur') as _ \gset
+select enregistrer_prelevement(:'produit', 1) as prise2 \gset
+
+reset role;
+select t_agir(:'dev') as _ \gset
+select lives_ok(format($$ select retirer_produit(%L) $$, :'produit'),
+                'retirer un produit qui a été prélevé ne casse rien');
+reset role;
+select is((select actif from produits where id = :'produit'), false,
+          'il est désactivé et non supprimé : la contrepartie d''une dette reste');
+
+select t_agir(:'dev') as _ \gset
+select lives_ok(format($$ select retirer_compte(%L) $$, :'vendeur'),
+                'retirer un compte qui a prélevé ne casse rien');
+reset role;
+select is((select count(*)::int from prelevements where id = :'prise2'), 1,
+          'et sa prise subsiste : une dette ne s''évapore pas avec le compte');

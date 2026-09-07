@@ -101,7 +101,7 @@ commandes à chaque push : la section ci-dessus n'est pas une promesse, c'est ce
 qui tourne.
 
 Les tests sont en **pgTAP**, pas en TypeScript : c'est en SQL que vit la logique
-métier, donc c'est là que porte la couverture. 212 assertions, portant sur les règles
+métier, donc c'est là que porte la couverture. 217 assertions, portant sur les règles
 qu'on ne peut ni annuler ni deviner en lisant l'interface : la
 hiérarchie des rôles, le calcul de la dette, la borne anti-surversement, les
 deux régimes du SAV et la révocation d'un échange.

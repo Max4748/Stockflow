@@ -307,6 +307,11 @@ begin
        + (select count(*) from restocks         where cree_par     = p_id)
        + (select count(*) from sav              where cree_par     = p_id)
        + (select count(*) from sav              where traite_par   = p_id)
+       -- Redondant avec mouvements_stock en pratique — un prélèvement en écrit
+       -- toujours un — mais explicite par choix : la clé étrangère est
+       -- `restrict`, et sans ce terme la suppression échouerait sur une erreur
+       -- brute au lieu de désactiver proprement.
+       + (select count(*) from prelevements     where vendeur_id   = p_id)
     into v_refs;
 
   if v_refs = 0 then
