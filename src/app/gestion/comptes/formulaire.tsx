@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import type { EtatAction, EtatActionSecret } from "@/lib/types";
 
 import { changerRole, changerStockLie, creerVendeur } from "../actions";
-import { LienInvitation, MotDePasseProvisoire } from "../vendeurs/formulaire";
+import { DialogueCompteCree } from "../vendeurs/formulaire";
 
 /**
  * Création d'un compte gérant.
@@ -43,14 +43,14 @@ export function FormulaireCreationGerant() {
   }, [etat.succes, etat.jeton]);
 
   return (
-    // `jeton` volontairement absent : le refermer au succès emporterait le mot
-    // de passe provisoire, affiché une seule fois. Même motif que la création
-    // d'un vendeur — voir gestion/vendeurs/formulaire.tsx.
+    <>
     <DialogueAction
       libelle="Créer un compte gérant"
       variante="default"
+      // Se ferme au succès : le résultat a son propre dialogue.
+      jeton={etat.jeton}
       titre="Créer un compte gérant"
-      description="Le mot de passe provisoire s'affiche ici une seule fois : aucun e-mail n'est envoyé, il se transmet de la main à la main."
+      description="Un lien d'accès part par e-mail. Il s'affiche ensuite pour le transmettre autrement si besoin."
     >
       <form
         action={action}
@@ -85,30 +85,7 @@ export function FormulaireCreationGerant() {
           </Alert>
         )}
 
-        {etat.motDePasse && (
-          <div className="sm:col-span-2">
-            <MotDePasseProvisoire
-              email={etat.email}
-              motDePasse={etat.motDePasse}
-            />
-          </div>
-        )}
 
-        {/* Chemin normal depuis le passage à l'invitation : pas de mot de passe,
-            un lien. Sans ce bloc, créer un gérant ne rendait rien à l'écran. */}
-        {etat.email && !etat.motDePasse && (
-          <Alert className="sm:col-span-2">
-            <AlertDescription className="space-y-2">
-              <p>
-                Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
-                valable une heure.
-              </p>
-              {etat.lienInvitation && (
-                <LienInvitation lien={etat.lienInvitation} />
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
           <DialogClose render={<Button variant="outline">Fermer</Button>} />
@@ -118,6 +95,8 @@ export function FormulaireCreationGerant() {
         </div>
       </form>
     </DialogueAction>
+      <DialogueCompteCree etat={etat} />
+    </>
   );
 }
 

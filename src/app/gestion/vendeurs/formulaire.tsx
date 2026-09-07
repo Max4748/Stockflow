@@ -6,7 +6,15 @@ import { toast } from "sonner";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { EtatAction, EtatActionSecret } from "@/lib/types";
@@ -37,11 +45,14 @@ export function FormulaireCreationVendeur() {
   }, [etat.succes, etat.jeton]);
 
   return (
+    <>
     <DialogueAction
       libelle="Créer un compte vendeur"
       variante="default"
+      // Se ferme au succès : le résultat a désormais son propre dialogue.
+      jeton={etat.jeton}
       titre="Créer un compte vendeur"
-      description="Un lien d'accès part par e-mail. Il s'affiche aussi ici après la création, pour le transmettre autrement si besoin."
+      description="Un lien d'accès part par e-mail. Il s'affiche ensuite pour le transmettre autrement si besoin."
     >
       <form
         action={action}
@@ -91,29 +102,6 @@ export function FormulaireCreationVendeur() {
           </Alert>
         )}
 
-        {/* Plus de mot de passe à afficher ici : le compte est créé par
-            invitation, et c'est le vendeur qui choisira le sien depuis le lien
-            reçu. Il reste à confirmer À QUELLE adresse il est parti, seule
-            information que le gérant doive vérifier avant de fermer. */}
-        {etat.email && !etat.motDePasse && (
-          <Alert className="sm:col-span-2">
-            <AlertDescription className="space-y-2">
-              <p>
-                Lien d&apos;accès envoyé à <strong>{etat.email}</strong>. Il est
-                valable une heure.
-              </p>
-              {etat.lienInvitation ? (
-                <LienInvitation lien={etat.lienInvitation} />
-              ) : (
-                <p className="text-muted-foreground text-xs">
-                  Sans réception, la fiche du vendeur permet de lui attribuer un
-                  mot de passe provisoire.
-                </p>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
           <DialogClose render={<Button variant="outline">Fermer</Button>} />
           <Button type="submit" disabled={enCours}>
@@ -122,6 +110,8 @@ export function FormulaireCreationVendeur() {
         </div>
       </form>
     </DialogueAction>
+      <DialogueCompteCree etat={etat} />
+    </>
   );
 }
 
@@ -139,29 +129,79 @@ export function FormulaireCreationVendeur() {
 export function LienInvitation({ lien }: { lien: string }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <code className="bg-muted min-w-0 flex-1 truncate rounded px-2 py-1.5 font-mono text-xs select-all">
-          {lien}
-        </code>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            navigator.clipboard
-              .writeText(lien)
-              .then(() => toast.success("Lien copié."))
-              .catch(() => toast.error("Copie impossible, le sélectionner."));
-          }}
-        >
-          Copier
-        </Button>
-      </div>
-      <p className="text-muted-foreground text-xs">
-        Même lien que celui du courriel. Le transmettre par un autre canal si
-        besoin — le premier des deux chemins utilisé consomme l&apos;autre.
-      </p>
+      {/* `block` + `break-all`, JAMAIS `truncate` dans une rangée flex : une URL
+          de 150 caractères y forçait un débordement horizontal, avec barre de
+          défilement dans le dialogue et lien coupé à l'écran. */}
+      <code className="bg-muted block w-full rounded-md px-3 py-2 font-mono text-xs break-all select-all">
+        {lien}
+      </code>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="w-full sm:w-auto"
+        onClick={() => {
+          navigator.clipboard
+            .writeText(lien)
+            .then(() => toast.success("Lien copié."))
+            .catch(() => toast.error("Copie impossible, le sélectionner."));
+        }}
+      >
+        Copier le lien
+      </Button>
     </div>
+  );
+}
+
+/**
+ * Le dialogue qui suit une création réussie.
+ *
+ * SÉPARÉ du formulaire, et pas un encadré de plus à l'intérieur : le résultat
+ * s'empilait sous des champs redevenus vides, ce qui laissait croire qu'il
+ * restait quelque chose à saisir, et poussait le dialogue au-delà de la fenêtre.
+ *
+ * Ouvert sans `useEffect` : `key={etat.jeton}` remonte le composant à chaque
+ * succès et `defaultOpen` l'ouvre au montage. C'est le procédé déjà employé par
+ * DialogueAction pour se refermer — un effet qui appellerait `setOuvert` ferait
+ * des renders en cascade.
+ */
+export function DialogueCompteCree({ etat }: { etat: EtatActionSecret }) {
+  if (!etat.jeton || !etat.email || etat.motDePasse) return null;
+
+  return (
+    <Dialog key={etat.jeton} defaultOpen>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Compte créé</DialogTitle>
+          <DialogDescription>
+            Un lien d&apos;accès vient de partir à {etat.email}. Il est valable
+            une heure.
+          </DialogDescription>
+        </DialogHeader>
+
+        {etat.lienInvitation ? (
+          <div className="space-y-3">
+            <p className="text-sm">
+              Le même lien, pour le transmettre par un autre canal :
+            </p>
+            <LienInvitation lien={etat.lienInvitation} />
+            <p className="text-muted-foreground text-xs">
+              Les deux chemins mènent au même accès — le premier utilisé consomme
+              l&apos;autre.
+            </p>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            Sans réception, la fiche du vendeur permet de lui attribuer un mot de
+            passe provisoire.
+          </p>
+        )}
+
+        <DialogFooter>
+          <DialogClose render={<Button>Fermer</Button>} />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
