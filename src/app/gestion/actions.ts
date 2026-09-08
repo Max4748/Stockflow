@@ -1136,3 +1136,60 @@ export async function supprimerPrelevement(
     jeton: jeton(),
   };
 }
+
+/**
+ * Régénérer le lien d'accès d'un compte qui n'a pas encore servi le sien.
+ *
+ * RE-INVITE plutôt que `generateLink` : `inviteUserByEmail` renvoie le courriel
+ * ET repose un jeton neuf, donc les deux chemins restent alignés. `generateLink`
+ * ne renverrait rien et rendrait un lien pointant sur l'URL interne de Kong,
+ * inutilisable hors de la machine.
+ *
+ * Le jeton précédent meurt à ce moment-là, ce qui est l'effet recherché : on
+ * régénère parce que l'ancien est périmé ou perdu. C'est aussi pourquoi ce
+ * geste ne doit PAS être proposé à un compte déjà en service — GoTrue le refuse
+ * de lui-même, mais avec un message que personne ne comprendrait.
+ */
+export async function regenererLienInvitation(
+  _etat: EtatActionSecret,
+  formData: FormData,
+): Promise<EtatActionSecret> {
+  await exigerAdmin();
+
+  const vendeurId = String(formData.get("vendeur_id") ?? "").trim();
+  if (!vendeurId) return { erreur: "Compte introuvable." };
+
+  const { data: compte, error: erreurLecture } =
+    await clientAdmin().auth.admin.getUserById(vendeurId);
+  if (erreurLecture || !compte?.user?.email) {
+    return { erreur: "Compte introuvable côté authentification." };
+  }
+  if (compte.user.email_confirmed_at) {
+    return {
+      erreur:
+        "Ce compte a déjà choisi son mot de passe : il n'y a plus de lien " +
+        "d'accès à donner. Utiliser la réinitialisation du mot de passe.",
+    };
+  }
+
+  const email = compte.user.email;
+  const { error } = await clientAdmin().auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${env.APP_URL}/auth/callback?next=/changer-mot-de-passe`,
+  });
+  if (error) return { erreur: error.message };
+
+  const supabase = await creerClient();
+  const { data: jetonLien } = await supabase.rpc("lien_invitation", {
+    p_id: vendeurId,
+  });
+
+  rafraichir();
+  return {
+    succes: `Nouveau lien envoyé à ${email}.`,
+    email,
+    lienInvitation: jetonLien
+      ? `${env.APP_URL}/auth/callback?token_hash=${jetonLien}&type=invite&next=/changer-mot-de-passe`
+      : undefined,
+    jeton: jeton(),
+  };
+}

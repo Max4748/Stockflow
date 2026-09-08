@@ -174,7 +174,19 @@ suiteBrute.startsWith("/") && !suiteBrute.startsWith("//")
 test, ce lien servirait de redirection ouverte depuis un domaine de confiance,
 dans un courriel que l'utilisateur a de bonnes raisons de croire légitime.
 
-**Le lien vaut une heure et ne sert qu'une fois** (`GOTRUE_MAILER_OTP_EXP`).
+**Le lien vaut 24 heures et ne sert qu'une fois** (`GOTRUE_MAILER_OTP_EXP`,
+posé à `86400` dans `docker-compose.override.yml`).
+
+Porté d'une heure à 24 heures parce qu'un lien de création de compte est souvent
+envoyé le soir et ouvert le lendemain : à une heure, des vendeurs invités dans la
+nuit trouvaient un lien mort au réveil.
+
+**Le réglage est GLOBAL** — GoTrue v2.189 n'expose qu'un `otp_exp`, vérifié dans
+le binaire. Les liens de réinitialisation de mot de passe valent donc 24 heures
+eux aussi, alors qu'une heure y suffirait : fenêtre plus large si une boîte mail
+est compromise. Une durée plus courte pour la seule réinitialisation demanderait
+de la faire respecter dans `src/app/auth/callback/route.ts`, en comparant
+`recovery_sent_at` avant d'appeler `verifyOtp`.
 Expiré, consommé ou tronqué, il renvoie tous les cas sur le même message :
 distinguer « expiré » de « inconnu » renseignerait sur la validité d'un jeton.
 

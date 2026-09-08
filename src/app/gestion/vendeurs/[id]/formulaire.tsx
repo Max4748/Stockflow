@@ -26,11 +26,12 @@ import {
   retirerCompte,
   encaisserVersement,
   modifierVendeur,
+  regenererLienInvitation,
   reinitialiserMotDePasse,
   retournerStock,
   supprimerVersement,
 } from "../../actions";
-import { MotDePasseProvisoire } from "../formulaire";
+import { LienInvitation, MotDePasseProvisoire } from "../formulaire";
 
 type Versement = {
   id: string;
@@ -260,6 +261,7 @@ function DialogueParametres({ profil }: { profil: Profil }) {
           </div>
         </form>
 
+        <BoutonNouveauLien vendeurId={profil.id} />
         <BoutonReinitialiserMotDePasse vendeurId={profil.id} />
       </div>
     </DialogueAction>
@@ -297,6 +299,52 @@ function BoutonReinitialiserMotDePasse({ vendeurId }: { vendeurId: string }) {
       </form>
 
       {etat.motDePasse && <MotDePasseProvisoire motDePasse={etat.motDePasse} />}
+    </div>
+  );
+}
+
+/**
+ * Renvoyer un lien d'accès à un compte qui n'a pas encore choisi son mot de
+ * passe.
+ *
+ * Le lien vaut 24 h. Passé ce délai — ou s'il s'est perdu en route — c'est ce
+ * bouton plutôt qu'un mot de passe provisoire : le vendeur choisit lui-même le
+ * sien, et personne n'a de secret à transporter.
+ *
+ * Le lien précédent meurt à cet instant. C'est voulu : on ne régénère que parce
+ * que l'ancien ne sert plus.
+ */
+function BoutonNouveauLien({ vendeurId }: { vendeurId: string }) {
+  const [etat, action, enCours] = useActionState<EtatActionSecret, FormData>(
+    regenererLienInvitation,
+    {},
+  );
+
+  useEffect(() => {
+    if (etat.succes) toast.success(etat.succes);
+    if (etat.erreur) toast.error(etat.erreur);
+  }, [etat.succes, etat.erreur, etat.jeton]);
+
+  return (
+    <div className="space-y-3 border-t pt-4">
+      <p className="text-muted-foreground text-xs">
+        Pour un compte qui n&apos;a pas encore choisi son mot de passe. Le
+        courriel repart, et le lien s&apos;affiche pour le transmettre
+        autrement. Valable 24 heures.
+      </p>
+      <form action={action}>
+        <input type="hidden" name="vendeur_id" value={vendeurId} />
+        <Button
+          type="submit"
+          variant="outline"
+          className="h-11 w-full"
+          disabled={enCours}
+        >
+          {enCours ? "Envoi…" : "Générer un nouveau lien d'accès"}
+        </Button>
+      </form>
+
+      {etat.lienInvitation && <LienInvitation lien={etat.lienInvitation} />}
     </div>
   );
 }

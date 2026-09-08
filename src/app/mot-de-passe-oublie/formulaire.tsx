@@ -35,7 +35,7 @@ export function FormulaireOubli() {
           <Alert>
             <AlertDescription>
               Si un compte existe avec cette adresse, un lien vient d&apos;être
-              envoyé. Il est valable une heure. Penser à regarder dans les
+              envoyé. Il est valable 24 heures. Penser à regarder dans les
               indésirables.
             </AlertDescription>
           </Alert>

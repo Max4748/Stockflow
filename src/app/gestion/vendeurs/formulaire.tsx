@@ -175,7 +175,7 @@ export function DialogueCompteCree({ etat }: { etat: EtatActionSecret }) {
           <DialogTitle>Compte créé</DialogTitle>
           <DialogDescription>
             Un lien d&apos;accès vient de partir à {etat.email}. Il est valable
-            une heure.
+            24 heures.
           </DialogDescription>
         </DialogHeader>
 

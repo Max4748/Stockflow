@@ -11,7 +11,7 @@ export const metadata = { title: "Connexion — StockFlow" };
  */
 const MESSAGES: Record<string, string> = {
   "lien-invalide":
-    "Ce lien n'est plus valable. Les liens expirent au bout d'une heure et ne servent qu'une fois. En demander un nouveau.",
+    "Ce lien n'est plus valable. Les liens expirent au bout de 24 heures et ne servent qu'une fois. En demander un nouveau.",
 };
 
 export default async function PageLogin({
