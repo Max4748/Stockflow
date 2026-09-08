@@ -1,6 +1,6 @@
 # Modèle de données et règles comptables
 
-19 tables, 4 vues, 82 fonctions, 26 politiques RLS. Le SQL fait référence : les
+20 tables, 4 vues, 83 fonctions, 28 politiques RLS. Le SQL fait référence : les
 fichiers de `supabase/schema/` sont commentés, et chaque objet n'y est défini
 qu'une fois.
 
@@ -18,6 +18,70 @@ qu'une fois.
 | `demandes_restock` + `demande_lignes` | réassorts demandés par les vendeurs                                |
 | `versements`                          | ce qu'un vendeur a reversé                                         |
 | `sav`                                 | les défaillances, rattachées à leur vente                          |
+
+## Modèles et parfums
+
+Le catalogue a **deux niveaux, et un seul est une unité de stock.**
+
+Un modèle (« JNR Falcon X 18K ») existe en plusieurs parfums, et le stock se
+compte par parfum — « 3 mangue, 5 menthe », jamais « 8 Falcon X ». C'est donc le
+parfum qui vit dans `produits`, et les **219 références à `produit_id`**
+réparties sur dix tables et vues — mouvements, ventes, SAV, prélèvements,
+réassorts — ne le savent même pas. Le CUMP et la comptabilité ignorent que les
+modèles existent.
+
+`modeles` ne porte que ce qui lui appartient vraiment :
+
+| Colonne | Pourquoi elle est ici et pas sur le parfum |
+| --- | --- |
+| `prix_vente_conseille` | tous les parfums d'un modèle valent le même prix |
+| `seuil_parfum` | saisi une fois, évalué parfum par parfum |
+| `seuil_modele` | c'est une propriété du modèle par définition |
+
+**Pourquoi une table et non une colonne `modele` sur `produits`.** Ces trois
+attributs y auraient été recopiés sur chaque parfum : huit copies du prix pour
+huit parfums, sans autorité sur celle qui fait foi, et un changement de prix qui
+doit toucher huit lignes ensemble. Une colonne texte n'a par ailleurs aucune
+intégrité référentielle — « Falcon X » et « falcon x » deviendraient deux
+familles en silence. Tant que le regroupement était facultatif c'était
+supportable ; obligatoire, non.
+
+L'unicité change de **portée** au passage : un parfum est unique dans son
+modèle, pas dans tout le catalogue. Sans ça, deux modèles ne pourraient pas
+avoir une « Mangue ». Le `sku`, lui, reste unique globalement : c'est une
+référence commerciale.
+
+### Deux seuils, deux questions
+
+`seuil_parfum` dit **quel parfum manque**, `seuil_modele` dit **si le modèle
+s'éteint**. Un modèle peut aller bien avec un parfum en rupture (0 mangue,
+20 menthe), et être bas sans qu'aucun parfum ne le soit (trois parfums à 2, seuil
+parfum 1, seuil modèle 10). Les deux cas sont fixés par
+`src/lib/format.test.ts`.
+
+`seuil_modele = 0` **désactive** l'alerte de modèle, et c'est le défaut : un
+catalogue repris ne doit pas se mettre à crier au premier déploiement. Une
+rupture totale reste une rupture — ce n'est pas un seuil, c'est un fait.
+
+Le total du modèle se calcule **côté client** (`niveauModele`, `src/lib/format.ts`)
+et non en SQL : les écrans groupent déjà par modèle pour l'affichage, donc la
+somme y est gratuite, et ça évite de tenir une seconde agrégation SQL en
+parallèle de `niveauStock`. À quelques dizaines de produits c'est le bon
+compromis ; au millier, l'agrégat devrait redescendre en base.
+
+### Ce qu'un modèle désactivé emporte
+
+Désactiver un modèle désactive ses parfums. Ce n'est pas une commodité : le prix
+vit sur le modèle, donc un parfum dont le modèle est éteint n'a plus de prix et
+ne peut pas être vendu. Les laisser actifs les ferait apparaître dans les listes
+de saisie sans tarif.
+
+### La reprise d'un catalogue plat
+
+Chaque produit d'avant devient **un modèle à un seul parfum**, portant son propre
+nom, son prix et son seuil. Le gérant regroupe ensuite à la main : deviner que
+« Falcon X Mangue » et « Falcon X Menthe » sont un même modèle serait une
+supposition sur ses données, pas une conversion.
 
 ## Le registre de mouvements
 
@@ -522,9 +586,9 @@ tenue à jour à côté.
 | Couche | Contenu | Ce que sa position garantit |
 | --- | --- | --- |
 | `10_types_et_tables/` | types énumérés, tables, contraintes, index, RLS | rien n'existe avant |
-| `20_fonctions/` | les 82 fonctions, une seule définition chacune | après les tables qu'elles lisent |
+| `20_fonctions/` | les 83 fonctions, une seule définition chacune | après les tables qu'elles lisent |
 | `30_vues_et_triggers/` | les 4 vues, le trigger d'inscription | `v_lignes_vente` appelle `est_admin()`, le trigger appelle `gerer_nouvel_utilisateur()` |
-| `40_droits/` | policies, grants et revokes, commentaires | les 26 policies citent `est_admin` / `est_dev` / `est_actif` |
+| `40_droits/` | policies, grants et revokes, commentaires | les 28 policies citent `est_admin` / `est_dev` / `est_actif` |
 | `90_donnees/` | amorçage, reprises de données | tout le schéma est en place |
 
 À l'intérieur d'une couche, l'ordre alphabétique suffit — sauf dans `10`, où les

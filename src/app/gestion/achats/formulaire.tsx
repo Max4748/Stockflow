@@ -10,7 +10,7 @@ import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { aujourdHui, date, euros, eurosPrecis } from "@/lib/format";
-import type { EtatAction, Produit, Restock } from "@/lib/types";
+import type { EtatAction, ProduitAvecModele, Restock } from "@/lib/types";
 
 import {
   enregistrerAchat,
@@ -32,7 +32,7 @@ import {
  * exactement ce que fait un ajustement positif, réservé pour cette raison aux
  * écarts de comptage.
  */
-export function FormulaireAchat({ produits }: { produits: Produit[] }) {
+export function FormulaireAchat({ produits }: { produits: ProduitAvecModele[] }) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(
     enregistrerAchat,
     {},
@@ -95,7 +95,7 @@ function ChampsAchat({
   initial,
   libelleValider,
 }: {
-  produits: Produit[];
+  produits: ProduitAvecModele[];
   erreur?: string;
   enCours: boolean;
   initial?: SaisieAchat;
@@ -133,10 +133,13 @@ function ChampsAchat({
                   htmlFor={`ach-${p.id}`}
                   className="truncate text-sm font-normal"
                 >
-                  {p.nom}
+                    <span className="text-muted-foreground">
+                      {p.modeles.nom} ·{" "}
+                    </span>
+                    {p.nom}
                 </Label>
                 <p className="text-muted-foreground text-xs">
-                  {euros(p.prix_vente_conseille)} conseillé
+                  {euros(p.modeles.prix_vente_conseille)} conseillé
                 </p>
               </div>
               <div className="shrink-0">
@@ -277,7 +280,7 @@ export function DialogueCorrigerAchat({
   achat,
   saisie,
 }: {
-  produits: Produit[];
+  produits: ProduitAvecModele[];
   achat: Restock;
   saisie: SaisieAchat;
 }) {

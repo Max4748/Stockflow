@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exigerAdmin } from "@/lib/auth";
 import { date, euros, eurosPrecis } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
-import type { Produit, Restock } from "@/lib/types";
+import type { ProduitAvecModele, Restock } from "@/lib/types";
 
 import {
   BoutonSupprimerAchat,
@@ -57,7 +57,13 @@ export default async function PageAchats() {
   const supabase = await creerClient();
 
   const [rProduits, rAchats, rLignes] = await Promise.all([
-    supabase.from("produits").select("*").eq("actif", true).order("nom"),
+    supabase
+      .from("produits")
+      // Le prix conseillé vit sur le modèle : PostgREST le joint plutôt qu'un
+      // second aller-retour.
+      .select("id, modele_id, nom, sku, actif, modeles(nom, prix_vente_conseille, actif)")
+      .eq("actif", true)
+      .order("nom"),
     supabase
       .from("restocks")
       .select("*")
@@ -71,7 +77,12 @@ export default async function PageAchats() {
     supabase.from("restock_lignes").select("restock_id, produit_id, quantite"),
   ]);
 
-  const produits = (rProduits.data as Produit[] | null) ?? [];
+  const produits = ((rProduits.data as ProduitAvecModele[] | null) ?? [])
+    // Un modèle désactivé emporte ses parfums : ils n'ont plus de prix.
+    .filter((p) => p.modeles?.actif)
+    .sort((a, b) =>
+      `${a.modeles.nom} ${a.nom}`.localeCompare(`${b.modeles.nom} ${b.nom}`),
+    );
   const achats = (rAchats.data as Restock[] | null) ?? [];
   const lignes =
     (rLignes.data as

@@ -4,73 +4,125 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exigerAdmin } from "@/lib/auth";
 import { euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
-import type { Produit } from "@/lib/types";
+import type { Modele, Produit } from "@/lib/types";
 
-import { DialogueProduit } from "./formulaire";
+import {
+  DialogueModele,
+  DialogueNouveauModele,
+  DialogueParfum,
+} from "./formulaire";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Produits — StockFlow" };
+export const metadata = { title: "Catalogue — StockFlow" };
 
 export default async function PageProduits() {
   await exigerAdmin();
   const supabase = await creerClient();
 
-  // Écriture directe en table : la policy `produits_admin_all` l'autorise.
-  // Pas de RPC nécessaire, un produit ne porte aucun invariant comptable.
-  const { data, error } = await supabase
-    .from("produits")
-    .select("*")
-    .order("nom");
+  // Écriture directe en table : les policies `modeles_admin_all` et
+  // `produits_admin_all` l'autorisent. Pas de RPC nécessaire, le catalogue ne
+  // porte aucun invariant comptable.
+  const [rModeles, rParfums] = await Promise.all([
+    supabase.from("modeles").select("*").order("nom"),
+    supabase.from("produits").select("*").order("nom"),
+  ]);
 
-  const produits = (data as Produit[] | null) ?? [];
+  const modeles = (rModeles.data as Modele[] | null) ?? [];
+  const parfums = (rParfums.data as Produit[] | null) ?? [];
+  const erreur = rModeles.error ?? rParfums.error;
+
+  const parModele = new Map<string, Produit[]>();
+  for (const p of parfums) {
+    parModele.set(p.modele_id, [...(parModele.get(p.modele_id) ?? []), p]);
+  }
 
   return (
     <div className="w-full space-y-6">
-      {/* Création et édition passent par des dialogues : la page reste une
-          liste lisible, sans formulaire permanent en tête. */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Produits</h1>
-        <DialogueProduit />
+        <h1 className="text-xl font-semibold">Catalogue</h1>
+        <DialogueNouveauModele />
       </div>
 
-      {error && (
+      {erreur && (
         <Alert variant="destructive">
-          <AlertDescription>{error.message}</AlertDescription>
+          <AlertDescription>{erreur.message}</AlertDescription>
         </Alert>
       )}
 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">
-            Catalogue ({produits.length})
+            {modeles.length} modèle(s) · {parfums.length} parfum(s)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {produits.length === 0 ? (
+          {modeles.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center text-sm">
-              Aucun produit. En créer un pour commencer.
+              Aucun modèle. En créer un pour commencer.
             </p>
           ) : (
-            <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-              {produits.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-2 font-medium">
-                      <span className="truncate">{p.nom}</span>
-                      {!p.actif && <Badge variant="outline">inactif</Badge>}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {p.sku ? `${p.sku} · ` : ""}
-                      {euros(p.prix_vente_conseille)} conseillé · seuil{" "}
-                      {p.seuil_alerte}
-                    </p>
-                  </div>
-                  <DialogueProduit produit={p} />
-                </li>
-              ))}
+            <ul className="space-y-3">
+              {modeles.map((m) => {
+                const siens = parModele.get(m.id) ?? [];
+                return (
+                  <li key={m.id} className="rounded-lg border">
+                    {/* `details` natif : le dépliage n'a pas besoin d'état
+                        client, et la page reste un composant serveur. */}
+                    <details open={siens.length > 0 && siens.length <= 6}>
+                      <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 p-3">
+                        <span className="font-medium">{m.nom}</span>
+                        {!m.actif && <Badge variant="outline">inactif</Badge>}
+                        <span className="text-muted-foreground text-xs">
+                          {euros(m.prix_vente_conseille)} conseillé · seuil
+                          parfum {m.seuil_parfum} · seuil modèle{" "}
+                          {m.seuil_modele === 0 ? "désactivé" : m.seuil_modele}
+                        </span>
+                        <span className="text-muted-foreground ml-auto text-xs">
+                          {siens.length} parfum(s)
+                        </span>
+                      </summary>
+
+                      <div className="space-y-2 border-t p-3">
+                        {siens.length === 0 ? (
+                          <p className="text-muted-foreground text-sm">
+                            Aucun parfum. Ce modèle n&apos;apparaît nulle part
+                            tant qu&apos;il n&apos;en a pas.
+                          </p>
+                        ) : (
+                          <ul className="divide-border divide-y">
+                            {siens.map((p) => (
+                              <li
+                                key={p.id}
+                                className="flex items-center gap-3 py-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="flex items-center gap-2 truncate text-sm">
+                                    {p.nom}
+                                    {!p.actif && (
+                                      <Badge variant="outline">inactif</Badge>
+                                    )}
+                                  </p>
+                                  {p.sku && (
+                                    <p className="text-muted-foreground text-xs">
+                                      {p.sku}
+                                    </p>
+                                  )}
+                                </div>
+                                <DialogueParfum modele={m} parfum={p} />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <DialogueParfum modele={m} />
+                          <DialogueModele modele={m} />
+                        </div>
+                      </div>
+                    </details>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>

@@ -60,7 +60,7 @@ select is((select stock_detenu(:'produit', :'vendeur')), 8,
 -- ---------- Ce qu'un vendeur ne peut pas faire ----------
 select t_agir(:'vendeur') as _ \gset
 select throws_ok(
-  format($$ select definir_prix_preleve(%L, %L, 1) $$, :'vendeur', :'produit'),
+  format($$ select definir_prix_preleve(%L, t_modele(%L), 1) $$, :'vendeur', :'produit'),
   '42501', null, 'un vendeur ne fixe pas son propre tarif');
 
 select throws_ok(
@@ -72,17 +72,17 @@ select throws_ok(
   '42501', null,
   'un vendeur n''annule pas sa propre prise : ce serait effacer sa dette');
 
--- ---------- Le tarif est un couple (vendeur, produit) ----------
+-- ---------- Le tarif est un couple (vendeur, MODÈLE) ----------
 reset role;
 select t_agir(:'gerant') as _ \gset
-select definir_prix_preleve(:'vendeur', :'produit', 12) as _ \gset
+select definir_prix_preleve(:'vendeur', t_modele(:'produit'), 12) as _ \gset
 select is(prix_preleve(:'vendeur', :'produit'), 12.00::numeric,
           'le tarif posé remplace le défaut');
 select is(prix_preleve(:'riche', :'produit'), 0.00::numeric,
           'et il ne déborde pas sur un autre vendeur');
 
 select throws_ok(
-  format($$ select definir_prix_preleve(%L, %L, -1) $$, :'vendeur', :'produit'),
+  format($$ select definir_prix_preleve(%L, t_modele(%L), -1) $$, :'vendeur', :'produit'),
   '22023', null, 'un tarif négatif est refusé');
 
 -- Le tarif est figé À LA PRISE : la première reste à 25, la seconde part à 12.
@@ -91,7 +91,7 @@ select is((select reste_a_verser from creances() where vendeur_id = :'vendeur'),
           62.00::numeric,
           'un tarif changé ne réécrit pas une dette déjà constituée : 50 + 12');
 
-select definir_prix_preleve(:'vendeur', :'produit', null) as _ \gset
+select definir_prix_preleve(:'vendeur', t_modele(:'produit'), null) as _ \gset
 select is(prix_preleve(:'vendeur', :'produit'), 25.00::numeric,
           'remettre le tarif à NULL revient au défaut');
 

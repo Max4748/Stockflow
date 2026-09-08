@@ -43,6 +43,7 @@ begin
     'demandes',         (select count(*) from demandes_restock),
     'achats',           (select count(*) from restocks),
     'produits',         (select count(*) from produits),
+    'modeles',          (select count(*) from modeles),
     'operations',       (select count(*) from journal_operations)
   ) into v_comptes;
 
@@ -93,6 +94,7 @@ begin
   delete from restock_lignes where true;
   delete from restocks where true;
   delete from produits where true;
+  delete from modeles where true;
   delete from journal_operations where true;
 
   -- DEUX traces, pour deux lectorats.

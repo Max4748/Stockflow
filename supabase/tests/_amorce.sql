@@ -74,10 +74,33 @@ begin
   perform set_config('role', 'authenticated', true);
 end $$;
 
-create or replace function t_produit(p_nom text, p_prix numeric default 0)
+-- Crée un modèle À UN SEUL PARFUM et rend l'identifiant du PARFUM, qui est
+-- l'unité de stock. La quasi-totalité des tests ne parle que de stock et de
+-- comptabilité : leur imposer de créer un modèle puis un parfum n'ajouterait
+-- aucune couverture. Les tests qui portent sur les modèles eux-mêmes
+-- (16_modeles.sql) les créent explicitement.
+create or replace function t_produit(
+  p_nom          text,
+  p_prix         numeric default 0,
+  p_seuil_parfum int default 3,
+  p_seuil_modele int default 0
+) returns uuid language plpgsql as $$
+declare v_modele uuid; v_parfum uuid;
+begin
+  insert into modeles (nom, prix_vente_conseille, seuil_parfum, seuil_modele)
+  values (p_nom, p_prix, p_seuil_parfum, p_seuil_modele)
+  returning id into v_modele;
+
+  insert into produits (modele_id, nom) values (v_modele, p_nom)
+  returning id into v_parfum;
+
+  return v_parfum;
+end $$;
+
+/** Le modèle d'un parfum créé par t_produit, pour les tests de tarif. */
+create or replace function t_modele(p_produit uuid)
 returns uuid language sql as $$
-  insert into produits (nom, prix_vente_conseille) values (p_nom, p_prix)
-  returning id;
+  select modele_id from produits where id = p_produit;
 $$;
 
 -- ------------------------------------------------------------

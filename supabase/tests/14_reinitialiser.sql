@@ -47,6 +47,7 @@ select (select count(*) from ventes) + (select count(*) from ventes_annulees)
      + (select count(*) from mouvements_stock) + (select count(*) from versements)
      + (select count(*) from sav) + (select count(*) from demandes_restock)
      + (select count(*) from restocks) + (select count(*) from produits)
+     + (select count(*) from modeles) + (select count(*) from prelevements)
      + (select count(*) from journal_operations) as total \gset
 
 select t_agir(:'gerant') as _ \gset

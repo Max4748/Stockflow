@@ -123,8 +123,22 @@ $$;
 -- ------------------------------------------------------------
 -- Lecture : le stock que l'appelant peut vendre.
 -- ------------------------------------------------------------
+-- `drop` obligatoire : les colonnes de sortie changent, et `create or replace`
+-- refuse (« cannot change return type »). Le grant part avec, la couche 40 le
+-- repose.
+drop function if exists stock_disponible();
+
 create or replace function stock_disponible()
-returns table (produit_id uuid, produit text, quantite int, seuil_alerte int)
+returns table (
+  produit_id   uuid,
+  produit      text,
+  quantite     int,
+  modele_id    uuid,
+  modele       text,
+  seuil_parfum int,
+  seuil_modele int,
+  prix_vente_conseille numeric(10,2)
+)
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare
   v_source uuid;
@@ -138,14 +152,15 @@ begin
   return query
     select p.id, p.nom,
            coalesce(s.quantite, 0)::int,
-           p.seuil_alerte
+           mo.id, mo.nom, mo.seuil_parfum, mo.seuil_modele, mo.prix_vente_conseille
       from produits p
+      join modeles mo on mo.id = p.modele_id
       -- `is not distinct from` : `= NULL` vaut toujours NULL, et l'entrepôt
       -- EST le détenteur NULL. Piège documenté dans donnees.md.
       left join v_stock_detenteur s
              on s.produit_id = p.id and s.detenteur_id is not distinct from v_source
-     where p.actif or coalesce(s.quantite, 0) <> 0
-     order by p.nom;
+     where (p.actif and mo.actif) or coalesce(s.quantite, 0) <> 0
+     order by mo.nom, p.nom;
 end $$;
 
 -- ------------------------------------------------------------
@@ -387,8 +402,16 @@ end $$;
 -- impossibles et l'admin refuse en boucle. Il voit des quantités, jamais une
 -- valeur ni un coût.
 -- ------------------------------------------------------------
+drop function if exists stock_entrepot();
+
 create or replace function stock_entrepot()
-returns table (produit_id uuid, produit text, quantite int)
+returns table (
+  produit_id uuid,
+  produit    text,
+  quantite   int,
+  modele_id  uuid,
+  modele     text
+)
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 begin
   if not est_actif() then
@@ -396,23 +419,29 @@ begin
   end if;
 
   return query
-    select p.id, p.nom, coalesce(s.quantite, 0)::int
+    select p.id, p.nom, coalesce(s.quantite, 0)::int, mo.id, mo.nom
       from produits p
+      join modeles mo on mo.id = p.modele_id
       left join v_stock_detenteur s
              on s.produit_id = p.id and s.detenteur_id is null
-     where p.actif
-     order by p.nom;
+     where p.actif and mo.actif
+     order by mo.nom, p.nom;
 end $$;
 
 -- ------------------------------------------------------------
 -- Stock VALORISÉ (admin) : entrepôt, distribué, total, et valeur au CUMP.
 -- ------------------------------------------------------------
+drop function if exists stock_valorise();
+
 create or replace function stock_valorise()
 returns table (
   produit_id      uuid,
   produit         text,
   actif           boolean,
-  seuil_alerte    int,
+  modele_id       uuid,
+  modele          text,
+  seuil_parfum    int,
+  seuil_modele    int,
   stock_entrepot  int,
   stock_distribue int,
   stock_total     int,
@@ -426,12 +455,13 @@ begin
   end if;
 
   return query
-    select s.produit_id, s.nom, s.actif, s.seuil_alerte,
+    select s.produit_id, s.nom, s.actif,
+           s.modele_id, s.modele, s.seuil_parfum, s.seuil_modele,
            s.stock_entrepot, s.stock_distribue, s.stock_total,
            cout_moyen_pondere(s.produit_id)::numeric(10,4),
            (s.stock_total * cout_moyen_pondere(s.produit_id))::numeric(12,2)
       from v_stock_produit s
-     order by s.nom;
+     order by s.modele, s.nom;
 end $$;
 
 -- ============================================================

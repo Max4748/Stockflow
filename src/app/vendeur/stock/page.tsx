@@ -62,7 +62,7 @@ export default async function PageStock() {
         // nombre de colonnes suit la place disponible, jusqu'à 6.
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
           {stock.map((l) => {
-            const niveau = niveauStock(l.quantite, l.seuil_alerte);
+            const niveau = niveauStock(l.quantite, l.seuil_parfum);
             return (
               <li key={l.produit_id}>
                 <Card className="h-full">
@@ -82,7 +82,7 @@ export default async function PageStock() {
                       )}
                     </div>
                     <p className="text-muted-foreground text-xs">
-                      seuil d&apos;alerte : {l.seuil_alerte}
+                      seuil d&apos;alerte : {l.seuil_parfum}
                     </p>
                   </CardContent>
                 </Card>

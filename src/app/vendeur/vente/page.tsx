@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { date, dateHeure, euros } from "@/lib/format";
 import { FormulaireSav } from "@/components/formulaire-sav";
-import type { LigneStock, MaVente, Produit, VenteSavable } from "@/lib/types";
+import type { LigneStock, MaVente, VenteSavable } from "@/lib/types";
 
 import { FormulaireVente } from "./formulaire";
 
@@ -27,10 +27,8 @@ export default async function PageVente({
   const { annulee } = await searchParams;
   const supabase = await creerClient();
 
-  const [rStock, rProduits, rVentes, rSavables] = await Promise.all([
+  const [rStock, rVentes, rSavables] = await Promise.all([
     supabase.rpc("stock_disponible"),
-    // Pour le prix conseillé, qui pré-remplit le formulaire.
-    supabase.from("produits").select("id, prix_vente_conseille"),
     // `corrigeable` est calculé en SQL, pas ici : la fenêtre de 48 h ne doit
     // pas dépendre de l'horloge du téléphone.
     supabase.rpc("mes_ventes", { p_limite: 12 }),
@@ -43,12 +41,11 @@ export default async function PageVente({
   const stock = (rStock.data as LigneStock[] | null) ?? [];
   const mesVentes = (rVentes.data as MaVente[] | null) ?? [];
   const savables = (rSavables.data as VenteSavable[] | null) ?? [];
-  const produits =
-    (rProduits.data as Pick<Produit, "id" | "prix_vente_conseille">[] | null) ??
-    [];
 
+  // Le prix conseillé vient désormais de `stock_disponible()`, qui le
+  // redescend depuis le modèle : plus de seconde requête sur `produits`.
   const prixConseille = new Map(
-    produits.map((p) => [p.id, Number(p.prix_vente_conseille)]),
+    stock.map((l) => [l.produit_id, Number(l.prix_vente_conseille)]),
   );
 
   // On ne propose que ce que le vendeur détient réellement. Le contrôle qui

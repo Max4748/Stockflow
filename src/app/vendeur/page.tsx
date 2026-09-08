@@ -9,13 +9,7 @@ import { creerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { dateHeure, euros, niveauStock, quantite } from "@/lib/format";
 import { estEncadrement } from "@/lib/types";
-import type {
-  LigneJournalVendeur,
-  LigneStock,
-  LigneStockEntrepot,
-  MaDette,
-  Produit,
-} from "@/lib/types";
+import type { LigneJournalVendeur, LigneStock, LigneStockEntrepot, MaDette } from "@/lib/types";
 
 import { FormulaireRestock } from "./restock/formulaire";
 import { FormulaireVente } from "./vente/formulaire";
@@ -31,12 +25,11 @@ export default async function PageVendeur() {
   // aux dialogues montés sur cette page : depuis que les formulaires sont des
   // dialogues, le geste part d'ici plutôt que d'un aller-retour vers un écran
   // qui reposerait le même bouton.
-  const [rDette, rStock, rJournal, rProduits, rEntrepot, rDemandes] =
+  const [rDette, rStock, rJournal, rEntrepot, rDemandes] =
     await Promise.all([
       supabase.rpc("ma_dette"),
       supabase.rpc("stock_disponible"),
       supabase.rpc("mon_journal", { p_limite: 15 }),
-      supabase.from("produits").select("id, prix_vente_conseille"),
       supabase.rpc("stock_entrepot"),
       // Une seule demande de réassort peut être en attente à la fois.
       supabase
@@ -50,21 +43,20 @@ export default async function PageVendeur() {
   const stock = (rStock.data as LigneStock[] | null) ?? [];
   const journal = (rJournal.data as LigneJournalVendeur[] | null) ?? [];
   const entrepot = (rEntrepot.data as LigneStockEntrepot[] | null) ?? [];
-  const produits =
-    (rProduits.data as Pick<Produit, "id" | "prix_vente_conseille">[] | null) ??
-    [];
   const demandeEnAttente = (rDemandes.count ?? 0) > 0;
 
   const erreur = rDette.error ?? rStock.error ?? rJournal.error;
   const alertes = stock.filter(
-    (l) => niveauStock(l.quantite, l.seuil_alerte) !== "ok",
+    (l) => niveauStock(l.quantite, l.seuil_parfum) !== "ok",
   );
 
   // Ce que le vendeur détient réellement, prix conseillé à l'appui. Le contrôle
   // qui compte reste celui du SQL : proposer un produit épuisé ne mènerait
   // qu'à un refus.
+  // Le prix conseillé vient désormais de `stock_disponible()`, qui le
+  // redescend depuis le modèle : plus de seconde requête sur `produits`.
   const prixConseille = new Map(
-    produits.map((p) => [p.id, Number(p.prix_vente_conseille)]),
+    stock.map((l) => [l.produit_id, Number(l.prix_vente_conseille)]),
   );
   const vendables = stock
     .filter((l) => l.quantite > 0)
@@ -233,7 +225,7 @@ export default async function PageVendeur() {
                   <span className="truncate">{l.produit}</span>
                   <Badge
                     variant={
-                      niveauStock(l.quantite, l.seuil_alerte) === "rupture"
+                      niveauStock(l.quantite, l.seuil_parfum) === "rupture"
                         ? "destructive"
                         : "secondary"
                     }

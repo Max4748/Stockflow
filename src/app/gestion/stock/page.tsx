@@ -7,7 +7,7 @@ import { exigerAdmin } from "@/lib/auth";
 import { euros, niveauStock } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
 import type {
-  Produit,
+  ProduitAvecModele,
   StockDetenteur,
   StockValorise,
   TotauxStock,
@@ -30,7 +30,7 @@ const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
     entete: "Produit",
     principale: true,
     valeur: (l) => {
-      const niveau = niveauStock(l.stock_entrepot, l.seuil_alerte);
+      const niveau = niveauStock(l.stock_entrepot, l.seuil_parfum);
       return (
         <span className="flex items-center gap-2">
           {l.produit}
@@ -110,7 +110,11 @@ export default async function PageStock() {
       supabase.from("profils").select("id, nom, role, actif").order("nom"),
       // Le formulaire de restock a besoin des produits complets (prix conseillé),
       // que stock_valorise() ne porte pas.
-      supabase.from("produits").select("*").eq("actif", true).order("nom"),
+      supabase
+        .from("produits")
+        .select("id, modele_id, nom, sku, actif, modeles(nom, prix_vente_conseille, actif)")
+        .eq("actif", true)
+        .order("nom"),
       // Les totaux viennent du SQL, pas d'un reduce() : sommer en TypeScript
       // des valeurs déjà arrondies au centime faisait diverger cet écran du
       // Bilan d'un centime. Voir `totaux_stock`.
@@ -120,7 +124,11 @@ export default async function PageStock() {
 
   const stock = (rStock.data as StockValorise[] | null) ?? [];
   const detenteurs = (rDetenteurs.data as StockDetenteur[] | null) ?? [];
-  const produits = (rProduits.data as Produit[] | null) ?? [];
+  const produits = ((rProduits.data as ProduitAvecModele[] | null) ?? [])
+    .filter((p) => p.modeles?.actif)
+    .sort((a, b) =>
+      `${a.modeles.nom} ${a.nom}`.localeCompare(`${b.modeles.nom} ${b.nom}`),
+    );
 
   // Ce que chaque compte détient déjà, pour que le choix d'un destinataire se
   // fasse en connaissance de cause plutôt qu'à l'aveugle. Les lignes
@@ -144,7 +152,7 @@ export default async function PageStock() {
   const erreur = rStock.error ?? rDetenteurs.error ?? rProfils.error;
 
   const alertes = stock.filter(
-    (l) => l.actif && niveauStock(l.stock_entrepot, l.seuil_alerte) !== "ok",
+    (l) => l.actif && niveauStock(l.stock_entrepot, l.seuil_parfum) !== "ok",
   );
 
   return (

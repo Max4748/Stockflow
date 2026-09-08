@@ -108,14 +108,22 @@ select detenteur_id, produit_id, sum(quantite)::int as quantite
   from mouvements_stock
  group by detenteur_id, produit_id;
 
+-- Le seuil et le prix vivent sur le MODÈLE : la vue les redescend au parfum
+-- pour que les lectures ne rejoignent pas `modeles` chacune de leur côté.
+-- `p.actif and mo.actif` : un modèle désactivé emporte ses parfums, puisque le
+-- prix vit sur lui et qu'un parfum sans prix n'est pas vendable.
 create or replace view v_stock_produit as
-select p.id as produit_id, p.nom, p.actif, p.seuil_alerte,
+select p.id as produit_id, p.nom, (p.actif and mo.actif) as actif,
+       mo.id as modele_id, mo.nom as modele,
+       mo.seuil_parfum, mo.seuil_modele, mo.prix_vente_conseille,
        coalesce(sum(m.quantite) filter (where m.detenteur_id is null), 0)::int     as stock_entrepot,
        coalesce(sum(m.quantite) filter (where m.detenteur_id is not null), 0)::int as stock_distribue,
        coalesce(sum(m.quantite), 0)::int                                           as stock_total
   from produits p
+  join modeles mo on mo.id = p.modele_id
   left join mouvements_stock m on m.produit_id = p.id
- group by p.id, p.nom, p.actif, p.seuil_alerte;
+ group by p.id, p.nom, p.actif, mo.id, mo.nom, mo.actif,
+          mo.seuil_parfum, mo.seuil_modele, mo.prix_vente_conseille;
 
 drop trigger if exists on_auth_user_created on auth.users;
 

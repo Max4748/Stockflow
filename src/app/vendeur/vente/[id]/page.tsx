@@ -7,7 +7,7 @@ import { exigerProfil } from "@/lib/auth";
 import { dateHeure, euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import type { LigneStock, MaVente, Produit } from "@/lib/types";
+import type { LigneStock, MaVente } from "@/lib/types";
 
 import { FormulaireCorrection } from "./formulaire";
 
@@ -30,7 +30,7 @@ export default async function PageCorrection({
   const { id } = await params;
   const supabase = await creerClient();
 
-  const [rVentes, rLignes, rStock, rProduits] = await Promise.all([
+  const [rVentes, rLignes, rStock] = await Promise.all([
     supabase.rpc("mes_ventes", { p_limite: 100 }),
     // v_lignes_vente filtre sur auth.uid() dans sa définition et n'expose
     // AUCUN coût : c'est le seul accès du vendeur au détail de ses ventes.
@@ -41,7 +41,6 @@ export default async function PageCorrection({
       .select("produit_id, produit, quantite, prix_vente_unitaire")
       .eq("vente_id", id),
     supabase.rpc("stock_disponible"),
-    supabase.from("produits").select("id, nom, prix_vente_conseille"),
   ]);
 
   const ventes = (rVentes.data as MaVente[] | null) ?? [];
@@ -52,12 +51,11 @@ export default async function PageCorrection({
 
   const lignes = (rLignes.data as LigneExistante[] | null) ?? [];
   const stock = (rStock.data as LigneStock[] | null) ?? [];
-  const produits =
-    (rProduits.data as
-      Pick<Produit, "id" | "nom" | "prix_vente_conseille">[] | null) ?? [];
 
+  // Le prix conseillé vient désormais de `stock_disponible()`, qui le
+  // redescend depuis le modèle : plus de seconde requête sur `produits`.
   const prixConseille = new Map(
-    produits.map((p) => [p.id, Number(p.prix_vente_conseille)]),
+    stock.map((l) => [l.produit_id, Number(l.prix_vente_conseille)]),
   );
 
   // Stock disponible POUR CETTE CORRECTION : ce que le vendeur détient
@@ -72,16 +70,15 @@ export default async function PageCorrection({
     );
   }
 
-  const vendables = produits
-    .map((p) => {
-      const detenu = stock.find((s) => s.produit_id === p.id)?.quantite ?? 0;
-      return {
-        produit_id: p.id,
-        produit: p.nom,
-        quantite: detenu + (dejaSorti.get(p.id) ?? 0),
-        prix_conseille: prixConseille.get(p.id) ?? 0,
-      };
-    })
+  // Parti de `stock` et non plus d'une seconde lecture de `produits` : la RPC
+  // porte déjà le modèle, le parfum et le prix conseillé.
+  const vendables = stock
+    .map((l) => ({
+      produit_id: l.produit_id,
+      produit: `${l.modele} · ${l.produit}`,
+      quantite: l.quantite + (dejaSorti.get(l.produit_id) ?? 0),
+      prix_conseille: prixConseille.get(l.produit_id) ?? 0,
+    }))
     .filter((p) => p.quantite > 0);
 
   return (

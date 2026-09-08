@@ -75,6 +75,7 @@ grant select on profils, produits, ventes, vente_lignes, mouvements_stock,
 
 -- Tables de paramétrage : écriture directe par l'admin (la RLS filtre).
 grant insert, update, delete on produits    to authenticated;
+grant insert, update, delete on modeles     to authenticated;
 
 grant insert, update, delete on invitations to authenticated;
 
@@ -456,3 +457,9 @@ grant execute on function tarifs_preleves(uuid)                           to aut
 -- Le lien d'invitation, pour le transmettre hors courriel. Gardée par
 -- `est_admin()` + `exiger_gestion_de()` dans son corps.
 grant execute on function lien_invitation(uuid) to authenticated;
+
+-- Catalogue à deux niveaux : le modèle porte le prix et les seuils, le parfum
+-- reste l'unité de stock.
+grant select on modeles to authenticated;
+
+grant execute on function retirer_modele(uuid) to authenticated;

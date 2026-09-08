@@ -50,12 +50,40 @@ export type Profil = {
   cree_le: string;
 };
 
-export type Produit = {
+/**
+ * Un MODÈLE : la famille qui porte le prix et les deux seuils.
+ *
+ * Ce n'est pas une unité de stock — le stock se compte par parfum. Trois
+ * attributs vivent ici parce qu'ils appartiennent au modèle et non au parfum :
+ * les recopier sur chaque parfum donnerait huit copies du prix sans autorité
+ * sur celle qui fait foi.
+ */
+export type Modele = {
   id: string;
   nom: string;
-  sku: string | null;
   prix_vente_conseille: number;
-  seuil_alerte: number;
+  /** Évalué parfum par parfum. */
+  seuil_parfum: number;
+  /** Évalué sur le TOTAL du modèle. 0 = alerte désactivée. */
+  seuil_modele: number;
+  actif: boolean;
+};
+
+/**
+ * Un parfum avec son modèle joint, tel que PostgREST le rend sur
+ * `select("…, modeles(…)")`. Le prix et les seuils vivant sur le modèle, un
+ * écran qui affiche un parfum a presque toujours besoin des deux.
+ */
+export type ProduitAvecModele = Produit & {
+  modeles: Pick<Modele, "nom" | "prix_vente_conseille" | "actif">;
+};
+
+/** Un PARFUM : l'unité de stock. `nom` ne porte que le parfum (« Mangue »). */
+export type Produit = {
+  id: string;
+  modele_id: string;
+  nom: string;
+  sku: string | null;
   actif: boolean;
 };
 
@@ -64,7 +92,11 @@ export type LigneStock = {
   produit_id: string;
   produit: string;
   quantite: number;
-  seuil_alerte: number;
+  modele_id: string;
+  modele: string;
+  seuil_parfum: number;
+  seuil_modele: number;
+  prix_vente_conseille: number;
 };
 
 /** rpc('stock_entrepot') — quantités de l'entrepôt, sans valorisation. */
@@ -72,6 +104,8 @@ export type LigneStockEntrepot = {
   produit_id: string;
   produit: string;
   quantite: number;
+  modele_id: string;
+  modele: string;
 };
 
 /** rpc('ma_dette') — renvoie UNE ligne. */
@@ -231,7 +265,10 @@ export type StockValorise = {
   produit_id: string;
   produit: string;
   actif: boolean;
-  seuil_alerte: number;
+  modele_id: string;
+  modele: string;
+  seuil_parfum: number;
+  seuil_modele: number;
   stock_entrepot: number;
   stock_distribue: number;
   stock_total: number;
@@ -472,9 +509,10 @@ export type LignePrelevement = {
  * pas quoi proposer de remettre à zéro.
  */
 export type TarifPreleve = {
-  produit_id: string;
-  produit: string;
+  modele_id: string;
+  modele: string;
   prix_vente_conseille: number;
   prix_effectif: number;
   personnalise: boolean;
+  nb_parfums: number;
 };

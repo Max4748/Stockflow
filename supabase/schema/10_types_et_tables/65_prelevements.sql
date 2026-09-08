@@ -11,7 +11,8 @@
 -- ventes affiché à tout le monde. La dette, elle, ne fait pas la différence —
 -- de l'argent dû est de l'argent dû.
 --
--- LE PRIX EST UN COUPLE (vendeur, produit). Le prix par défaut vaut
+-- LE PRIX EST UN COUPLE (vendeur, MODÈLE) : tous les parfums d'un modèle se
+-- prélèvent au même tarif. Le prix par défaut vaut
 -- `prix_vente_conseille - commission_unitaire` : c'est très exactement ce qu'un
 -- vendeur devrait à la maison s'il avait vendu l'unité au prix conseillé. Un
 -- prélèvement au tarif par défaut ne lui coûte donc ni plus ni moins que de
@@ -21,15 +22,55 @@
 
 create table if not exists prix_preleves (
   vendeur_id uuid not null references profils(id) on delete cascade,
-  produit_id uuid not null references produits(id) on delete cascade,
+  modele_id  uuid not null references modeles(id) on delete cascade,
   prix       numeric(10,2) not null check (prix >= 0),
   defini_le  timestamptz not null default now(),
   defini_par uuid references profils(id) on delete set null,
-  primary key (vendeur_id, produit_id)
+  primary key (vendeur_id, modele_id)
 );
 
+-- ------------------------------------------------------------
+-- REPRISE : le tarif était par couple (vendeur, PARFUM).
+--
+-- Un modèle, un tarif : régler 5 modèles vaut mieux que 40 parfums. Sans effet
+-- sur une base neuve, où `produit_id` n'a jamais existé.
+-- ------------------------------------------------------------
+alter table prix_preleves
+  add column if not exists modele_id uuid references modeles(id) on delete cascade;
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'prix_preleves'
+       and column_name = 'produit_id'
+  ) then
+    return;
+  end if;
+
+  execute 'update prix_preleves pp
+              set modele_id = p.modele_id
+             from produits p
+            where p.id = pp.produit_id and pp.modele_id is null';
+
+  -- Deux parfums d'un même modèle pouvaient porter deux tarifs distincts : ils
+  -- entrent en collision sur la nouvelle clé. Le plus récent l'emporte, faute
+  -- de règle métier pour départager.
+  execute 'delete from prix_preleves a
+            using prix_preleves b
+            where a.vendeur_id = b.vendeur_id
+              and a.modele_id  = b.modele_id
+              and a.produit_id is distinct from b.produit_id
+              and (a.defini_le, a.produit_id) < (b.defini_le, b.produit_id)';
+
+  alter table prix_preleves drop constraint if exists prix_preleves_pkey;
+  alter table prix_preleves drop column if exists produit_id;
+  alter table prix_preleves alter column modele_id set not null;
+  alter table prix_preleves add primary key (vendeur_id, modele_id);
+end $$;
+
 comment on table prix_preleves is
-  'Exceptions au tarif de prélèvement. Sans ligne, le repli est prix_vente_conseille - commission_unitaire.';
+  'Exceptions au tarif de prélèvement, PAR MODÈLE. Sans ligne, le repli est prix_vente_conseille - commission_unitaire.';
 
 -- `restrict` sur le produit, comme `vente_lignes` : un produit qui a été
 -- prélevé porte une trace comptable, le supprimer effacerait la contrepartie

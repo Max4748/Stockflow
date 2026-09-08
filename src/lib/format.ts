@@ -107,3 +107,28 @@ export const LIBELLES_STATUT: Record<string, string> = {
   refusee: "Refusée",
   annulee: "Annulée",
 };
+
+/**
+ * Niveau d'alerte d'un MODÈLE, sur le total de ses parfums.
+ *
+ * Deux seuils répondent à deux questions différentes : `niveauStock` dit quel
+ * parfum manque, celle-ci dit si le modèle s'éteint. Un modèle peut être « ok »
+ * avec un parfum en rupture, et inversement.
+ *
+ * Le total se calcule ICI et non en SQL : les écrans groupent déjà par modèle
+ * pour l'affichage, donc la somme y est gratuite, et ça évite de tenir une
+ * seconde agrégation SQL en parallèle de la première. À quelques dizaines de
+ * produits c'est le bon compromis ; au millier, l'agrégat devrait redescendre.
+ *
+ * `seuil` à 0 DÉSACTIVE l'alerte : c'est le défaut, un catalogue repris ne doit
+ * pas se mettre à crier au premier déploiement.
+ */
+export function niveauModele(
+  quantites: number[],
+  seuil: number,
+): "rupture" | "bas" | "ok" {
+  const total = quantites.reduce((s, q) => s + q, 0);
+  if (total <= 0) return "rupture";
+  if (seuil <= 0) return "ok";
+  return total <= seuil ? "bas" : "ok";
+}

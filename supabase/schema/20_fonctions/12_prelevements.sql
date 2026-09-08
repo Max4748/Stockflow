@@ -23,39 +23,50 @@
 -- `greatest(0, …)` parce qu'une commission supérieure au prix conseillé
 -- donnerait un tarif négatif, c'est-à-dire une dette qui diminue en prenant de
 -- la marchandise.
+-- SIGNATURE INCHANGÉE, et c'est délibéré : `enregistrer_prelevement` travaille
+-- sur un parfum, pas sur un modèle. La fonction remonte au modèle elle-même, et
+-- tout le flux de prélèvement reste intact.
 create or replace function prix_preleve(p_vendeur uuid, p_produit uuid)
 returns numeric
 language sql stable security definer set search_path = public, pg_temp as $$
   select coalesce(
-    (select pp.prix from prix_preleves pp
-      where pp.vendeur_id = p_vendeur and pp.produit_id = p_produit),
+    (select pp.prix
+       from prix_preleves pp
+       join produits pr on pr.modele_id = pp.modele_id
+      where pp.vendeur_id = p_vendeur and pr.id = p_produit),
     greatest(
       0,
-      coalesce((select pr.prix_vente_conseille from produits pr where pr.id = p_produit), 0)
+      coalesce((select mo.prix_vente_conseille
+                  from produits pr join modeles mo on mo.id = pr.modele_id
+                 where pr.id = p_produit), 0)
       - coalesce((select p.commission_unitaire from profils p where p.id = p_vendeur), 0)
     )
   )::numeric(10,2);
 $$;
 
 -- ------------------------------------------------------------
--- Poser ou retirer une exception de tarif. `p_prix` à NULL remet le repli.
+-- Poser ou retirer une exception de tarif, PAR MODÈLE. `p_prix` à NULL remet
+-- le repli.
 -- ------------------------------------------------------------
+-- `drop` obligatoire : renommer un paramètre d'entrée l'exige, `create or
+-- replace` refuse. Le grant part avec, la couche 40 le repose.
+drop function if exists definir_prix_preleve(uuid, uuid, numeric);
+
 create or replace function definir_prix_preleve(
   p_vendeur uuid,
-  p_produit uuid,
+  p_modele  uuid,
   p_prix    numeric default null
 ) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare
-  v_role    text;
-  v_nom     text;
-  v_produit text;
+  v_role   text;
+  v_modele text;
 begin
   if not est_admin() then
     raise exception 'Réservé aux gérants.' using errcode = '42501';
   end if;
 
-  select role, nom into v_role, v_nom from profils where id = p_vendeur;
+  select role into v_role from profils where id = p_vendeur;
   if not found then
     raise exception 'Compte inconnu.' using errcode = '22023';
   end if;
@@ -64,16 +75,16 @@ begin
     raise exception 'Seul un vendeur prélève de la marchandise.' using errcode = '22023';
   end if;
 
-  select nom into v_produit from produits where id = p_produit;
+  select nom into v_modele from modeles where id = p_modele;
   if not found then
-    raise exception 'Produit inconnu.' using errcode = '22023';
+    raise exception 'Modèle inconnu.' using errcode = '22023';
   end if;
 
   if p_prix is null then
     delete from prix_preleves
-     where vendeur_id = p_vendeur and produit_id = p_produit;
+     where vendeur_id = p_vendeur and modele_id = p_modele;
     perform tracer_admin('tarif de prélèvement remis au défaut', p_vendeur,
-      jsonb_build_object('produit', v_produit), null);
+      jsonb_build_object('modele', v_modele), null);
     return;
   end if;
 
@@ -81,13 +92,13 @@ begin
     raise exception 'Un tarif ne peut pas être négatif.' using errcode = '22023';
   end if;
 
-  insert into prix_preleves (vendeur_id, produit_id, prix, defini_par)
-  values (p_vendeur, p_produit, p_prix, auth.uid())
-  on conflict (vendeur_id, produit_id) do update
+  insert into prix_preleves (vendeur_id, modele_id, prix, defini_par)
+  values (p_vendeur, p_modele, p_prix, auth.uid())
+  on conflict (vendeur_id, modele_id) do update
     set prix = excluded.prix, defini_le = now(), defini_par = auth.uid();
 
   perform tracer_admin('tarif de prélèvement', p_vendeur, null,
-    jsonb_build_object('produit', v_produit, 'prix', p_prix));
+    jsonb_build_object('modele', v_modele, 'prix', p_prix));
 end $$;
 
 -- ------------------------------------------------------------
@@ -219,9 +230,11 @@ begin
     raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
   end if;
   return query
-    select pl.id, pr.nom, pl.quantite, pl.prix_unitaire,
+    select pl.id, mo.nom || ' · ' || pr.nom, pl.quantite, pl.prix_unitaire,
            (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.cree_le
-      from prelevements pl join produits pr on pr.id = pl.produit_id
+      from prelevements pl
+      join produits pr on pr.id = pl.produit_id
+      join modeles  mo on mo.id = pr.modele_id
      where pl.vendeur_id = auth.uid()
      order by pl.cree_le desc
      limit least(greatest(coalesce(p_limite, 20), 1), 100);
@@ -244,15 +257,17 @@ begin
     raise exception 'Réservé aux gérants.' using errcode = '42501';
   end if;
   return query
-    select pl.id, pr.nom, pl.quantite, pl.prix_unitaire,
+    select pl.id, mo.nom || ' · ' || pr.nom, pl.quantite, pl.prix_unitaire,
            (pl.quantite * pl.prix_unitaire)::numeric(12,2), pl.cree_le
-      from prelevements pl join produits pr on pr.id = pl.produit_id
+      from prelevements pl
+      join produits pr on pr.id = pl.produit_id
+      join modeles  mo on mo.id = pr.modele_id
      where pl.vendeur_id = p_vendeur_id
      order by pl.cree_le desc
      limit least(greatest(coalesce(p_limite, 20), 1), 100);
 end $$;
 
--- Le tarif applicable à chaque produit pour un vendeur donné, exceptions et
+-- Le tarif applicable à chaque MODÈLE pour un vendeur donné, exceptions et
 -- replis mêlés. C'est ce que lit l'écran de tarification : sans `personnalise`,
 -- impossible de distinguer un tarif choisi d'un tarif qui suit le conseillé.
 --
@@ -260,13 +275,16 @@ end $$;
 -- avant de la faire : lui cacher le tarif reviendrait à lui faire signer une
 -- dette dont il ignore le montant. Il ne voit que les siens, jamais ceux d'un
 -- autre.
+drop function if exists tarifs_preleves(uuid);
+
 create or replace function tarifs_preleves(p_vendeur_id uuid)
 returns table (
-  produit_id           uuid,
-  produit              text,
+  modele_id            uuid,
+  modele               text,
   prix_vente_conseille numeric(10,2),
   prix_effectif        numeric(10,2),
-  personnalise         boolean
+  personnalise         boolean,
+  nb_parfums           int
 )
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 begin
@@ -277,12 +295,21 @@ begin
   if not est_actif() then
     raise exception 'Compte inactif ou non authentifié.' using errcode = '42501';
   end if;
+
   return query
-    select pr.id, pr.nom, pr.prix_vente_conseille,
-           prix_preleve(p_vendeur_id, pr.id),
-           exists (select 1 from prix_preleves pp
-                    where pp.vendeur_id = p_vendeur_id and pp.produit_id = pr.id)
-      from produits pr
-     where pr.actif
-     order by pr.nom;
+    select mo.id, mo.nom, mo.prix_vente_conseille,
+           coalesce(
+             pp.prix,
+             greatest(0, mo.prix_vente_conseille
+                         - coalesce((select p.commission_unitaire
+                                       from profils p where p.id = p_vendeur_id), 0))
+           )::numeric(10,2),
+           pp.prix is not null,
+           (select count(*)::int from produits pr
+             where pr.modele_id = mo.id and pr.actif)
+      from modeles mo
+      left join prix_preleves pp
+             on pp.modele_id = mo.id and pp.vendeur_id = p_vendeur_id
+     where mo.actif
+     order by mo.nom;
 end $$;

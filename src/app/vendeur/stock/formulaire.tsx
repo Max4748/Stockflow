@@ -44,7 +44,9 @@ export function FormulairePrelevement({
   }, [etat.succes, etat.jeton]);
 
   const disponibles = stock.filter((l) => l.quantite > 0);
-  const tarif = tarifs.find((t) => t.produit_id === produitId);
+  // Le tarif est par MODÈLE : on remonte du parfum choisi à son modèle.
+  const ligne = stock.find((l) => l.produit_id === produitId);
+  const tarif = tarifs.find((t) => t.modele_id === ligne?.modele_id);
   const q = Number(quantite);
   const total =
     tarif && Number.isInteger(q) && q > 0 ? tarif.prix_effectif * q : null;
@@ -82,7 +84,7 @@ export function FormulairePrelevement({
             <option value="">Choisir…</option>
             {disponibles.map((l) => (
               <option key={l.produit_id} value={l.produit_id}>
-                {l.produit} — {l.quantite} en stock
+                {l.modele} · {l.produit} — {l.quantite} en stock
               </option>
             ))}
           </select>

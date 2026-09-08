@@ -105,10 +105,16 @@ export async function traiterDemande(
 }
 
 // ---------------------------------------------------------------------------
-// Produits
+// Catalogue : modèles et parfums
 // ---------------------------------------------------------------------------
 
-export async function enregistrerProduit(
+/**
+ * Le modèle porte le prix et les DEUX seuils.
+ *
+ * `seuil_modele` à 0 désactive l'alerte de modèle. C'est un cas nommé, pas un
+ * oubli : sans lui, tout catalogue repris se mettrait à alerter d'un coup.
+ */
+export async function enregistrerModele(
   _etat: EtatAction,
   formData: FormData,
 ): Promise<EtatAction> {
@@ -116,44 +122,176 @@ export async function enregistrerProduit(
 
   const id = String(formData.get("id") ?? "");
   const nom = String(formData.get("nom") ?? "").trim();
-  const sku = String(formData.get("sku") ?? "").trim();
   const prix = Number(formData.get("prix_vente_conseille"));
-  const seuil = Number(formData.get("seuil_alerte"));
+  const seuilParfum = Number(formData.get("seuil_parfum"));
+  const seuilModele = Number(formData.get("seuil_modele"));
   const actif = formData.get("actif") === "1";
 
-  if (!nom) return { erreur: "Le nom du produit est obligatoire." };
+  if (!nom) return { erreur: "Le nom du modèle est obligatoire." };
   if (!Number.isFinite(prix) || prix < 0) return { erreur: "Prix invalide." };
-  if (!Number.isFinite(seuil) || seuil < 0)
-    return { erreur: "Seuil invalide." };
+  if (!Number.isFinite(seuilParfum) || seuilParfum < 0)
+    return { erreur: "Seuil par parfum invalide." };
+  if (!Number.isFinite(seuilModele) || seuilModele < 0)
+    return { erreur: "Seuil du modèle invalide." };
 
   const supabase = await creerClient();
   const valeurs = {
     nom,
-    sku: sku || null,
     prix_vente_conseille: prix,
-    seuil_alerte: Math.trunc(seuil),
+    seuil_parfum: Math.trunc(seuilParfum),
+    seuil_modele: Math.trunc(seuilModele),
     actif,
   };
+
+  const { error } = id
+    ? await supabase.from("modeles").update(valeurs).eq("id", id)
+    : await supabase.from("modeles").insert(valeurs);
+
+  if (error) {
+    if (error.code === "23505") return { erreur: "Un modèle porte déjà ce nom." };
+    return { erreur: error.message };
+  }
+
+  rafraichir();
+  return { succes: id ? "Modèle modifié." : "Modèle créé.", jeton: jeton() };
+}
+
+/** Un parfum : l'unité de stock. Il n'a ni prix ni seuil, ils sont au modèle. */
+export async function enregistrerParfum(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const modeleId = String(formData.get("modele_id") ?? "").trim();
+  const nom = String(formData.get("nom") ?? "").trim();
+  const sku = String(formData.get("sku") ?? "").trim();
+  const actif = formData.get("actif") === "1";
+
+  if (!modeleId) return { erreur: "Modèle introuvable." };
+  if (!nom) return { erreur: "Le nom du parfum est obligatoire." };
+
+  const supabase = await creerClient();
+  const valeurs = { modele_id: modeleId, nom, sku: sku || null, actif };
 
   const { error } = id
     ? await supabase.from("produits").update(valeurs).eq("id", id)
     : await supabase.from("produits").insert(valeurs);
 
   if (error) {
-    // L'unicité est insensible à la casse (index sur lower(nom)) :
-    // « Produit A » et « produit a » sont le même produit, et deux jumeaux
-    // fausseraient durablement le coût moyen pondéré.
+    // L'unicité du nom est désormais SCOPÉE au modèle : deux modèles peuvent
+    // avoir une « Mangue ». Le SKU, lui, reste unique dans tout le catalogue.
     if (error.code === "23505") {
-      return { erreur: "Un produit porte déjà ce nom ou ce SKU." };
+      return { erreur: "Ce modèle a déjà ce parfum, ou ce SKU est déjà pris." };
     }
     return { erreur: error.message };
   }
 
   rafraichir();
+  return { succes: id ? "Parfum modifié." : "Parfum ajouté.", jeton: jeton() };
+}
+
+/**
+ * Créer un modèle et ses premiers parfums d'un coup.
+ *
+ * Le prix étant partagé, saisir huit parfums un par un voudrait dire ressaisir
+ * le modèle huit fois. Les parfums restent ajoutables après coup par
+ * `enregistrerParfum` : ce formulaire est le raccourci du premier jour, pas le
+ * seul chemin.
+ *
+ * PAS ATOMIQUE : deux appels PostgREST. Si les parfums échouent, le modèle
+ * reste — on le dit plutôt que d'annoncer un succès trompeur, et il suffit de
+ * lui ajouter ses parfums.
+ */
+export async function creerModeleAvecParfums(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const nom = String(formData.get("nom") ?? "").trim();
+  const prix = Number(formData.get("prix_vente_conseille"));
+  const seuilParfum = Number(formData.get("seuil_parfum"));
+  const seuilModele = Number(formData.get("seuil_modele"));
+  const parfums = formData
+    .getAll("parfum")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+
+  if (!nom) return { erreur: "Le nom du modèle est obligatoire." };
+  if (!Number.isFinite(prix) || prix < 0) return { erreur: "Prix invalide." };
+  if (!Number.isFinite(seuilParfum) || seuilParfum < 0)
+    return { erreur: "Seuil par parfum invalide." };
+  if (!Number.isFinite(seuilModele) || seuilModele < 0)
+    return { erreur: "Seuil du modèle invalide." };
+
+  const doublon = parfums.find(
+    (p, i) => parfums.findIndex((q) => q.toLowerCase() === p.toLowerCase()) !== i,
+  );
+  if (doublon) return { erreur: `Le parfum « ${doublon} » est en double.` };
+
+  const supabase = await creerClient();
+  const { data: modele, error: erreurModele } = await supabase
+    .from("modeles")
+    .insert({
+      nom,
+      prix_vente_conseille: prix,
+      seuil_parfum: Math.trunc(seuilParfum),
+      seuil_modele: Math.trunc(seuilModele),
+    })
+    .select("id")
+    .single();
+
+  if (erreurModele) {
+    if (erreurModele.code === "23505")
+      return { erreur: "Un modèle porte déjà ce nom." };
+    return { erreur: erreurModele.message };
+  }
+
+  if (parfums.length === 0) {
+    rafraichir();
+    return { succes: `${nom} créé, sans parfum pour l'instant.`, jeton: jeton() };
+  }
+
+  const { error: erreurParfums } = await supabase
+    .from("produits")
+    .insert(parfums.map((p) => ({ modele_id: modele.id, nom: p })));
+
+  if (erreurParfums) {
+    return {
+      erreur:
+        `${nom} a été créé, mais ses parfums non : ${erreurParfums.message}. ` +
+        `Les ajouter depuis sa fiche.`,
+    };
+  }
+
+  rafraichir();
   return {
-    succes: id ? "Produit modifié." : "Produit créé.",
+    succes: `${nom} créé avec ${parfums.length} parfum(s).`,
     jeton: jeton(),
   };
+}
+
+/**
+ * Retire un modèle. Supprimé s'il n'a aucun parfum, désactivé sinon — et ses
+ * parfums avec, puisque le prix vit sur le modèle.
+ */
+export async function retirerModele(
+  _etat: EtatAction,
+  formData: FormData,
+): Promise<EtatAction> {
+  await exigerAdmin();
+
+  const id = String(formData.get("modele_id") ?? "").trim();
+  if (!id) return { erreur: "Modèle introuvable." };
+
+  const supabase = await creerClient();
+  const { data, error } = await supabase.rpc("retirer_modele", { p_id: id });
+  if (error) return { erreur: error.message };
+
+  rafraichir();
+  return { succes: String(data), jeton: jeton() };
 }
 
 /**
@@ -1070,7 +1208,9 @@ export async function changerStockLie(
 }
 
 /**
- * Fixer le tarif auquel un vendeur prélève un produit donné.
+ * Fixer le tarif auquel un vendeur prélève un MODÈLE donné.
+ *
+ * Un modèle, un tarif : régler cinq modèles vaut mieux que quarante parfums.
  *
  * Champ vide = retour au repli calculé en base (`prix conseillé − commission`).
  * C'est un cas nommé, pas un accident : sans lui, un tarif posé une fois ne
@@ -1083,9 +1223,9 @@ export async function definirPrixPreleve(
   await exigerAdmin();
 
   const vendeurId = String(formData.get("vendeur_id") ?? "").trim();
-  const produitId = String(formData.get("produit_id") ?? "").trim();
+  const modeleId = String(formData.get("modele_id") ?? "").trim();
   const brut = String(formData.get("prix") ?? "").trim();
-  if (!vendeurId || !produitId) return { erreur: "Cible introuvable." };
+  if (!vendeurId || !modeleId) return { erreur: "Cible introuvable." };
 
   let prix: number | null = null;
   if (brut !== "") {
@@ -1098,7 +1238,7 @@ export async function definirPrixPreleve(
   const supabase = await creerClient();
   const { error } = await supabase.rpc("definir_prix_preleve", {
     p_vendeur: vendeurId,
-    p_produit: produitId,
+    p_modele: modeleId,
     p_prix: prix,
   });
   if (error) return { erreur: error.message };

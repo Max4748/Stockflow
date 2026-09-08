@@ -26,6 +26,16 @@ create policy invitations_admin_all on invitations for all
 -- produits : lecture par tout compte actif, écriture admin.
 drop policy if exists produits_select    on produits;
 
+-- Modèles : mêmes règles que les parfums. L'écran de catalogue écrit en direct
+-- par PostgREST, la policy est donc le seul garde-fou en écriture.
+drop policy if exists modeles_select on modeles;
+drop policy if exists modeles_admin_all on modeles;
+
+create policy modeles_select on modeles for select using (est_actif());
+
+create policy modeles_admin_all on modeles for all
+  using (est_admin()) with check (est_admin());
+
 drop policy if exists produits_admin_all on produits;
 
 create policy produits_select on produits for select using (est_actif());

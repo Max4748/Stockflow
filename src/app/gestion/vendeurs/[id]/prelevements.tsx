@@ -76,7 +76,9 @@ export function ListePrelevements({
 }
 
 /**
- * Le tarif de prélèvement, produit par produit.
+ * Le tarif de prélèvement, MODÈLE par modèle.
+ *
+ * Un modèle, un tarif : cinq lignes à régler par vendeur plutôt que quarante.
  *
  * Le champ vide n'est pas « zéro » mais « suivre le défaut » : le placeholder
  * affiche donc le repli calculé en base plutôt qu'un 0 trompeur. Un tarif
@@ -99,7 +101,7 @@ export function TarifsPrelevement({
   }, [etat.succes, etat.jeton]);
 
   if (tarifs.length === 0) {
-    return <p className="text-muted-foreground text-sm">Aucun produit actif.</p>;
+    return <p className="text-muted-foreground text-sm">Aucun modèle actif.</p>;
   }
 
   return (
@@ -112,15 +114,18 @@ export function TarifsPrelevement({
 
       <ul className="divide-border divide-y">
         {tarifs.map((t) => (
-          <li key={t.produit_id} className="py-2">
+          <li key={t.modele_id} className="py-2">
             <form
               action={action}
               className="flex flex-wrap items-center gap-2 text-sm"
             >
               <input type="hidden" name="vendeur_id" value={vendeurId} />
-              <input type="hidden" name="produit_id" value={t.produit_id} />
+              <input type="hidden" name="modele_id" value={t.modele_id} />
               <span className="min-w-0 flex-1 truncate font-medium">
-                {t.produit}
+                {t.modele}
+                <span className="text-muted-foreground ml-1 font-normal">
+                  · {t.nb_parfums} parfum(s)
+                </span>
               </span>
               <span className="text-muted-foreground text-xs tabular-nums">
                 conseillé {euros(t.prix_vente_conseille)}
@@ -133,7 +138,7 @@ export function TarifsPrelevement({
                 defaultValue={t.personnalise ? t.prix_effectif : ""}
                 placeholder={String(t.prix_effectif)}
                 className="w-28 tabular-nums"
-                aria-label={`Tarif de prélèvement pour ${t.produit}`}
+                aria-label={`Tarif de prélèvement pour ${t.modele}`}
               />
               <Button type="submit" size="sm" variant="outline" disabled={enCours}>
                 {t.personnalise ? "Modifier" : "Fixer"}
@@ -143,8 +148,9 @@ export function TarifsPrelevement({
         ))}
       </ul>
       <p className="text-muted-foreground text-xs">
-        Champ vide : le tarif suit le prix conseillé moins sa commission. Une
-        prise déjà faite garde le tarif du jour où elle a été faite.
+        Un tarif par modèle : tous ses parfums se prélèvent au même prix. Champ
+        vide, le tarif suit le prix conseillé moins sa commission. Une prise
+        déjà faite garde le tarif du jour où elle a été faite.
       </p>
     </div>
   );
