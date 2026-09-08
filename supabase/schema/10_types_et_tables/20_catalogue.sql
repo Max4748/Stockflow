@@ -52,9 +52,13 @@ alter table modeles enable row level security;
 -- Les parfums. `nom` ne porte que le parfum (« Mangue ») : l'affichage
 -- concatène avec le modèle.
 -- ------------------------------------------------------------
+-- `modele_id` est ajoutée PAR `alter table` juste en dessous, et volontairement
+-- absente d'ici. Une base convertie ne peut pas la placer ailleurs qu'en fin de
+-- table ; la déclarer en 2e position sur une base neuve ferait diverger les deux
+-- pour de bon, sur un détail sans effet. Les deux chemins la mettent donc au
+-- même endroit.
 create table if not exists produits (
   id        uuid primary key default gen_random_uuid(),
-  modele_id uuid not null references modeles(id) on delete restrict,
   nom       text not null,
   sku       text,
   actif     boolean not null default true,

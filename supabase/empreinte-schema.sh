@@ -38,9 +38,14 @@ with tout as (
   -- ---------- colonnes ----------
   -- Aucune table n'a de trou d'attnum : la position ordinale est comparable
   -- telle quelle, et elle compte (`select *`, `insert` sans liste de colonnes).
+  -- POSITION RELATIVE et non `attnum` brut : une colonne supprimée laisse un
+  -- trou définitif dans `attnum`, donc une base CONVERTIE ne pourrait jamais
+  -- égaler une base neuve, même à schéma logique identique. L'ordre relatif
+  -- attrape toujours un vrai réordonnancement, sans ce faux positif.
   select 1 as sec,
          format('COLONNE   %s.%s  #%s  %s  %s  defaut=%s',
-                c.relname, a.attname, a.attnum,
+                c.relname, a.attname,
+                row_number() over (partition by c.relname order by a.attnum),
                 format_type(a.atttypid, a.atttypmod),
                 case when a.attnotnull then 'NOT NULL' else 'NULL' end,
                 coalesce(pg_get_expr(d.adbin, d.adrelid), '-')) as ligne

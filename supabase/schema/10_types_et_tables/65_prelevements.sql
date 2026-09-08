@@ -20,13 +20,14 @@
 -- ne contient QUE les exceptions.
 -- ------------------------------------------------------------
 
+-- `modele_id` et la clé primaire sont posées plus bas, pour la même raison que
+-- sur `produits` : une base convertie ne peut pas placer la colonne ailleurs
+-- qu'en fin de table.
 create table if not exists prix_preleves (
   vendeur_id uuid not null references profils(id) on delete cascade,
-  modele_id  uuid not null references modeles(id) on delete cascade,
   prix       numeric(10,2) not null check (prix >= 0),
   defini_le  timestamptz not null default now(),
-  defini_par uuid references profils(id) on delete set null,
-  primary key (vendeur_id, modele_id)
+  defini_par uuid references profils(id) on delete set null
 );
 
 -- ------------------------------------------------------------
@@ -65,8 +66,16 @@ begin
 
   alter table prix_preleves drop constraint if exists prix_preleves_pkey;
   alter table prix_preleves drop column if exists produit_id;
-  alter table prix_preleves alter column modele_id set not null;
-  alter table prix_preleves add primary key (vendeur_id, modele_id);
+end $$;
+
+alter table prix_preleves alter column modele_id set not null;
+
+-- Clé primaire posée à part et idempotente : la reprise l'a peut-être déjà
+-- retirée, une base neuve ne l'a jamais eue.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'prix_preleves_pkey') then
+    alter table prix_preleves add primary key (vendeur_id, modele_id);
+  end if;
 end $$;
 
 comment on table prix_preleves is
