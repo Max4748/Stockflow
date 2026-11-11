@@ -16,10 +16,10 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // Identiques au fond du thème sombre (oklch(0.185 0 0)) : l'écran de
+    // Identiques au fond du thème sombre (oklch(0.185 0.012 262)) : l'écran de
     // démarrage doit être celui de l'application, pas un blanc qui flashe.
-    background_color: "#1b1b1b",
-    theme_color: "#1b1b1b",
+    background_color: "#101318",
+    theme_color: "#101318",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  BoxesIcon,
+  HomeIcon,
+  LifeBuoyIcon,
+  type LucideIcon,
+  ShoppingCartIcon,
+  TruckIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -7,12 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import type { Compteurs } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const ONGLETS = [
-  { href: "/vendeur", libelle: "Accueil" },
-  { href: "/vendeur/vente", libelle: "Vendre" },
-  { href: "/vendeur/stock", libelle: "Stock" },
-  { href: "/vendeur/restock", libelle: "Réassort" },
-  { href: "/vendeur/sav", libelle: "SAV" },
+const ONGLETS: { href: string; libelle: string; icone: LucideIcon }[] = [
+  { href: "/vendeur", libelle: "Accueil", icone: HomeIcon },
+  { href: "/vendeur/vente", libelle: "Vendre", icone: ShoppingCartIcon },
+  { href: "/vendeur/stock", libelle: "Stock", icone: BoxesIcon },
+  { href: "/vendeur/restock", libelle: "Réassort", icone: TruckIcon },
+  { href: "/vendeur/sav", libelle: "SAV", icone: LifeBuoyIcon },
 ];
 
 /**
@@ -40,6 +48,10 @@ function estActif(chemin: string, href: string) {
  * Barre d'onglets fixée en bas — la zone atteignable au pouce. Masquée à
  * partir de `md` : sur un écran large, une barre collée en bas de fenêtre est
  * loin du contenu et n'a pas de sens à la souris.
+ *
+ * Icône AU-DESSUS du libellé : c'est la forme qu'un téléphone a apprise à tout
+ * le monde, et elle laisse le libellé entier à 75 px de large. L'icône se
+ * reconnaît du coin de l'œil, le libellé lève le doute.
  */
 export function NavigationMobile({
   compteurs,
@@ -55,10 +67,17 @@ export function NavigationMobile({
     // Pleine largeur : le conteneur de page n'a plus de plafond, une barre
     // centrée à 672 px serait décalée par rapport au contenu entre 672 et
     // 768 px de large.
-    <nav className="bg-background/95 fixed inset-x-0 bottom-0 z-10 flex w-full border-t backdrop-blur md:hidden">
+    // `pb-[env(safe-area-inset-bottom)]` : installée, l'application n'a plus
+    // de barre système sous elle, et la barre de geste d'iOS recouvrait le bas
+    // des onglets.
+    <nav
+      aria-label="Navigation principale"
+      className="bg-background/95 fixed inset-x-0 bottom-0 z-10 flex w-full border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+    >
       {liste.map((onglet) => {
         const actif = estActif(chemin, onglet.href);
         const compteur = compteurs[onglet.href] ?? 0;
+        const Icone = onglet.icone;
         return (
           <Link
             key={onglet.href}
@@ -67,14 +86,26 @@ export function NavigationMobile({
             className={cn(
               // min-h-14 : cible tactile confortable, au-delà des 44 px minimum.
               // Cinq onglets tiennent : ~75 px chacun sur un écran de 375 px.
-              "flex min-h-14 flex-1 items-center justify-center gap-1 text-sm font-medium transition-colors",
+              // La bordure haute est TOUJOURS là (transparente au repos) : sans
+              // elle, l'onglet actif descendait de 2 px par rapport aux autres.
+              "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-t-2 text-xs font-medium transition-colors",
               actif
-                ? "text-foreground border-foreground border-t-2"
-                : "text-muted-foreground hover:text-foreground",
+                ? "text-primary border-primary"
+                : "text-muted-foreground hover:text-foreground border-transparent",
             )}
           >
+            <span className="relative">
+              <Icone className="size-5" strokeWidth={actif ? 2.25 : 1.75} />
+              {compteur > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="bg-destructive absolute -top-1.5 -right-3 h-4 min-w-4 justify-center px-1 text-[0.625rem] text-white tabular-nums"
+                >
+                  {compteur}
+                </Badge>
+              )}
+            </span>
             {onglet.libelle}
-            {compteur > 0 && <Badge variant="destructive">{compteur}</Badge>}
           </Link>
         );
       })}
@@ -94,10 +125,14 @@ export function NavigationBureau({
   const liste = onglets(stockLie);
 
   return (
-    <nav className="hidden items-center gap-1 md:flex">
+    <nav
+      aria-label="Navigation principale"
+      className="hidden items-center gap-1 md:flex"
+    >
       {liste.map((onglet) => {
         const actif = estActif(chemin, onglet.href);
         const compteur = compteurs[onglet.href] ?? 0;
+        const Icone = onglet.icone;
         return (
           <Link
             key={onglet.href}
@@ -107,12 +142,13 @@ export function NavigationBureau({
               // `min-h-9` : même hauteur que les entrées de la barre latérale
               // de gestion. Ce sont deux cibles à la souris, dans deux espaces
               // de la même application ; rien ne justifiait deux valeurs.
-              "flex min-h-9 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors",
+              "flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors",
               actif
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
+            <Icone className="size-4" />
             {onglet.libelle}
             {compteur > 0 && <Badge variant="destructive">{compteur}</Badge>}
           </Link>

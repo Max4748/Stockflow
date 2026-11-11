@@ -19,7 +19,7 @@ export function FormulaireMotDePasse() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent>
         <form action={action} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nouveau">Nouveau mot de passe</Label>
@@ -55,7 +55,7 @@ export function FormulaireMotDePasse() {
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={enCours}>
+          <Button type="submit" size="lg" className="w-full" disabled={enCours}>
             {enCours ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </form>

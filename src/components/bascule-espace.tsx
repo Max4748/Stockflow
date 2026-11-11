@@ -1,3 +1,5 @@
+import { ArrowLeftRightIcon } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 import { basculerVersGestion, basculerVersVendeur } from "@/app/actions";
@@ -9,8 +11,9 @@ import { basculerVersGestion, basculerVersVendeur } from "@/app/actions";
  * comme le bouton Déconnexion des deux layouts. Aucun JavaScript client n'est
  * nécessaire pour poser un cookie et rediriger.
  *
- * Le libellé se raccourcit sous `sm` : l'en-tête vendeur porte déjà le thème,
- * la déconnexion et, à partir de `md`, la navigation.
+ * Les layouts ne le montrent qu'à partir de `sm`. En dessous, la même bascule
+ * est une entrée du menu du compte (`menu-compte.tsx`) : l'en-tête d'un
+ * téléphone n'a pas la place d'un bouton à libellé.
  */
 export function BasculeEspace({ vers }: { vers: "gestion" | "vendeur" }) {
   const action = vers === "gestion" ? basculerVersGestion : basculerVersVendeur;
@@ -18,11 +21,9 @@ export function BasculeEspace({ vers }: { vers: "gestion" | "vendeur" }) {
 
   return (
     <form action={action}>
-      {/* Pas d'espace insécable ici : le Button est un conteneur flex avec son
-          propre `gap`, l'ajouter produisait un double blanc (« Espace  Gestion »). */}
-      <Button type="submit" variant="outline" size="sm">
-        <span className="hidden sm:inline">Espace</span>
-        {libelle}
+      <Button type="submit" variant="outline">
+        <ArrowLeftRightIcon />
+        Espace {libelle.toLowerCase()}
       </Button>
     </form>
   );

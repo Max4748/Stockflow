@@ -1,4 +1,5 @@
-import { BoutonThemeFlottant } from "@/components/bouton-theme";
+import { CadreAuth } from "@/components/cadre-auth";
+
 import { FormulaireConnexion } from "./formulaire";
 
 export const metadata = { title: "Connexion — StockFlow" };
@@ -22,17 +23,8 @@ export default async function PageLogin({
   const { erreur } = await searchParams;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <BoutonThemeFlottant />
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">StockFlow</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Gestion de stock et de ventes
-          </p>
-        </div>
-        <FormulaireConnexion avertissement={erreur ? MESSAGES[erreur] : undefined} />
-      </div>
-    </main>
+    <CadreAuth titre="StockFlow" description="Gestion de stock et de ventes">
+      <FormulaireConnexion avertissement={erreur ? MESSAGES[erreur] : undefined} />
+    </CadreAuth>
   );
 }

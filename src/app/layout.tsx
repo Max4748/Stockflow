@@ -28,8 +28,8 @@ export const viewport: Viewport = {
   // et c'est cette couleur qui peint la zone système. Une seule valeur ferait
   // un bandeau clair au-dessus d'une interface sombre, ou l'inverse.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1b1b1b" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f9fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#101318" },
   ],
 };
 

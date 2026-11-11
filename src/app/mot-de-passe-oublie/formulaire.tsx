@@ -16,7 +16,7 @@ import { demanderReinitialisation, type EtatOubli } from "./actions";
 function BoutonEnvoyer() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" size="lg" className="w-full" disabled={pending}>
       {pending ? "Envoi…" : "Envoyer le lien"}
     </Button>
   );
@@ -31,8 +31,8 @@ export function FormulaireOubli() {
   if (etat.envoye) {
     return (
       <Card>
-        <CardContent className="space-y-4 pt-6">
-          <Alert>
+        <CardContent className="space-y-4">
+          <Alert variant="succes">
             <AlertDescription>
               Si un compte existe avec cette adresse, un lien vient d&apos;être
               envoyé. Il est valable 24 heures. Penser à regarder dans les
@@ -43,7 +43,10 @@ export function FormulaireOubli() {
               base-ui, qui compose par `render` et n'a pas de `asChild`. */}
           <Link
             href="/login"
-            className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "w-full",
+            )}
           >
             Retour à la connexion
           </Link>
@@ -54,7 +57,7 @@ export function FormulaireOubli() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent>
         <form action={action} className="space-y-4">
           {etat.erreur && (
             <Alert variant="destructive">
