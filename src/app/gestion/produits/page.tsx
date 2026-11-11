@@ -1,3 +1,5 @@
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,10 +40,9 @@ export default async function PageProduits() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Catalogue</h1>
+      <EntetePage titre="Catalogue">
         <DialogueNouveauModele />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -57,9 +58,10 @@ export default async function PageProduits() {
         </CardHeader>
         <CardContent>
           {modeles.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">
-              Aucun modèle. En créer un pour commencer.
-            </p>
+            <EtatVide
+              titre="Aucun modèle au catalogue"
+              description="Créer un premier modèle avec le bouton « Nouveau modèle », puis lui ajouter ses parfums."
+            />
           ) : (
             <ul className="space-y-3">
               {modeles.map((m) => {

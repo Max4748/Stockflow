@@ -1,5 +1,16 @@
 import Link from "next/link";
 
+import {
+  CoinsIcon,
+  HandCoinsIcon,
+  HistoryIcon,
+  ShoppingCartIcon,
+  WalletIcon,
+} from "lucide-react";
+
+import { EntetePage } from "@/components/entete-page";
+import { EtatVide } from "@/components/etat-vide";
+import { Kpi } from "@/components/kpi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -74,6 +85,22 @@ export default async function PageVendeur() {
 
   return (
     <div className="space-y-6">
+      {/* Le dialogue de vente s'ouvre ICI, dans l'en-tête, à la même place que
+          l'action principale de tous les autres écrans. Auparavant ce bouton
+          menait à /vendeur/vente, où un second bouton du même libellé ouvrait
+          le formulaire : deux clics sur le même mot. Sur téléphone il passe
+          sous le titre, en pleine largeur, à 56 px. */}
+      <EntetePage
+        titre={`Bonjour ${profil.nom.trim().split(/\s+/)[0]}`}
+        description={
+          vendables.length > 0
+            ? "Voici où vous en êtes."
+            : "Aucun stock à vendre pour le moment."
+        }
+      >
+        {vendables.length > 0 && <FormulaireVente produits={vendables} />}
+      </EntetePage>
+
       {erreur && (
         <Alert variant="destructive">
           <AlertDescription>{erreur.message}</AlertDescription>
@@ -92,120 +119,100 @@ export default async function PageVendeur() {
             par construction. */}
         {/* La carte de commission est masquée pour l'encadrement : sans ce
             rattrapage, la bande laissait une colonne vide sur six. */}
-        <Card
+        <Kpi
+          accent
+          icone={encadrement ? WalletIcon : HandCoinsIcon}
           className={cn(
             "sm:col-span-2",
             encadrement ? "2xl:col-span-5" : "2xl:col-span-4",
           )}
+          libelle={
+            encadrement
+              ? "Ce que j'ai encaissé"
+              : "Ce que je dois à l'administrateur"
+          }
+          valeur={euros((encadrement ? dette?.ca : dette?.reste_a_verser) ?? 0)}
+          precision={
+            encadrement &&
+            "Aucune créance : vous encaissez pour la maison. Ces ventes sont comptées dans le bilan de gestion."
+          }
         >
-          <CardHeader className="pb-3">
-            <CardTitle className="text-muted-foreground text-sm font-medium">
-              {encadrement
-                ? "Ce que j'ai encaissé"
-                : "Ce que je dois à l'administrateur"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-4xl font-semibold tabular-nums">
-              {euros((encadrement ? dette?.ca : dette?.reste_a_verser) ?? 0)}
-            </p>
-            {encadrement ? (
-              <p className="text-muted-foreground text-xs">
-                Aucune créance : vous encaissez pour la maison. Ces ventes sont
-                comptées dans le bilan de gestion.
-              </p>
-            ) : (
-              <dl
-                className={cn(
-                  "text-muted-foreground grid gap-2 text-xs",
-                  Number(dette?.rembourse ?? 0) > 0
-                    ? "grid-cols-2 sm:grid-cols-4"
-                    : "grid-cols-3",
-                )}
-              >
+          {/* Les couleurs sont HÉRITÉES de la carte (`opacity`, `border-current`)
+              et non posées en dur : la carte est un aplat primaire en clair et
+              une teinte diluée en sombre, le détail suit sans rien savoir. */}
+          {!encadrement && (
+            <dl
+              className={cn(
+                "mt-4 grid gap-x-4 gap-y-2 border-t border-current/15 pt-3 text-xs",
+                Number(dette?.rembourse ?? 0) > 0
+                  ? "grid-cols-2 sm:grid-cols-4"
+                  : "grid-cols-3",
+              )}
+            >
+              <div>
+                <dt className="opacity-80">Ventes encaissées</dt>
+                <dd className="text-sm font-medium tabular-nums">
+                  {euros(dette?.ca ?? 0)}
+                </dd>
+              </div>
+              <div>
+                <dt className="opacity-80">Ma commission</dt>
+                <dd className="text-sm font-medium tabular-nums">
+                  − {euros(dette?.commissions ?? 0)}
+                </dd>
+              </div>
+              <div>
+                <dt className="opacity-80">Déjà reversé</dt>
+                <dd className="text-sm font-medium tabular-nums">
+                  − {euros(dette?.verse ?? 0)}
+                </dd>
+              </div>
+              {/* Affiché seulement quand il y en a : sinon une ligne à 0 €
+                  ferait chercher une explication à un cas qui n'existe pas.
+                  Sans elle, en revanche, une dette qui baisse sans versement
+                  serait incompréhensible. */}
+              {Number(dette?.rembourse ?? 0) > 0 && (
                 <div>
-                  <dt>Ventes encaissées</dt>
-                  <dd className="text-foreground font-medium tabular-nums">
-                    {euros(dette?.ca ?? 0)}
+                  <dt className="opacity-80">Remboursé (SAV)</dt>
+                  <dd className="text-sm font-medium tabular-nums">
+                    − {euros(dette?.rembourse ?? 0)}
                   </dd>
                 </div>
+              )}
+              {/* Le SEUL terme qui s'ajoute, d'où le « + » explicite : de la
+                  marchandise partie sans qu'un client ait payé. Sans cette ligne,
+                  une dette qui monte sans vente serait un mystère. */}
+              {Number(dette?.preleve ?? 0) > 0 && (
                 <div>
-                  <dt>Ma commission</dt>
-                  <dd className="text-foreground font-medium tabular-nums">
-                    − {euros(dette?.commissions ?? 0)}
+                  <dt className="opacity-80">Pris pour moi</dt>
+                  <dd className="text-sm font-medium tabular-nums">
+                    + {euros(dette?.preleve ?? 0)}
                   </dd>
                 </div>
-                <div>
-                  <dt>Déjà reversé</dt>
-                  <dd className="text-foreground font-medium tabular-nums">
-                    − {euros(dette?.verse ?? 0)}
-                  </dd>
-                </div>
-                {/* Affiché seulement quand il y en a : sinon une ligne à 0 €
-                    ferait chercher une explication à un cas qui n'existe pas.
-                    Sans elle, en revanche, une dette qui baisse sans versement
-                    serait incompréhensible. */}
-                {Number(dette?.rembourse ?? 0) > 0 && (
-                  <div>
-                    <dt>Remboursé (SAV)</dt>
-                    <dd className="text-foreground font-medium tabular-nums">
-                      − {euros(dette?.rembourse ?? 0)}
-                    </dd>
-                  </div>
-                )}
-                {/* Le SEUL terme qui s'ajoute, d'où le « + » explicite : de la
-                    marchandise partie sans qu'un client ait payé. Sans cette ligne,
-                    une dette qui monte sans vente serait un mystère. */}
-                {Number(dette?.preleve ?? 0) > 0 && (
-                  <div>
-                    <dt>Pris pour moi</dt>
-                    <dd className="text-foreground font-medium tabular-nums">
-                      + {euros(dette?.preleve ?? 0)}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </dl>
+          )}
+        </Kpi>
 
-        <Card>
-          <CardContent>
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Mes ventes
-            </p>
-            <p className="mt-2 text-2xl leading-none font-semibold tabular-nums">
-              {dette?.nb_ventes ?? 0}
-            </p>
-            <p className="text-muted-foreground mt-2 text-xs leading-snug">
-              {quantite(dette?.qte_vendue ?? 0)} écoulées
-            </p>
-          </CardContent>
-        </Card>
+        <Kpi
+          icone={ShoppingCartIcon}
+          libelle="Mes ventes"
+          valeur={dette?.nb_ventes ?? 0}
+          precision={`${quantite(dette?.qte_vendue ?? 0)} écoulées`}
+        />
         {/* Un gérant n'a pas de commission : la maison lui appartient. Une
             carte à 0 € en permanence n'apprendrait rien. */}
         {!encadrement && (
-          <Card>
-            <CardContent>
-              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                Ma commission
-              </p>
-              <p className="mt-2 text-2xl leading-none font-semibold tabular-nums">
-                {euros(dette?.commissions ?? 0)}
-              </p>
-              <p className="text-muted-foreground mt-2 text-xs leading-snug">
-                {euros(profil.commission_unitaire)} par unité
-              </p>
-            </CardContent>
-          </Card>
+          <Kpi
+            icone={CoinsIcon}
+            ton="succes"
+            libelle="Ma commission"
+            valeur={euros(dette?.commissions ?? 0)}
+            precision={`${euros(profil.commission_unitaire)} par unité`}
+          />
         )}
       </div>
 
-      {/* Le dialogue s'ouvre ICI. Auparavant ce bouton menait à /vendeur/vente,
-          où un second bouton du même libellé ouvrait le formulaire : deux clics
-          sur le même mot. Depuis que la saisie est un dialogue, elle n'a plus
-          besoin de sa page pour s'ouvrir. */}
-      {vendables.length > 0 && <FormulaireVente produits={vendables} />}
 
       {/* Les alertes sont une courte liste, le journal en est une longue :
           1/3 – 2/3 plutôt que 50/50, qui laisserait la colonne de gauche
@@ -227,7 +234,7 @@ export default async function PageVendeur() {
                     variant={
                       niveauStock(l.quantite, l.seuil_parfum) === "rupture"
                         ? "destructive"
-                        : "secondary"
+                        : "alerte"
                     }
                   >
                     {l.quantite <= 0 ? "épuisé" : `${l.quantite} restant(s)`}
@@ -248,7 +255,7 @@ export default async function PageVendeur() {
                     href="/vendeur/restock"
                     className={cn(
                       buttonVariants({ variant: "outline" }),
-                      "h-10 w-full",
+                      "w-full",
                     )}
                   >
                     Demande en cours
@@ -278,9 +285,11 @@ export default async function PageVendeur() {
           </CardHeader>
           <CardContent>
             {journal.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center text-sm">
-                Aucune opération pour le moment.
-              </p>
+              <EtatVide
+                icone={HistoryIcon}
+                titre="Aucune opération pour le moment."
+                description="Vos ventes, versements et réassorts apparaîtront ici."
+              />
             ) : (
               <ul className="divide-y">
                 {journal.map((l, i) => (

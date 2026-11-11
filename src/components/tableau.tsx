@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { EtatVide } from "@/components/etat-vide";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -55,9 +56,7 @@ export function Tableau<T>({
   action,
 }: Props<T>) {
   if (lignes.length === 0) {
-    return (
-      <p className="text-muted-foreground py-8 text-center text-sm">{vide}</p>
-    );
+    return <EtatVide titre={vide} />;
   }
 
   const principale = colonnes.find((c) => c.principale) ?? colonnes[0];
@@ -77,7 +76,13 @@ export function Tableau<T>({
               {colonnes.map((c) => (
                 <TableHead
                   key={c.cle}
-                  className={cn(c.alignement === "droite" && "text-right")}
+                  className={cn(
+                    // En-têtes en retrait : petites capitales grises, comme les
+                    // libellés des indicateurs. Ce sont des étiquettes, les
+                    // données doivent dominer.
+                    "text-muted-foreground text-xs font-medium tracking-wide uppercase",
+                    c.alignement === "droite" && "text-right",
+                  )}
                 >
                   {c.entete}
                 </TableHead>
@@ -115,9 +120,9 @@ export function Tableau<T>({
         {lignes.map((ligne) => (
           <li key={cle(ligne)}>
             <Card>
-              <CardContent className="space-y-2 pt-5">
+              <CardContent className="space-y-2.5">
                 <p className="font-medium">{principale.valeur(ligne)}</p>
-                <dl className="space-y-1 text-sm">
+                <dl className="space-y-1.5 text-sm">
                   {secondaires.map((c) => (
                     <div key={c.cle} className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">{c.entete}</dt>
@@ -132,7 +137,9 @@ export function Tableau<T>({
                     </div>
                   ))}
                 </dl>
-                {action && <div className="pt-1">{action(ligne)}</div>}
+                {action && (
+                  <div className="border-t pt-3">{action(ligne)}</div>
+                )}
               </CardContent>
             </Card>
           </li>

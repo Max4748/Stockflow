@@ -154,7 +154,7 @@
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   /* Mesuré sur un aplat à 12 % posé sur --muted : succès 5,97 · alerte 6,13 ·
-     primaire 4,6. */
+     primaire 4,75. */
   --succes: oklch(0.8 0.15 155);
   --alerte: oklch(0.83 0.13 80);
   --border: oklch(1 0 0 / 12%);

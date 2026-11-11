@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -77,12 +78,12 @@ export function BoutonBloquerDefinitivement({ ip }: { ip: string }) {
             placeholder="Ce qui rendra cette ligne compréhensible dans six mois"
           />
         </div>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" variant="destructive" disabled={enCours}>
             {enCours ? "Blocage…" : "Bloquer"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );

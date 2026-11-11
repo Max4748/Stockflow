@@ -4,7 +4,6 @@ import {
   ActivityIcon,
   BookOpenIcon,
   BoxesIcon,
-  ClipboardListIcon,
   HistoryIcon,
   InboxIcon,
   LayoutDashboardIcon,

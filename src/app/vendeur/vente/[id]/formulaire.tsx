@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { ChampSelect } from "@/components/champ-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -124,7 +124,7 @@ export function FormulaireCorrection({
 
             return (
               <Card key={ligne.cle}>
-                <CardContent className="space-y-3 pt-5">
+                <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-xs font-medium">
                       Produit {index + 1}
@@ -229,7 +229,7 @@ export function FormulaireCorrection({
         </Button>
 
         <Card>
-          <CardContent className="grid gap-3 pt-5 sm:grid-cols-2">
+          <CardContent className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="client">Client</Label>
               <Input
@@ -323,7 +323,7 @@ function BoutonAnnuler({ venteId }: { venteId: string }) {
             lieu mais que les chiffres sont faux, préférer la correction.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Conserver</Button>} />
           <form action={action}>
             <input type="hidden" name="vente_id" value={venteId} />
@@ -331,7 +331,7 @@ function BoutonAnnuler({ venteId }: { venteId: string }) {
               {enCours ? "Annulation…" : "Annuler la vente"}
             </Button>
           </form>
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );

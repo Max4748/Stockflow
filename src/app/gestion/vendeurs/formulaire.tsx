@@ -1,8 +1,10 @@
 "use client";
 
+import { UserPlusIcon } from "lucide-react";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -48,6 +49,7 @@ export function FormulaireCreationVendeur() {
     <>
     <DialogueAction
       libelle="Créer un compte vendeur"
+      icone={UserPlusIcon}
       variante="default"
       // Se ferme au succès : le résultat a désormais son propre dialogue.
       jeton={etat.jeton}
@@ -102,12 +104,12 @@ export function FormulaireCreationVendeur() {
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire className="sm:col-span-2">
           <DialogClose render={<Button variant="outline">Fermer</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Création…" : "Créer le compte"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
       <DialogueCompteCree etat={etat} />
@@ -197,9 +199,9 @@ export function DialogueCompteCree({ etat }: { etat: EtatActionSecret }) {
           </p>
         )}
 
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button>Fermer</Button>} />
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );

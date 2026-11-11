@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,7 @@ export function CarteArbitrage({ dossier }: { dossier: DossierSav }) {
             {dossier.declare_par}
           </p>
         </div>
-        <Badge variant="secondary" className="shrink-0">
+        <Badge variant="alerte" className="shrink-0">
           {euros(dossier.montant_rembourse)} à valider
         </Badge>
       </div>
@@ -63,7 +64,7 @@ export function CarteArbitrage({ dossier }: { dossier: DossierSav }) {
         </Alert>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <PiedFormulaire>
         {/* Deux formulaires distincts plutôt qu'un champ à basculer : le refus
             demande un motif, la validation non. */}
         <DialogueRefus dossier={dossier} />
@@ -80,7 +81,7 @@ export function CarteArbitrage({ dossier }: { dossier: DossierSav }) {
               : `Valider — ${euros(dossier.montant_rembourse)}`}
           </Button>
         </form>
-      </div>
+      </PiedFormulaire>
     </div>
   );
 }
@@ -122,12 +123,12 @@ function DialogueRefus({ dossier }: { dossier: DossierSav }) {
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" variant="destructive" disabled={enCours}>
             {enCours ? "Refus…" : "Refuser la demande"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );
@@ -215,12 +216,12 @@ export function BoutonRevoquer({ dossier }: { dossier: DossierSav }) {
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" variant="destructive" disabled={enCours}>
             {enCours ? "Révocation…" : "Révoquer le dossier"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );
@@ -257,12 +258,12 @@ export function BoutonSupprimer({ dossier }: { dossier: DossierSav }) {
     >
       <form action={action} className="space-y-4">
         <input type="hidden" name="sav_id" value={dossier.id} />
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" variant="destructive" disabled={enCours}>
             {enCours ? "Suppression…" : "Supprimer le dossier"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );

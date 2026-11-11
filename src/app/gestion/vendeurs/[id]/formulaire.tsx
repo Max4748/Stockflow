@@ -1,8 +1,11 @@
 "use client";
 
+import { BanknoteIcon, SettingsIcon, UndoIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { EtatVide } from "@/components/etat-vide";
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -67,12 +69,13 @@ export function BarreActions({
   stock: LigneStockDetenu[];
 }) {
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-      <DialogueVersement
-        vendeurId={profil.id}
-        nom={profil.nom}
-        resteAVerser={resteAVerser}
-      />
+    // Un fragment, pas un conteneur : c'est `EntetePage` qui aligne les
+    // actions. Ordre d'écriture = ordre à l'écran dès `sm`, donc du moins
+    // engageant au PRINCIPAL, qui finit à l'extrême droite — et en premier sur
+    // téléphone, où la rangée s'empile à l'envers.
+    <>
+      <BoutonActivation profil={profil} />
+      <DialogueParametres profil={profil} />
       {stock.length > 0 && (
         <DialogueRetourStock
           vendeurId={profil.id}
@@ -80,9 +83,12 @@ export function BarreActions({
           stock={stock}
         />
       )}
-      <DialogueParametres profil={profil} />
-      <BoutonActivation profil={profil} />
-    </div>
+      <DialogueVersement
+        vendeurId={profil.id}
+        nom={profil.nom}
+        resteAVerser={resteAVerser}
+      />
+    </>
   );
 }
 
@@ -111,6 +117,7 @@ function DialogueVersement({
   return (
     <DialogueAction
       libelle="Encaisser un versement"
+      icone={BanknoteIcon}
       variante="default"
       titre={`Encaisser un versement de ${nom}`}
       description={`${nom} doit ${euros(resteAVerser)}.`}
@@ -182,12 +189,12 @@ function DialogueVersement({
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Enregistrement…" : "Enregistrer le versement"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );
@@ -210,6 +217,7 @@ function DialogueParametres({ profil }: { profil: Profil }) {
   return (
     <DialogueAction
       libelle="Paramètres du compte"
+      icone={SettingsIcon}
       titre={`Paramètres de ${profil.nom}`}
       jeton={etat.jeton}
     >
@@ -253,12 +261,12 @@ function DialogueParametres({ profil }: { profil: Profil }) {
             </Alert>
           )}
 
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <PiedFormulaire>
             <DialogClose render={<Button variant="outline">Fermer</Button>} />
             <Button type="submit" disabled={enCours}>
               {enCours ? "Enregistrement…" : "Enregistrer"}
             </Button>
-          </div>
+          </PiedFormulaire>
         </form>
 
         <BoutonNouveauLien vendeurId={profil.id} />
@@ -389,7 +397,7 @@ function BoutonActivation({ profil }: { profil: Profil }) {
         <Button
           type="submit"
           variant="outline"
-          className="h-11 w-full sm:w-auto"
+          className="h-11 w-full sm:h-10 sm:w-auto"
           disabled={enCours}
         >
           {enCours ? "Réactivation…" : "Réactiver le compte"}
@@ -404,7 +412,10 @@ function BoutonActivation({ profil }: { profil: Profil }) {
     <Dialog key={`${etat.jeton ?? ""}-${etatRetrait.jeton ?? ""}`}>
       <DialogTrigger
         render={
-          <Button variant="destructive" className="h-11 w-full sm:w-auto">
+          <Button
+            variant="destructive"
+            className="h-11 w-full sm:h-10 sm:w-auto"
+          >
             Retirer
           </Button>
         }
@@ -474,9 +485,9 @@ function BoutonActivation({ profil }: { profil: Profil }) {
           </div>
         </div>
 
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );
@@ -507,6 +518,7 @@ function DialogueRetourStock({
   return (
     <DialogueAction
       libelle="Reprendre du stock"
+      icone={UndoIcon}
       titre={`Reprendre du stock de ${nom}`}
       description="Les unités reprises repartent en entrepôt et redeviennent disponibles pour les réassorts."
       jeton={etat.jeton}
@@ -601,7 +613,7 @@ function ChampsRetour({
         </Alert>
       )}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <PiedFormulaire>
         <DialogClose render={<Button variant="outline">Annuler</Button>} />
         <Button type="submit" disabled={enCours || total === 0}>
           {enCours
@@ -610,7 +622,7 @@ function ChampsRetour({
               ? "Saisir une quantité"
               : `Reprendre ${total} u`}
         </Button>
-      </div>
+      </PiedFormulaire>
     </>
   );
 }
@@ -622,9 +634,7 @@ function ChampsRetour({
 export function ListeVersements({ versements }: { versements: Versement[] }) {
   if (versements.length === 0) {
     return (
-      <p className="text-muted-foreground py-6 text-center text-sm">
-        Aucun versement reçu.
-      </p>
+      <EtatVide titre="Aucun versement reçu." />
     );
   }
 
@@ -674,7 +684,7 @@ function BoutonSupprimerVersement({ versement }: { versement: Versement }) {
             vendeur remontera d&apos;autant.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <form action={action}>
             <input type="hidden" name="versement_id" value={versement.id} />
@@ -682,7 +692,7 @@ function BoutonSupprimerVersement({ versement }: { versement: Versement }) {
               {enCours ? "Suppression…" : "Supprimer"}
             </Button>
           </form>
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );

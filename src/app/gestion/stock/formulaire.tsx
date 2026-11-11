@@ -1,8 +1,10 @@
 "use client";
 
+import { ArrowRightLeftIcon, SlidersHorizontalIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { ChampSelect } from "@/components/champ-select";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -77,6 +79,7 @@ export function FormulaireAjustement({
   return (
     <DialogueAction
       libelle="Ajuster le stock"
+      icone={SlidersHorizontalIcon}
       titre="Ajustement d'inventaire"
       description="Perte, casse ou écart de comptage. Sans contrepartie comptable, contrairement à un transfert — c'est pourquoi le motif est obligatoire."
       jeton={etat.jeton}
@@ -148,12 +151,12 @@ export function FormulaireAjustement({
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire className="sm:col-span-2">
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Enregistrement…" : "Enregistrer l'ajustement"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );
@@ -194,6 +197,7 @@ export function FormulaireTransfert({
     // est plein — c'est le geste courant (voir docs/interface.md).
     <DialogueAction
       libelle="Distribuer le stock"
+      icone={ArrowRightLeftIcon}
       titre="Distribuer du stock à un compte"
       description="Les unités quittent l'entrepôt pour le stock personnel du destinataire, qui peut alors les vendre. Sans passer par une demande de réassort."
       jeton={etat.jeton}
@@ -349,7 +353,7 @@ function ChampsTransfert({
         </Alert>
       )}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <PiedFormulaire>
         <DialogClose render={<Button variant="outline">Annuler</Button>} />
         <Button type="submit" disabled={enCours || total === 0}>
           {enCours
@@ -358,7 +362,7 @@ function ChampsTransfert({
               ? "Saisir une quantité"
               : `Distribuer ${total} u`}
         </Button>
-      </div>
+      </PiedFormulaire>
     </>
   );
 }

@@ -69,17 +69,28 @@ Ce qui est unifié, en revanche, et doit le rester :
   composants de navigation. Il y était propriété de l'un et dépendance de
   l'autre.
 
-**Une seule chose diverge volontairement : l'état actif.** Fond plein partout,
-sauf dans la barre d'onglets du bas, qui emploie une bordure haute. Un aplat
-dans une barre de 56 px est lourd, et l'indicateur en bordure est la convention
-des barres d'onglets sur téléphone. C'est écrit ici pour que ça ne se fasse pas
-« corriger » au hasard.
+- **chaque entrée porte une icône** (lucide), dans les quatre rendus. L'icône
+  se reconnaît du coin de l'œil, le libellé lève le doute : aucune entrée n'est
+  réduite à son icône ;
+- **l'état actif est à la couleur primaire** : aplat `primary/10` et texte
+  `primary` dans la barre latérale, le tiroir et la navigation vendeur au
+  bureau.
+
+**Une seule chose diverge volontairement : l'état actif de la barre du bas**,
+qui emploie une bordure haute (primaire) et non un aplat. Un aplat dans une
+barre de 56 px est lourd, et l'indicateur en bordure est la convention des
+barres d'onglets sur téléphone. La bordure est toujours présente, transparente
+au repos, pour que l'onglet actif ne se décale pas de 2 px. C'est écrit ici
+pour que ça ne se fasse pas « corriger » au hasard.
+
+La **marque** (`logo.tsx`) est toujours dans le coin haut gauche : en tête de
+barre latérale à partir de `lg` en gestion, dans l'en-tête sinon.
 
 ## Les deux formes en détail
 
 **Espace vendeur** (`navigation-vendeur.tsx`) : 5 entrées, barre d'onglets fixée
-en bas sur mobile (zone du pouce, cibles de 56 px), en ligne dans l'en-tête à
-partir de `md`. Cinq onglets tiennent : ~75 px chacun sur un écran de 375 px.
+en bas sur mobile (zone du pouce, cibles de 56 px, icône au-dessus du libellé),
+en ligne dans l'en-tête à partir de `md`, à gauche, à la suite de la marque. Cinq onglets tiennent : ~75 px chacun sur un écran de 375 px.
 
 L'onglet **SAV** porte une pastille, allumée uniquement s'il s'est passé
 quelque chose que le vendeur n'a **pas fait lui-même** depuis sa dernière
@@ -96,7 +107,7 @@ s'éteindrait sur une information jamais reçue. L'effet est conditionné à
 **Espace gestion** (`navigation-admin.tsx`) : 10 sections groupées (Pilotage /
 Stock / Comptabilité / Technique / Compte), barre latérale à partir de `lg`,
 tiroir en dessous, ouvert par une icône seule. Pas le mot « Menu » : l'en-tête
-porte déjà le titre, le rôle, la bascule d'espace, le thème et la déconnexion.
+porte déjà la marque, la bascule d'espace et le menu du compte.
 Le bouton fait 40 px et non les 32 px de la variante `icon` par défaut, parce
 qu'il est le SEUL point de navigation sous `lg`, et son `aria-label` annonce le
 nombre de décisions en attente. Le groupe **Technique** (Intégrité, Comptes gérants) n'est rendu que si
@@ -118,10 +129,22 @@ latérale est masquée, et rien ne signalerait sinon qu'une décision attend.
 Un gérant pilote **et** vend. `bascule-espace.tsx` pose dans les deux en-têtes un
 bouton vers l'autre espace ; il n'apparaît côté vendeur que pour l'encadrement.
 
-C'est un **Server Component** : un `<form>` sur une Server Action, comme le
-bouton Déconnexion. Poser un cookie et rediriger ne demande aucun JavaScript
-client. Le libellé se réduit à « Gestion » / « Vendeur » sous `sm`, l'en-tête
-vendeur portant déjà le thème, la déconnexion et, dès `md`, la navigation.
+C'est un **Server Component** : un `<form>` sur une Server Action. Poser un
+cookie et rediriger ne demande aucun JavaScript client. Le bouton n'est montré
+qu'à partir de `sm` ; en dessous, la même bascule est une entrée du menu du
+compte, l'en-tête d'un téléphone n'ayant pas la place d'un bouton à libellé.
+
+### Menu du compte
+
+`menu-compte.tsx` : une pastille aux initiales, en haut à droite des deux
+espaces, qui ouvre un menu portant **tout ce qui concerne le compte** : nom et
+rôle, bascule d'espace et sécurité (encadrement seulement), changement de mot
+de passe, thème (Clair / Sombre / Système), déconnexion.
+
+Les deux en-têtes alignaient auparavant trois contrôles séparés (bascule,
+thème, « Déconnexion » en toutes lettres) qui se serraient sur téléphone, et
+le changement volontaire de mot de passe n'avait aucun chemin. `BoutonTheme`
+ne sert plus qu'aux écrans hors espace, en variante flottante.
 
 L'espace choisi est mémorisé et `/` y renvoie à la connexion suivante. Ce cookie
 est du confort de navigation et rien d'autre, voir
@@ -132,6 +155,74 @@ commission, la grande carte affiche donc son **encaissé** et la carte de
 commission disparaît.
 
 ## Composants partagés
+
+### `entete-page.tsx` : un seul en-tête de page
+
+```tsx
+<EntetePage
+  titre="État du stock"
+  description="…"                              // facultatif
+  retour={{ href: "/gestion/vendeurs", libelle: "Vendeurs" }}  // page de détail
+  badge={<Badge variant="alerte">…</Badge>}    // état accolé au titre
+  filtres={<FiltrePeriode actif={periode.cle} />}
+>
+  <ActionSecondaire />
+  <ActionPrincipale />
+</EntetePage>
+```
+
+Chaque écran écrivait le sien et il en existait quatre variantes. La
+disposition est maintenant fixe et **ne se règle pas par props** :
+
+- titre à gauche, lien de retour au-dessus, description en dessous ;
+- **actions à droite dès `sm`, l'action principale (`default`) EN DERNIER**,
+  donc à l'extrême droite ; les secondaires (`outline`) la précèdent ;
+- sur téléphone, les actions passent sous le titre, en pleine largeur, et
+  s'empilent à l'envers : la principale est la première sous le pouce ;
+- un **filtre n'est pas une action** : il a sa rangée, sous le titre.
+
+Les boutons d'en-tête font tous 44 px au doigt et 40 px à la souris
+(`DialogueAction` s'en charge).
+
+### `pied-formulaire.tsx` : une seule rangée de boutons
+
+```tsx
+<PiedFormulaire>
+  <DialogClose render={<Button variant="outline">Annuler</Button>} />
+  <Button type="submit">Enregistrer</Button>
+</PiedFormulaire>
+```
+
+**Annuler (ou le refus) à gauche, l'action principale à droite**, le tout
+groupé à droite ; sur téléphone, pleine largeur, 44 px, l'action principale
+au-dessus. On écrit donc toujours : secondaire, puis principal. Cinq variantes
+de ce bloc cohabitaient, et `DialogFooter` (bandeau grisé) n'était employé que
+par certains dialogues : il ne l'est plus.
+
+> ⚠️ **Une exception d'écriture, pas de rendu** : la carte de décision d'une
+> demande de réassort porte deux boutons `submit` dans le même formulaire.
+> Entrée dans un champ soumet avec le PREMIER dans le code, qui doit rester
+> « Accorder ». La disposition commune y est obtenue par `flex-row-reverse`.
+
+### `etat-vide.tsx`
+
+Icône, message, et geste facultatif, là où il n'y avait qu'une ligne de texte
+gris qui se lisait comme un chargement raté. `Tableau` l'emploie pour sa prop
+`vide`.
+
+### `lib/statuts.ts` : une couleur par sens
+
+`VARIANTE_STATUT` donne la variante de pastille d'un statut de demande ou de
+SAV : `alerte` (en attente), `succes` (accordé), `info` (partiel),
+`destructive` (refusé), `outline` (annulé). Quatre écrans tenaient chacun leur
+table. La couleur ne porte jamais l'information seule : le libellé est toujours
+écrit dans la pastille.
+
+### `cadre-auth.tsx`
+
+Cadre commun aux écrans hors espace (connexion, mot de passe oublié,
+changement de mot de passe, vérification, compte en attente) : marque, titre,
+phrase, contenu, sortie.
 
 ### `tableau.tsx` : un tableau, deux rendus
 
@@ -168,11 +259,13 @@ tableau plutôt que d'ajouter des options ici.
 Ils sont rangés là parce que c'est l'écran où l'on constate un problème de
 stock, pas dans trois écrans différents :
 
+Dans l'ordre d'affichage, de gauche à droite (le principal en dernier) :
+
 | Bouton                  | Effet                                                    | Variante  |
 | ----------------------- | -------------------------------------------------------- | --------- |
-| **Nouveau Restock**     | achat fournisseur, unités en entrepôt **avec leur coût** | `default` |
-| **Distribuer le stock** | entrepôt → un compte, sans demande préalable             | `outline` |
 | **Ajuster le stock**    | écart de comptage, casse, perte — motif obligatoire      | `outline` |
+| **Distribuer le stock** | entrepôt → un compte, sans demande préalable             | `outline` |
+| **Nouveau Restock**     | achat fournisseur, unités en entrepôt **avec leur coût** | `default` |
 
 « Nouveau Restock » est **le même composant** que sur l'écran Restock : deux
 copies divergeraient, et c'est ce formulaire qui fixe le coût de revient de
@@ -252,9 +345,15 @@ départager, comme sur la fiche vendeur où « Encaisser » domine les trois aut
 
 `tailleBouton` règle la cible tactile du déclencheur : `sm` dans une ligne de
 tableau, **`lg` pour l'action principale d'un espace** : l'enregistrement d'une
-vente garde ainsi ses 56 px, saisie debout sur un téléphone. La hauteur passe
-par `className` et non par `size` : les tailles du registre shadcn sont petites
-(`lg` y vaut 36 px), et tout le projet règle déjà ses hauteurs ainsi.
+vente garde ainsi ses 56 px sur téléphone, saisie debout (44 px à la souris).
+Sans `tailleBouton`, le déclencheur fait 44 px au doigt et 40 px à la souris.
+`icone` pose une icône lucide devant le libellé.
+
+**Hauteurs : ne plus les régler écran par écran.** `Button` vaut 36 px par
+défaut et 44 px en `lg`, `Input` 40 px ; `PiedFormulaire` et `DialogueAction`
+portent leurs boutons à 44 px sur téléphone. Les `h-9` / `h-10` / `h-11`
+posés au cas par cas donnaient deux boutons de tailles différentes dans un
+même pied de dialogue.
 
 **Fermeture après succès sans `setState` dans un effet**. Le réflexe habituel
 casse les règles ESLint du projet (renders en cascade). À la place :
@@ -289,8 +388,11 @@ filtre est **partageable par lien** et survit au rechargement.
 
 ### `kpi.tsx`, `bouton-theme.tsx`
 
-`Kpi` donne la même forme à tous les chiffres clés de l'application. Le bouton
-de thème est détaillé dans [theme.md](theme.md).
+`Kpi` donne la même forme à tous les chiffres clés de l'application. La
+couleur y porte un sens : `accent` désigne LE chiffre de l'écran (un seul par
+page, aplat primaire en clair, teinte diluée en sombre), `ton` colore la
+pastille de l'icône et, pour `alerte` et `danger`, le chiffre lui-même. Le
+bouton de thème est détaillé dans [theme.md](theme.md).
 
 ## Motif de formulaire : jeton + remontage par `key`
 

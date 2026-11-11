@@ -1,3 +1,4 @@
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,13 +70,12 @@ export default async function PageIntegrite() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Intégrité des données</h1>
+      <EntetePage titre="Intégrité des données">
         {/* Le geste le plus destructeur de l'application vit sur l'écran le
             plus technique, réservé au dev, et non près des données qu'il
             efface : on ne tombe pas dessus en cherchant autre chose. */}
         <BoutonReinitialiser inventaire={inventaire} />
-      </div>
+      </EntetePage>
 
       <Card>
         <CardHeader className="pb-3">

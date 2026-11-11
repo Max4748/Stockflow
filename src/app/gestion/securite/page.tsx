@@ -1,3 +1,4 @@
+import { EntetePage } from "@/components/entete-page";
 import {
   Card,
   CardContent,
@@ -26,7 +27,10 @@ export default async function PageSecurite() {
 
   return (
     <div className="w-full space-y-6">
-      <h1 className="text-xl font-semibold">Sécurité du compte</h1>
+      <EntetePage
+        titre="Sécurité du compte"
+        description="Double authentification et accès à ce compte."
+      />
 
       <Card>
         <CardHeader className="pb-3">

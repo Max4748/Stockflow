@@ -1,3 +1,4 @@
+import { EntetePage } from "@/components/entete-page";
 import { FiltrePeriode } from "@/components/filtre-periode";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -123,16 +124,11 @@ export default async function PageJournalAdmin({
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Journal d&apos;administration</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Qui a touché à quel compte, et ce qu&apos;il y avait avant. Réservé
-            au propriétaire technique : la liste dit qui surveille qui.
-          </p>
-        </div>
-        <FiltrePeriode actif={periode.cle} />
-      </div>
+      <EntetePage
+        titre="Journal d'administration"
+        description="Qui a touché à quel compte, et ce qu'il y avait avant. Réservé au propriétaire technique : la liste dit qui surveille qui."
+        filtres={<FiltrePeriode actif={periode.cle} />}
+      />
 
       {erreur && (
         <Alert variant="destructive">

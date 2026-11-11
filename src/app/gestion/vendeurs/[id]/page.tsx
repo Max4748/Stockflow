@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { BoxesIcon, CoinsIcon, HandCoinsIcon, ReceiptIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -45,7 +46,7 @@ const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
         {/* La vente n'est jamais réécrite par un SAV : c'est ce badge, et lui
             seul, qui répond à « cette vente a-t-elle posé problème ? ». */}
         {l.sav_unites > 0 && (
-          <Badge variant={l.sav_en_attente > 0 ? "outline" : "secondary"}>
+          <Badge variant={l.sav_en_attente > 0 ? "alerte" : "info"}>
             SAV {l.sav_unites} u{l.sav_en_attente > 0 && " · en attente"}
           </Badge>
         )}
@@ -142,22 +143,18 @@ export default async function PageFicheVendeur({
       {/* En-tête et barre d'actions. Les gestes ponctuels (encaisser, reprendre
           du stock, régler le compte) vivent dans des dialogues : la page ne
           présente que de l'information. */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-muted-foreground text-xs">
-            <Link href="/gestion/vendeurs" className="hover:underline">
-              Vendeurs
-            </Link>
-          </p>
-          <h1 className="flex flex-wrap items-center gap-2 text-xl font-semibold">
-            {profil.nom}
+      <EntetePage
+        titre={profil.nom}
+        retour={{ href: "/gestion/vendeurs", libelle: "Vendeurs" }}
+        badge={
+          <>
             {!profil.actif && <Badge variant="outline">inactif</Badge>}
             {profil.doit_changer_mdp && (
-              <Badge variant="secondary">mot de passe provisoire</Badge>
+              <Badge variant="alerte">mot de passe provisoire</Badge>
             )}
-          </h1>
-        </div>
-
+          </>
+        }
+      >
         <BarreActions
           profil={profil}
           resteAVerser={Number(creance?.reste_a_verser ?? 0)}
@@ -167,7 +164,7 @@ export default async function PageFicheVendeur({
             quantite: s.quantite,
           }))}
         />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -177,23 +174,23 @@ export default async function PageFicheVendeur({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          libelle="Reste à verser"
+          libelle="Reste à verser" icone={HandCoinsIcon}
           valeur={euros(creance?.reste_a_verser ?? 0)}
           precision="encaissé − sa commission − déjà reversé"
           accent
         />
         <Kpi
-          libelle="Encaissé"
+          libelle="Encaissé" icone={ReceiptIcon}
           valeur={euros(creance?.ca ?? 0)}
           precision={`${creance?.nb_ventes ?? 0} vente(s)`}
         />
         <Kpi
-          libelle="Sa commission"
+          libelle="Sa commission" icone={CoinsIcon}
           valeur={euros(creance?.commissions ?? 0)}
           precision={`${euros(profil.commission_unitaire)} par unité aujourd'hui`}
         />
         <Kpi
-          libelle="Stock détenu"
+          libelle="Stock détenu" icone={BoxesIcon}
           valeur={`${unitesDetenues} u`}
           precision="pas encore vendu"
         />

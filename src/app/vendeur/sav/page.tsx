@@ -1,7 +1,10 @@
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { FormulaireSav } from "@/components/formulaire-sav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VARIANTE_STATUT } from "@/lib/statuts";
 import { exigerProfil } from "@/lib/auth";
 import { date, dateHeure, euros, LIBELLES_STATUT_SAV } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -11,16 +14,6 @@ import { DemandeSavEnAttente, MarquerSavVu } from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SAV — StockFlow" };
-
-const VARIANTE_BADGE: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  valide: "default",
-  en_attente: "secondary",
-  refuse: "destructive",
-  annule: "outline",
-};
 
 export default async function PageSavVendeur() {
   await exigerProfil();
@@ -51,10 +44,9 @@ export default async function PageSavVendeur() {
           seulement pour les dossiers qu'elle a montrés, d'où la borne. */}
       <MarquerSavVu actif={nonVus > 0} borne={borneVue(dossiers)} />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Mes SAV</h1>
+      <EntetePage titre="Mes SAV">
         <FormulaireSav lignes={savables} contexte="vendeur" />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -91,9 +83,7 @@ export default async function PageSavVendeur() {
         </CardHeader>
         <CardContent>
           {traites.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              Aucun dossier traité pour le moment.
-            </p>
+            <EtatVide titre="Aucun dossier traité pour le moment." />
           ) : (
             // Grille de cartes plutôt qu'une liste pleine largeur : sur un
             // grand écran, un libellé à un bout et sa valeur à l'autre serait
@@ -105,7 +95,7 @@ export default async function PageSavVendeur() {
                     <span className="text-muted-foreground text-xs">
                       {date(d.date)}
                     </span>
-                    <Badge variant={VARIANTE_BADGE[d.statut] ?? "outline"}>
+                    <Badge variant={VARIANTE_STATUT[d.statut] ?? "outline"}>
                       {LIBELLES_STATUT_SAV[d.statut] ?? d.statut}
                     </Badge>
                   </div>

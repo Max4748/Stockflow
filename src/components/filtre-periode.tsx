@@ -29,18 +29,20 @@ export function FiltrePeriode({ actif }: { actif: ClePeriode }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+      {/* Un sélecteur segmenté : les préréglages s'excluent, et un seul bloc
+          le dit mieux que quatre boutons côte à côte. */}
+      <div className="bg-muted flex flex-wrap gap-0.5 rounded-lg p-0.5">
         {PRESETS.map((p) => (
           <Link
             key={p.cle}
             href={lien(p.cle)}
             aria-current={actif === p.cle ? "true" : undefined}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-sm transition-colors",
+              "flex min-h-9 items-center rounded-md px-3 text-sm font-medium transition-colors",
               actif === p.cle
-                ? "bg-muted text-foreground border-foreground/20"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                ? "bg-card text-primary shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {p.libelle}
@@ -60,7 +62,7 @@ export function FiltrePeriode({ actif }: { actif: ClePeriode }) {
             name="du"
             type="date"
             defaultValue={params.get("du") ?? ""}
-            className="h-9 w-auto"
+            className="w-auto"
           />
         </div>
         <div>
@@ -72,10 +74,10 @@ export function FiltrePeriode({ actif }: { actif: ClePeriode }) {
             name="au"
             type="date"
             defaultValue={params.get("au") ?? ""}
-            className="h-9 w-auto"
+            className="w-auto"
           />
         </div>
-        <Button type="submit" variant="outline" className="h-9">
+        <Button type="submit" variant="outline" className="h-10">
           Appliquer
         </Button>
       </form>

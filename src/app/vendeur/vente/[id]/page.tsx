@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { exigerProfil } from "@/lib/auth";
 import { dateHeure, euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
 import type { LigneStock, MaVente } from "@/lib/types";
 
 import { FormulaireCorrection } from "./formulaire";
@@ -82,18 +82,12 @@ export default async function PageCorrection({
     .filter((p) => p.quantite > 0);
 
   return (
-    <div className="w-full space-y-4">
-      <div>
-        <p className="text-muted-foreground text-xs">
-          <Link href="/vendeur/vente" className="hover:underline">
-            Vendre
-          </Link>
-        </p>
-        <h1 className="text-xl font-semibold">Corriger une vente</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Saisie du {dateHeure(vente.cree_le)} · {euros(vente.montant_total)}
-        </p>
-      </div>
+    <div className="w-full space-y-6">
+      <EntetePage
+        titre="Corriger une vente"
+        description={`Saisie du ${dateHeure(vente.cree_le)} · ${euros(vente.montant_total)}`}
+        retour={{ href: "/vendeur/vente", libelle: "Mes ventes" }}
+      />
 
       {!vente.corrigeable ? (
         <Alert>
@@ -105,7 +99,8 @@ export default async function PageCorrection({
             </p>
             <Link
               href="/vendeur/vente"
-              className={cn(buttonVariants({ variant: "outline" }), "h-10")}
+              data-slot="button"
+              className={buttonVariants({ variant: "outline" })}
             >
               Retour
             </Link>

@@ -1,5 +1,7 @@
+import { BoxesIcon, CoinsIcon, HandCoinsIcon, PackageIcon, ReceiptIcon, TrendingUpIcon, TruckIcon } from "lucide-react";
 import Link from "next/link";
 
+import { EntetePage } from "@/components/entete-page";
 import { FiltrePeriode } from "@/components/filtre-periode";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
@@ -33,7 +35,7 @@ const COLONNES_REVENUS: Colonne<RevenuVendeur>[] = [
         {/* Un gérant qui vend figure dans ce tableau : son CA compte déjà dans
             le bilan ci-dessus, l'en exclure ferait diverger les deux. */}
         {l.role !== "vendeur" && (
-          <Badge variant="secondary">
+          <Badge variant="info">
             {l.role === "dev" ? "dev" : "gérant"}
           </Badge>
         )}
@@ -143,10 +145,10 @@ export default async function PageBilan({
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Bilan</h1>
-        <FiltrePeriode actif={periode.cle} />
-      </div>
+      <EntetePage
+        titre="Bilan"
+        filtres={<FiltrePeriode actif={periode.cle} />}
+      />
 
       {erreur && (
         <Alert variant="destructive">
@@ -157,13 +159,13 @@ export default async function PageBilan({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6">
         <Kpi
           className="sm:col-span-2 2xl:col-span-2"
-          libelle="Marge nette de la période"
+          libelle="Marge nette de la période" icone={TrendingUpIcon}
           valeur={euros(bilan?.marge_nette ?? 0)}
           precision="chiffre d'affaires − coût de revient − commissions"
           accent
         />
         <Kpi
-          libelle="Chiffre d'affaires"
+          libelle="Chiffre d'affaires" icone={ReceiptIcon}
           valeur={euros(bilan?.ca ?? 0)}
           // « net des remboursements » : sans cette mention, ce chiffre semble
           // contredire la colonne « Encaissé » de l'écran Vendeurs, qui est le
@@ -171,33 +173,33 @@ export default async function PageBilan({
           precision={`${bilan?.nb_ventes ?? 0} vente(s), ${bilan?.qte_vendue ?? 0} u · net des remboursements SAV`}
         />
         <Kpi
-          libelle="Coût des marchandises"
+          libelle="Coût des marchandises" icone={PackageIcon}
           valeur={euros(bilan?.cout_marchandises ?? 0)}
           precision="au coût moyen pondéré figé"
         />
         <Kpi
-          libelle="Commissions versées"
+          libelle="Commissions versées" icone={CoinsIcon}
           valeur={euros(bilan?.commissions ?? 0)}
         />
         <Kpi
-          libelle="À récupérer"
+          libelle="À récupérer" icone={HandCoinsIcon} ton="alerte"
           valeur={euros(bilan?.montant_a_recuperer ?? 0)}
           precision="tous vendeurs, hors période"
         />
         <Kpi
-          libelle="Valeur du stock"
+          libelle="Valeur du stock" icone={BoxesIcon}
           valeur={euros(bilan?.valeur_stock ?? 0)}
           precision="entrepôt + distribué"
         />
         <Kpi
-          libelle="Achats de la période"
+          libelle="Achats de la période" icone={TruckIcon}
           valeur={euros(bilan?.achats_total ?? 0)}
           precision="frais de port inclus"
         />
       </div>
 
       {aRecuperer > 0 && (
-        <Alert>
+        <Alert variant="alerte">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
             <span>
               <strong className="tabular-nums">{euros(aRecuperer)}</strong> à
@@ -205,7 +207,8 @@ export default async function PageBilan({
             </span>
             <Link
               href="/gestion/vendeurs"
-              className={cn(buttonVariants({ variant: "outline" }), "h-9")}
+              data-slot="button"
+              className={buttonVariants({ variant: "outline" })}
             >
               Encaisser un versement
             </Link>

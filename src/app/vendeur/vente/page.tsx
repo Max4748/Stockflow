@@ -1,3 +1,4 @@
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { exigerProfil } from "@/lib/auth";
 import { creerClient } from "@/lib/supabase/server";
@@ -68,10 +69,9 @@ export default async function PageVente({
       {/* La saisie vit dans un dialogue : la page montre les ventes récentes,
           le bouton ouvre le geste. Sans stock, pas de bouton — un formulaire de
           vente qu'aucune ligne ne peut remplir ne rend service à personne. */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Mes ventes</h1>
+      <EntetePage titre="Mes ventes">
         {vendables.length > 0 && <FormulaireVente produits={vendables} />}
-      </div>
+      </EntetePage>
 
       {rStock.error && (
         <Alert variant="destructive">
@@ -91,7 +91,7 @@ export default async function PageVente({
       )}
 
       {vendables.length === 0 && (
-        <Alert>
+        <Alert variant="info">
           <AlertDescription>
             {profil.stock_lie_entrepot
               ? "L'entrepôt est vide. Enregistrer un achat fournisseur depuis Gestion → Restock avant de pouvoir vendre."
@@ -135,10 +135,14 @@ export default async function PageVente({
               {mesVentes.map((v) => (
                 <li
                   key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  // `min-w-0` : un enfant de grille ne rétrécit pas sous la largeur
+                  // de son contenu. Sans lui, un nom de client suivi de deux
+                  // pastilles poussait le bouton « Corriger » hors de la carte
+                  // sur un téléphone.
+                  className="flex min-w-0 items-center justify-between gap-3 rounded-lg border p-3"
                 >
                   <div className="min-w-0">
-                    <p className="flex items-center gap-2 truncate text-sm font-medium">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                       <span className={v.annulee_le ? "line-through" : ""}>
                         {v.client} · {euros(v.montant_total)}
                       </span>
@@ -154,9 +158,7 @@ export default async function PageVente({
                           un remboursement l'a fait baisser sans versement. */}
                       {v.sav_unites > 0 && (
                         <Badge
-                          variant={
-                            v.sav_en_attente > 0 ? "outline" : "secondary"
-                          }
+                          variant={v.sav_en_attente > 0 ? "alerte" : "info"}
                           className="shrink-0"
                         >
                           SAV {v.sav_unites} u

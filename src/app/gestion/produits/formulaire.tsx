@@ -1,8 +1,10 @@
 "use client";
 
+import { PlusIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -104,6 +106,7 @@ export function DialogueNouveauModele() {
   return (
     <DialogueAction
       libelle="Nouveau modèle"
+      icone={PlusIcon}
       variante="default"
       taille="large"
       titre="Nouveau modèle"
@@ -160,12 +163,12 @@ export function DialogueNouveauModele() {
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Création…" : "Créer le modèle"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );
@@ -236,12 +239,12 @@ export function DialogueModele({ modele }: { modele: Modele }) {
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Enregistrement…" : "Enregistrer"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
 
       {/* Hors du <form> ci-dessus : deux formulaires ne s'imbriquent pas en
@@ -358,12 +361,12 @@ export function DialogueParfum({
           </Alert>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Enregistrement…" : parfum ? "Enregistrer" : "Ajouter"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
 
       {parfum && (

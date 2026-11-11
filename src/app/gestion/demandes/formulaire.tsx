@@ -54,7 +54,7 @@ export function CarteDemande({
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base">{vendeur}</CardTitle>
-          <Badge variant="secondary">{totalDemande} u demandées</Badge>
+          <Badge variant="info">{totalDemande} u demandées</Badge>
         </div>
         <p className="text-muted-foreground text-xs">
           demandée le {dateHeure(demande.cree_le)}
@@ -171,12 +171,18 @@ function ChampsAccord({
       {/* Trois issues explicites. « Tout accorder » passe p_lignes_accordees à
           null côté serveur, ce qui laisse le SQL accorder les quantités
           demandées — et échouer proprement si le stock ne suit pas. */}
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {/* Même disposition que `PiedFormulaire` (refus à gauche, accord à
+          droite, accord au-dessus sur téléphone), mais obtenue par
+          `flex-row-reverse` et NON en inversant les boutons dans le code :
+          Entrée dans un champ soumet avec le PREMIER bouton du formulaire, qui
+          doit rester « Accorder ». L'inverser ferait refuser une demande sur
+          une simple touche Entrée. */}
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row-reverse sm:justify-start">
         <Button
           type="submit"
           name="decision"
           value="approuver"
-          className="h-11 flex-1"
+          className="h-11 sm:h-9"
           disabled={enCours || totalAccorde === 0}
         >
           {enCours ? "Traitement…" : `Accorder ${totalAccorde} u`}
@@ -186,7 +192,7 @@ function ChampsAccord({
           name="decision"
           value="refuser"
           variant="outline"
-          className="h-11"
+          className="h-11 sm:h-9"
           disabled={enCours}
         >
           Refuser

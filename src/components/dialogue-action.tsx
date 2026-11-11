@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import {
  */
 export function DialogueAction({
   libelle,
+  icone: Icone,
   titre,
   description,
   jeton,
@@ -38,6 +40,8 @@ export function DialogueAction({
   children,
 }: {
   libelle: ReactNode;
+  /** Icône du déclencheur : elle fait reconnaître le geste avant de le lire. */
+  icone?: LucideIcon;
   titre: string;
   description?: ReactNode;
   /** Change à chaque succès de l'action contenue. */
@@ -54,7 +58,8 @@ export function DialogueAction({
   /**
    * `sm` pour un déclencheur logé dans une ligne de tableau ; `lg` pour
    * l'action principale d'un espace, saisie debout sur un téléphone (la vente),
-   * qui mérite les 56 px de haut de la barre d'onglets.
+   * qui mérite les 56 px de haut de la barre d'onglets — sur téléphone
+   * seulement ; à la souris elle reprend 44 px.
    *
    * La hauteur passe par `className` et non par `size` : les tailles du
    * registre shadcn sont petites (`lg` y vaut 36 px), et tout le projet règle
@@ -81,11 +86,14 @@ export function DialogueAction({
               tailleBouton === "sm"
                 ? "shrink-0"
                 : tailleBouton === "lg"
-                  ? "h-14 w-full text-base sm:h-12 sm:w-auto sm:px-10"
-                  : "h-11 w-full sm:w-auto",
+                  ? "h-14 w-full gap-2 text-base sm:h-11 sm:w-auto sm:px-6"
+                  : // 44 px au doigt, 40 px à la souris : la même paire sur
+                    // TOUS les boutons d'en-tête de page.
+                    "h-11 w-full sm:h-10 sm:w-auto",
               classeBouton,
             )}
           >
+            {Icone && <Icone />}
             {libelle}
           </Button>
         }
