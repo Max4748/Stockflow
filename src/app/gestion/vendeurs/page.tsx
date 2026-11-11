@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { EntetePage } from "@/components/entete-page";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,7 @@ const COLONNES: Colonne<Creance>[] = [
         {/* Un compte d'encadrement n'apparaît ici que s'il a vendu. Le dire
             évite de le prendre pour un vendeur qui ne reverse jamais rien. */}
         {l.role !== "vendeur" && (
-          <Badge variant="secondary">
+          <Badge variant="info">
             {l.role === "dev" ? "dev" : "gérant"}
           </Badge>
         )}
@@ -113,10 +114,9 @@ export default async function PageVendeurs({
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Vendeurs</h1>
+      <EntetePage titre="Vendeurs">
         <FormulaireCreationVendeur />
-      </div>
+      </EntetePage>
 
       {retire && (
         <Alert>

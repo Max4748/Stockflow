@@ -1,3 +1,5 @@
+import { BoxesIcon, TriangleAlertIcon, UsersIcon, WalletIcon, WarehouseIcon } from "lucide-react";
+import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -38,7 +40,7 @@ const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
           {niveau === "rupture" && (
             <Badge variant="destructive">entrepôt vide</Badge>
           )}
-          {niveau === "bas" && <Badge variant="secondary">entrepôt bas</Badge>}
+          {niveau === "bas" && <Badge variant="alerte">entrepôt bas</Badge>}
         </span>
       );
     },
@@ -157,29 +159,28 @@ export default async function PageStock() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">État du stock</h1>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {/* Même dialogue que l'écran Achats : recevoir une commande se pense
-              depuis l'état du stock, pas depuis un historique d'achats. */}
-          <FormulaireAchat produits={produits} />
-          <FormulaireTransfert
-            produits={stock.map((s) => ({
-              id: s.produit_id,
-              nom: s.produit,
-              stockEntrepot: s.stock_entrepot,
-            }))}
-            detenteurs={comptesActifs}
-          />
-          {/* Pas de bouton SAV ici : l'écran Service après-vente porte le sien,
-              avec le suivi des dossiers qui va avec. Un doublon de plus dans un
-              en-tête déjà chargé n'apportait rien. */}
-          <FormulaireAjustement
-            produits={stock.map((s) => ({ id: s.produit_id, nom: s.produit }))}
-            detenteurs={comptes}
-          />
-        </div>
-      </div>
+      {/* Du moins fréquent au PRINCIPAL : « Nouveau Restock » finit à droite,
+          comme l'action principale de tous les autres écrans. */}
+      <EntetePage titre="État du stock">
+        {/* Pas de bouton SAV ici : l'écran Service après-vente porte le sien,
+            avec le suivi des dossiers qui va avec. Un doublon de plus dans un
+            en-tête déjà chargé n'apportait rien. */}
+        <FormulaireAjustement
+          produits={stock.map((s) => ({ id: s.produit_id, nom: s.produit }))}
+          detenteurs={comptes}
+        />
+        <FormulaireTransfert
+          produits={stock.map((s) => ({
+            id: s.produit_id,
+            nom: s.produit,
+            stockEntrepot: s.stock_entrepot,
+          }))}
+          detenteurs={comptesActifs}
+        />
+        {/* Même dialogue que l'écran Achats : recevoir une commande se pense
+            depuis l'état du stock, pas depuis un historique d'achats. */}
+        <FormulaireAchat produits={produits} />
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -189,30 +190,31 @@ export default async function PageStock() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          libelle="En entrepôt"
+          libelle="En entrepôt" icone={WarehouseIcon}
           valeur={`${totaux?.entrepot ?? 0} u`}
           precision="disponible pour les réassorts"
         />
         <Kpi
-          libelle="Chez les vendeurs"
+          libelle="Chez les vendeurs" icone={UsersIcon}
           valeur={`${totaux?.distribue ?? 0} u`}
           precision="détenu, pas encore vendu"
         />
         <Kpi
-          libelle="Stock total"
+          libelle="Stock total" icone={BoxesIcon}
           valeur={`${totaux?.total ?? 0} u`}
           precision="entrepôt + distribué"
           accent
         />
         <Kpi
-          libelle="Valeur du stock"
+          libelle="Valeur du stock" icone={WalletIcon}
           valeur={euros(totaux?.valeur ?? 0)}
           precision="au coût moyen pondéré"
         />
       </div>
 
       {alertes.length > 0 && (
-        <Alert>
+        <Alert variant="alerte">
+          <TriangleAlertIcon />
           <AlertDescription>
             Entrepôt sous le seuil d&apos;alerte :{" "}
             {alertes

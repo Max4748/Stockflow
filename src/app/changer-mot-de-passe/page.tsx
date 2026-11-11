@@ -1,5 +1,7 @@
-import { BoutonThemeFlottant } from "@/components/bouton-theme";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+
+import { CadreAuth } from "@/components/cadre-auth";
 
 import { profilCourant } from "@/lib/auth";
 
@@ -16,21 +18,27 @@ export default async function PageChangerMotDePasse() {
   if (!profil.actif) redirect("/en-attente");
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-4">
-      <BoutonThemeFlottant />
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-xl font-semibold tracking-tight">
-            Choisir un mot de passe
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {profil.doit_changer_mdp
-              ? "Ce compte utilise un mot de passe provisoire. Il faut le remplacer pour continuer."
-              : "Modification du mot de passe du compte."}
-          </p>
-        </div>
-        <FormulaireMotDePasse />
-      </div>
-    </main>
+    <CadreAuth
+      titre="Choisir un mot de passe"
+      description={
+        profil.doit_changer_mdp
+          ? "Ce compte utilise un mot de passe provisoire. Il faut le remplacer pour continuer."
+          : "Modification du mot de passe du compte."
+      }
+      // Un changement volontaire (depuis le menu du compte) doit pouvoir
+      // s'abandonner. Un changement IMPOSÉ, non : `/` y renverrait aussitôt.
+      pied={
+        !profil.doit_changer_mdp && (
+          <Link
+            href="/"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Annuler et revenir à l&apos;application
+          </Link>
+        )
+      }
+    >
+      <FormulaireMotDePasse />
+    </CadreAuth>
   );
 }

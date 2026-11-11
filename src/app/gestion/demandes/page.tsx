@@ -1,6 +1,9 @@
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VARIANTE_STATUT } from "@/lib/statuts";
 import { exigerAdmin } from "@/lib/auth";
 import { dateHeure, LIBELLES_STATUT } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -10,17 +13,6 @@ import { CarteDemande } from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Demandes de réassort — StockFlow" };
-
-const VARIANTE_BADGE: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  en_attente: "secondary",
-  approuvee: "default",
-  partielle: "default",
-  refusee: "destructive",
-  annulee: "outline",
-};
 
 export default async function PageDemandes() {
   await exigerAdmin();
@@ -58,12 +50,14 @@ export default async function PageDemandes() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Demandes de réassort</h1>
-        {enAttente.length > 0 && (
-          <Badge variant="destructive">{enAttente.length} en attente</Badge>
-        )}
-      </div>
+      <EntetePage
+        titre="Demandes de réassort"
+        badge={
+          enAttente.length > 0 && (
+            <Badge variant="destructive">{enAttente.length} en attente</Badge>
+          )
+        }
+      />
 
       {erreur && (
         <Alert variant="destructive">
@@ -72,7 +66,7 @@ export default async function PageDemandes() {
       )}
 
       {enAttente.length === 0 ? (
-        <Alert>
+        <Alert variant="succes">
           <AlertDescription>
             Aucune demande en attente. Rien ne bloque un vendeur.
           </AlertDescription>
@@ -102,9 +96,7 @@ export default async function PageDemandes() {
         </CardHeader>
         <CardContent>
           {traitees.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              Aucune demande traitée pour le moment.
-            </p>
+            <EtatVide titre="Aucune demande traitée pour le moment." />
           ) : (
             <ul className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {traitees.map((d) => (
@@ -113,7 +105,7 @@ export default async function PageDemandes() {
                     <span className="text-sm font-medium">
                       {nomVendeur.get(d.vendeur_id) ?? "—"}
                     </span>
-                    <Badge variant={VARIANTE_BADGE[d.statut] ?? "outline"}>
+                    <Badge variant={VARIANTE_STATUT[d.statut] ?? "outline"}>
                       {LIBELLES_STATUT[d.statut] ?? d.statut}
                     </Badge>
                   </div>

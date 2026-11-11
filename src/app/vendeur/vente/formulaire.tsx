@@ -1,5 +1,6 @@
 "use client";
 
+import { ShoppingCartIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -55,6 +56,7 @@ export function FormulaireVente({ produits }: { produits: ProduitVendable[] }) {
   return (
     <DialogueAction
       libelle="Enregistrer une vente"
+      icone={ShoppingCartIcon}
       variante="default"
       tailleBouton="lg"
       // `large` : la saisie tuile plusieurs cartes de produit, le gabarit
@@ -237,7 +239,7 @@ function ChampsVente({
       </Button>
 
       <Card>
-        <CardContent className="grid gap-3 pt-5 sm:grid-cols-2">
+        <CardContent className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="client">Client (facultatif)</Label>
             <Input
@@ -293,7 +295,7 @@ function ChampsVente({
           {/* Les deux boutons à la MÊME taille, comme dans tous les autres
               dialogues. La hauteur de 56 px appartient au déclencheur, sous le
               pouce sur une page ; ici elle écrasait « Annuler ». */}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col-reverse gap-2 max-sm:[&_[data-slot=button]]:h-11 sm:flex-row sm:items-center">
             <DialogClose render={<Button variant="outline">Annuler</Button>} />
             <Button type="submit" disabled={enCours}>
               {enCours ? "Enregistrement…" : "Valider la vente"}

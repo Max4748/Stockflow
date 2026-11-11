@@ -1,10 +1,26 @@
 "use client";
 
-import { MenuIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  BookOpenIcon,
+  BoxesIcon,
+  HistoryIcon,
+  InboxIcon,
+  LayoutDashboardIcon,
+  LifeBuoyIcon,
+  type LucideIcon,
+  MenuIcon,
+  ShieldCheckIcon,
+  TagsIcon,
+  TruckIcon,
+  UserCogIcon,
+  UsersIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +43,7 @@ import { cn } from "@/lib/utils";
  *   - en dessous : la même liste dans un tiroir.
  */
 
-type Entree = { href: string; libelle: string };
+type Entree = { href: string; libelle: string; icone: LucideIcon };
 
 /**
  * `niveauMinimum` : le groupe n'apparaît qu'au-delà. Le groupe Technique est à
@@ -40,33 +56,33 @@ const GROUPES: { titre: string; niveauMinimum?: number; entrees: Entree[] }[] =
     {
       titre: "Pilotage",
       entrees: [
-        { href: "/gestion", libelle: "Bilan" },
-        { href: "/gestion/demandes", libelle: "Demandes" },
+        { href: "/gestion", libelle: "Bilan", icone: LayoutDashboardIcon },
+        { href: "/gestion/demandes", libelle: "Demandes", icone: InboxIcon },
       ],
     },
     {
       titre: "Stock",
       entrees: [
-        { href: "/gestion/stock", libelle: "État du stock" },
-        { href: "/gestion/produits", libelle: "Produits" },
-        { href: "/gestion/achats", libelle: "Restock" },
-        { href: "/gestion/sav", libelle: "SAV" },
+        { href: "/gestion/stock", libelle: "État du stock", icone: BoxesIcon },
+        { href: "/gestion/produits", libelle: "Produits", icone: TagsIcon },
+        { href: "/gestion/achats", libelle: "Restock", icone: TruckIcon },
+        { href: "/gestion/sav", libelle: "SAV", icone: LifeBuoyIcon },
       ],
     },
     {
       titre: "Comptabilité",
       entrees: [
-        { href: "/gestion/vendeurs", libelle: "Vendeurs" },
-        { href: "/gestion/comptabilite", libelle: "Journal" },
+        { href: "/gestion/vendeurs", libelle: "Vendeurs", icone: UsersIcon },
+        { href: "/gestion/comptabilite", libelle: "Journal", icone: BookOpenIcon },
       ],
     },
     {
       titre: "Technique",
       niveauMinimum: 3,
       entrees: [
-        { href: "/gestion/comptes", libelle: "Comptes gérants" },
-        { href: "/gestion/journal-admin", libelle: "Journal admin" },
-        { href: "/gestion/integrite", libelle: "Intégrité" },
+        { href: "/gestion/comptes", libelle: "Comptes gérants", icone: UserCogIcon },
+        { href: "/gestion/journal-admin", libelle: "Journal admin", icone: HistoryIcon },
+        { href: "/gestion/integrite", libelle: "Intégrité", icone: ActivityIcon },
       ],
     },
     // Sans `niveauMinimum` : la double authentification concerne le compte de
@@ -74,7 +90,7 @@ const GROUPES: { titre: string; niveauMinimum?: number; entrees: Entree[] }[] =
     // davantage même — c'est lui qui voit les marges au quotidien.
     {
       titre: "Compte",
-      entrees: [{ href: "/gestion/securite", libelle: "Sécurité" }],
+      entrees: [{ href: "/gestion/securite", libelle: "Sécurité", icone: ShieldCheckIcon }],
     },
   ];
 
@@ -100,7 +116,7 @@ function Liens({
   const groupes = GROUPES.filter((g) => niveau >= (g.niveauMinimum ?? 0));
 
   return (
-    <nav className="space-y-6">
+    <nav aria-label="Navigation de gestion" className="space-y-6">
       {groupes.map((groupe) => (
         <div key={groupe.titre}>
           {/* `pb-1.5` : le titre doit coller à SES entrées. C'est le rapport
@@ -131,13 +147,18 @@ function Liens({
                       // `lg` et se pilote à la souris : 44 px y écartaient
                       // tellement les entrées qu'un groupe ne se distinguait
                       // plus du groupe suivant.
-                      "flex min-h-11 items-center justify-between gap-2 rounded-md px-3 text-sm font-medium transition-colors lg:min-h-9",
+                      "flex min-h-11 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors lg:min-h-9",
+                      // Même état actif que la navigation vendeur au bureau :
+                      // aplat primaire dilué, texte et icône à la couleur
+                      // primaire. Deux espaces, une seule façon de dire
+                      // « vous êtes ici ».
                       actif
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
                   >
-                    <span>{entree.libelle}</span>
+                    <entree.icone className="size-4 shrink-0" />
+                    <span className="flex-1 truncate">{entree.libelle}</span>
                     {compteur > 0 && (
                       <Badge variant="destructive">{compteur}</Badge>
                     )}
@@ -163,8 +184,19 @@ export function BarreLaterale({
   const chemin = usePathname();
 
   return (
-    <aside className="bg-muted/20 hidden w-60 shrink-0 border-r lg:block">
-      <div className="sticky top-0 max-h-dvh overflow-y-auto px-2 py-4">
+    <aside className="bg-sidebar hidden w-60 shrink-0 border-r lg:block">
+      <div className="sticky top-0 max-h-dvh overflow-y-auto px-2 pb-4">
+        {/* La marque vit ICI à partir de `lg`, et dans l'en-tête en dessous :
+            elle est toujours dans le coin haut gauche de l'écran, là où l'œil
+            la cherche. `h-16` : la même hauteur que l'en-tête voisin, pour que
+            leurs deux filets du bas se prolongent. */}
+        <Link
+          href="/gestion"
+          className="mb-3 flex h-16 items-center gap-2.5 px-3 font-semibold"
+        >
+          <Logo />
+          StockFlow
+        </Link>
         <Liens chemin={chemin} compteurs={compteurs} niveau={niveau} />
       </div>
     </aside>
@@ -229,8 +261,11 @@ export function TiroirNavigation({
         }
       />
       <SheetContent side="left" className="w-72 px-2 py-4">
-        <SheetHeader className="px-3 pb-2">
-          <SheetTitle>Gestion</SheetTitle>
+        <SheetHeader className="px-3 pb-4">
+          <SheetTitle className="flex items-center gap-2.5">
+            <Logo />
+            StockFlow
+          </SheetTitle>
         </SheetHeader>
         {/* Refermer le tiroir après un clic : sans ça il masquerait la page
             vers laquelle on vient de naviguer. */}

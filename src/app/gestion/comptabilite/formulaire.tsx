@@ -3,13 +3,13 @@
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -64,7 +64,7 @@ export function BoutonAnnulerVente({
             un ajustement de stock motivé.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Conserver</Button>} />
           <form action={action}>
             <input type="hidden" name="vente_id" value={venteId} />
@@ -72,7 +72,7 @@ export function BoutonAnnulerVente({
               {enCours ? "Annulation…" : "Annuler la vente"}
             </Button>
           </form>
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );

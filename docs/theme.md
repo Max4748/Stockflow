@@ -1,5 +1,50 @@
 # Thème clair / sombre
 
+## Palette actuelle : primaire bleue, neutres teintés
+
+La palette d'origine était **achromatique** (chroma 0 partout, seul le rouge
+d'erreur était coloré) et l'interface se lisait comme morose. Elle porte
+maintenant une couleur primaire bleue, et ses gris une pointe de la même
+teinte (chroma ≤ 0.03, teinte ~260). **Les clartés des surfaces n'ont pas
+bougé** : ce sont elles qui portent les contrastes, et tout ce que ce document
+dit de l'étagement fond / carte / dialogue reste vrai.
+
+| Variable | Clair | Sombre |
+| --- | --- | --- |
+| `--primary` | `oklch(0.5 0.2 262)` | `oklch(0.74 0.13 255)` |
+| `--primary-foreground` | `oklch(0.985 0 0)` | `oklch(0.17 0.03 264)` |
+| `--background` | `oklch(0.98 0.004 255)` | `oklch(0.185 0.012 262)` |
+| `--muted` | `oklch(0.967 0.007 255)` | `oklch(0.3 0.016 262)` |
+| `--muted-foreground` | `oklch(0.53 0.025 260)` | `oklch(0.74 0.02 260)` |
+| `--bordure-interactive` | `oklch(0.64 0.02 258)` | `oklch(0.56 0.02 258)` |
+| `--succes` | `oklch(0.47 0.12 155)` | `oklch(0.8 0.15 155)` |
+| `--alerte` | `oklch(0.5 0.11 60)` | `oklch(0.83 0.13 80)` |
+
+En sombre la primaire est **claire avec un texte foncé** : un bleu saturé à
+texte blanc n'atteint pas 4,5:1 sur un fond sombre sans devenir criard.
+
+### Contrastes mesurés
+
+Calculés (conversion OKLCH → sRGB, luminance relative WCAG), pas estimés.
+
+| Couple | Seuil | Clair | Sombre |
+| --- | --- | --- | --- |
+| Texte du bouton primaire sur `--primary` | 4,5 | 6,0 | 8,3 |
+| `--primary` (texte, lien) sur fond / carte / muted | 4,5 | 5,9 / 6,3 / 5,7 | 8,1 / 7,2 / 5,9 |
+| `--muted-foreground` sur fond / carte / muted | 4,5 | 4,98 / 5,28 / 4,80 | 8,1 / 7,2 / 5,9 |
+| `--bordure-interactive` sur fond / carte / muted (clair), fond / carte / dialogue (sombre) | 3 | 3,17 / 3,36 / 3,06 | 4,01 / 3,59 / 3,44 |
+| `--succes` sur son aplat à 12 %, posé sur `--muted` | 4,5 | 4,89 | 5,97 |
+| `--alerte` sur son aplat à 12 %, posé sur `--muted` | 4,5 | 4,77 | 6,13 |
+| `--primary` sur son aplat à 12 %, posé sur `--muted` | 4,5 | 4,78 | 4,75 |
+
+Les trois couleurs de sens servent de **texte sur un aplat à 12 % d'elles-mêmes**
+(pastilles `succes` / `alerte` / `info`, pastilles d'icône des indicateurs) :
+c'est ce cas, sur la surface la plus défavorable, qui fixe leur valeur.
+
+> Les sections ci-dessous racontent comment le thème a été construit. Leurs
+> tableaux chiffrés portent sur la palette achromatique d'origine ; le
+> raisonnement tient toujours, les valeurs à jour sont celles ci-dessus.
+
 ## Ce qui existait déjà avant qu'on l'active
 
 L'initialisation shadcn avait laissé la moitié du travail en place, sans que ce
@@ -58,9 +103,10 @@ serveur/client (aucune divergence possible) et l'icône est correcte dès le
 premier pixel affiché, avant même l'hydratation. `useTheme()` n'est lu que dans
 le contenu du menu déroulant, qui ne se rend qu'à l'ouverture.
 
-Placé dans les deux en-têtes (`vendeur/layout.tsx`, `gestion/layout.tsx`) et en
-variante flottante (`BoutonThemeFlottant`) sur les trois pages qui vivent hors
-layout (connexion, mot de passe provisoire, compte en attente), parce qu'un
+Dans les deux espaces, le choix du thème est une section du **menu du compte**
+(`menu-compte.tsx`), avec la même précaution : `useTheme()` n'y est lu que dans
+le contenu du menu. `BoutonTheme` reste en variante flottante
+(`BoutonThemeFlottant`) sur les pages qui vivent hors layout (connexion, mot de passe provisoire, compte en attente), parce qu'un
 vendeur qui arrive pour la première fois y passe avant d'atteindre son espace.
 
 ## Deux défauts corrigés avant l'activation
@@ -174,8 +220,8 @@ ne se détachaient pas les uns des autres.
 | `--muted-foreground`                   | 0.708         | **0.72**       | texte secondaire, 6,4–7,5:1 mesuré selon la surface |
 | `--border`                             | 10 % blanc    | **12 % blanc** | séparation de cartes un peu plus nette              |
 
-Les couleurs de graphiques (`--chart-*`) sont identiques en clair et en sombre
-dans le fichier ; l'application n'affiche aucun graphique, donc sans impact.
+Les couleurs de graphiques (`--chart-*`) sont définies pour les deux thèmes ;
+l'application n'affiche aucun graphique à ce jour.
 
 ## Contrôle qui ne peut pas être automatisé
 

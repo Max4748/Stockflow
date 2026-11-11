@@ -1,8 +1,10 @@
 "use client";
 
+import { PlusIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,7 @@ export function FormulaireAchat({ produits }: { produits: ProduitAvecModele[] })
   return (
     <DialogueAction
       libelle="Nouveau Restock"
+      icone={PlusIcon}
       variante="default"
       // `large` : la saisie d'un achat comporte une grille de produits et
       // quatre champs de montants — le gabarit standard serait à l'étroit.
@@ -251,7 +254,7 @@ function ChampsAchat({
           </div>
         </dl>
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours || unites === 0}>
             {enCours
@@ -260,7 +263,7 @@ function ChampsAchat({
                 ? "Saisir une quantité"
                 : (libelleValider ?? "Enregistrer l'achat")}
           </Button>
-        </div>
+        </PiedFormulaire>
       </div>
     </>
   );
@@ -343,12 +346,12 @@ export function BoutonSupprimerAchat({ achat }: { achat: Restock }) {
             <AlertDescription>{etat.erreur}</AlertDescription>
           </Alert>
         )}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Retour</Button>} />
           <Button type="submit" variant="destructive" disabled={enCours}>
             {enCours ? "Annulation…" : "Annuler l'achat"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );

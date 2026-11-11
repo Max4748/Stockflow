@@ -1,6 +1,9 @@
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VARIANTE_STATUT } from "@/lib/statuts";
 import { exigerProfil } from "@/lib/auth";
 import { creerClient } from "@/lib/supabase/server";
 import { dateHeure, LIBELLES_STATUT } from "@/lib/format";
@@ -10,17 +13,6 @@ import { BoutonAnnuler, FormulaireRestock } from "./formulaire";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Réassort — StockFlow" };
-
-const VARIANTE_BADGE: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  en_attente: "secondary",
-  approuvee: "default",
-  partielle: "default",
-  refusee: "destructive",
-  annulee: "outline",
-};
 
 export default async function PageRestock() {
   await exigerProfil();
@@ -45,10 +37,9 @@ export default async function PageRestock() {
     <div className="w-full space-y-6">
       {/* Le bouton n'apparaît que s'il n'y a rien en attente : une seule
           demande à la fois (index unique partiel en base). */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Réassort</h1>
+      <EntetePage titre="Réassort">
         {!enAttente && <FormulaireRestock produits={entrepot} />}
-      </div>
+      </EntetePage>
 
       {(rEntrepot.error || rDemandes.error) && (
         <Alert variant="destructive">
@@ -63,7 +54,7 @@ export default async function PageRestock() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-sm">Demande en cours</CardTitle>
-              <Badge variant="secondary">En attente</Badge>
+              <Badge variant="alerte">En attente</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -97,9 +88,7 @@ export default async function PageRestock() {
         </CardHeader>
         <CardContent>
           {demandes.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              Aucune demande pour le moment.
-            </p>
+            <EtatVide titre="Aucune demande pour le moment." />
           ) : (
             <ul className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {demandes.map((d) => (
@@ -108,7 +97,7 @@ export default async function PageRestock() {
                     <span className="text-muted-foreground text-xs">
                       {dateHeure(d.cree_le)}
                     </span>
-                    <Badge variant={VARIANTE_BADGE[d.statut] ?? "outline"}>
+                    <Badge variant={VARIANTE_STATUT[d.statut] ?? "outline"}>
                       {LIBELLES_STATUT[d.statut] ?? d.statut}
                     </Badge>
                   </div>

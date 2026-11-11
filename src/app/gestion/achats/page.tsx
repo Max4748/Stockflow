@@ -1,3 +1,4 @@
+import { EntetePage } from "@/components/entete-page";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,10 +110,9 @@ export default async function PageAchats() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Restock</h1>
+      <EntetePage titre="Restock">
         <FormulaireAchat produits={produits} />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">

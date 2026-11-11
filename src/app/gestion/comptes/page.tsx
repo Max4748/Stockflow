@@ -1,3 +1,5 @@
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -54,10 +56,10 @@ export default async function PageComptes() {
           {c.id === moi.id && <Badge variant="outline">vous</Badge>}
           {!c.actif && <Badge variant="destructive">désactivé</Badge>}
           {c.mdp_provisoire && (
-            <Badge variant="secondary">mot de passe provisoire</Badge>
+            <Badge variant="alerte">mot de passe provisoire</Badge>
           )}
           {c.stock_lie_entrepot && (
-            <Badge variant="outline">vend depuis l&apos;entrepôt</Badge>
+            <Badge variant="info">vend depuis l&apos;entrepôt</Badge>
           )}
         </span>
       ),
@@ -66,7 +68,7 @@ export default async function PageComptes() {
       cle: "role",
       entete: "Niveau",
       valeur: (c) => (
-        <Badge variant={c.role === "dev" ? "default" : "secondary"}>
+        <Badge variant={c.role === "dev" ? "default" : "info"}>
           {c.libelle}
         </Badge>
       ),
@@ -92,16 +94,12 @@ export default async function PageComptes() {
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Comptes gérants</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Réservé au propriétaire technique. Un gérant ne voit pas cet écran
-            et ne peut pas créer de compte à son propre niveau.
-          </p>
-        </div>
+      <EntetePage
+        titre="Comptes gérants"
+        description="Réservé au propriétaire technique. Un gérant ne voit pas cet écran et ne peut pas créer de compte à son propre niveau."
+      >
         <FormulaireCreationGerant />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -167,9 +165,7 @@ export default async function PageComptes() {
         </CardHeader>
         <CardContent>
           {comptes.filter((c) => c.role === "gerant").length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              Aucun gérant à rétrograder.
-            </p>
+            <EtatVide titre="Aucun gérant à rétrograder." />
           ) : (
             <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {comptes

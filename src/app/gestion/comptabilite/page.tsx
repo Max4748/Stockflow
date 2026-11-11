@@ -1,5 +1,7 @@
+import { CoinsIcon, PackageIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
 import Link from "next/link";
 
+import { EntetePage } from "@/components/entete-page";
 import { FiltrePeriode } from "@/components/filtre-periode";
 import { Kpi } from "@/components/kpi";
 import { ChampSelect } from "@/components/champ-select";
@@ -62,12 +64,12 @@ const LIBELLE_TYPE: Record<string, string> = {
 
 const VARIANTE: Record<
   string,
-  "default" | "secondary" | "outline" | "destructive"
+  "info" | "succes" | "secondary" | "outline" | "destructive"
 > = {
-  vente: "default",
+  vente: "info",
   vente_annulee: "destructive",
   achat: "secondary",
-  versement: "secondary",
+  versement: "succes",
   // Une défaillance est une mauvaise nouvelle : elle doit se repérer d'un
   // coup d'œil dans une colonne qui en compte six autres.
   sav: "destructive",
@@ -172,10 +174,10 @@ export default async function PageComptabilite({
 
   return (
     <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Journal comptable</h1>
-        <FiltrePeriode actif={periode.cle} />
-      </div>
+      <EntetePage
+        titre="Journal comptable"
+        filtres={<FiltrePeriode actif={periode.cle} />}
+      />
 
       {erreur && (
         <Alert variant="destructive">
@@ -184,14 +186,14 @@ export default async function PageComptabilite({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi libelle="Chiffre d'affaires" valeur={euros(bilan?.ca ?? 0)} />
+        <Kpi libelle="Chiffre d'affaires" icone={ReceiptIcon} valeur={euros(bilan?.ca ?? 0)} />
         <Kpi
-          libelle="Coût des marchandises"
+          libelle="Coût des marchandises" icone={PackageIcon}
           valeur={euros(bilan?.cout_marchandises ?? 0)}
         />
-        <Kpi libelle="Commissions" valeur={euros(bilan?.commissions ?? 0)} />
+        <Kpi libelle="Commissions" icone={CoinsIcon} valeur={euros(bilan?.commissions ?? 0)} />
         <Kpi
-          libelle="Marge nette"
+          libelle="Marge nette" icone={TrendingUpIcon}
           valeur={euros(bilan?.marge_nette ?? 0)}
           precision="Σ qté × (prix − coût − commission)"
           accent

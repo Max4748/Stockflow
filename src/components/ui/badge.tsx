@@ -13,7 +13,12 @@ const badgeVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
         destructive:
-          "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+          "bg-destructive/12 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+        // Trois couleurs de SENS, sur le modèle de `destructive` : aplat à
+        // 12 % et texte plein. Contrastes mesurés dans docs/theme.md.
+        succes: "bg-succes/12 text-succes",
+        alerte: "bg-alerte/12 text-alerte",
+        info: "bg-primary/12 text-primary",
         outline:
           "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost:

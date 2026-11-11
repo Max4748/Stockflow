@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -310,7 +311,7 @@ function ChampsSav({
         </Alert>
       )}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <PiedFormulaire>
         <DialogClose render={<Button variant="outline">Annuler</Button>} />
         <Button type="submit" disabled={enCours}>
           {enCours
@@ -319,7 +320,7 @@ function ChampsSav({
               ? "Envoyer au gérant"
               : "Enregistrer le SAV"}
         </Button>
-      </div>
+      </PiedFormulaire>
     </>
   );
 }

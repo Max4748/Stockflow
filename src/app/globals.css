@@ -28,6 +28,8 @@
   --color-border: var(--border);
   --color-bordure-interactive: var(--bordure-interactive);
   --color-destructive: var(--destructive);
+  --color-succes: var(--succes);
+  --color-alerte: var(--alerte);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -75,53 +77,59 @@
      ressortir, comme en sombre où ils sont plus clairs que le fond.
      Plancher à 0.97, qui est --muted : en dessous, les zones muettes se
      confondraient avec la page. */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Les neutres ne sont plus des gris purs : une pointe de bleu (chroma
+     ≤ 0.03, teinte ~260) les accorde à la couleur primaire. Les clartés,
+     elles, n'ont pas bougé : ce sont elles qui portent les contrastes. */
+  --background: oklch(0.98 0.004 255);
+  --foreground: oklch(0.21 0.03 264);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.21 0.03 264);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.21 0.03 264);
+  --primary: oklch(0.5 0.2 262);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  /* 0.545 et non 0.556 : le seuil de 4,5:1 se mesure contre la surface la
-     plus SOMBRE sur laquelle ce texte se pose, c'est-à-dire --muted (0.97) et
-     non la carte. L'ancienne valeur y tombait à 4,34:1, sous le seuil, et ce
-     depuis avant l'assombrissement du fond. Recalculé sur les trois
-     surfaces : fond 4,68 · carte 4,96 · muted 4,54. */
-  --muted-foreground: oklch(0.545 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.967 0.007 255);
+  --secondary-foreground: oklch(0.25 0.03 264);
+  --muted: oklch(0.967 0.007 255);
+  /* Le seuil de 4,5:1 se mesure contre la surface la plus SOMBRE sur laquelle
+     ce texte se pose, c'est-à-dire --muted et non la carte.
+     Mesuré sur les trois surfaces : fond 4,98 · carte 5,28 · muted 4,80. */
+  --muted-foreground: oklch(0.53 0.025 260);
+  --accent: oklch(0.967 0.007 255);
+  --accent-foreground: oklch(0.25 0.03 264);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
+  /* Couleurs de SENS, en plus de --destructive. Elles servent de texte sur un
+     aplat à 12 % d'elles-mêmes (pastilles, cartes d'indicateur) : c'est sur
+     cet aplat, posé sur --muted, que le seuil de 4,5:1 est mesuré.
+     Mesuré : succès 4,89 · alerte 4,77 · primaire 4,78. Voir docs/theme.md. */
+  --succes: oklch(0.47 0.12 155);
+  --alerte: oklch(0.5 0.11 60);
+  --border: oklch(0.92 0.008 255);
   /* Contour des éléments CLIQUABLES. Distinct de --border, qui reste discret
      pour les cartes, séparateurs et lignes de tableau : un bouton doit se
      distinguer du fond, une ligne de tableau non.
-     3,1:1 sur fond blanc, au-dessus du seuil de 3:1 que demande WCAG 1.4.11
-     pour délimiter un composant d'interface. --border n'atteint que 1,26:1,
-     ce qui le rend inutilisable pour un bouton. */
-  /* 0.645 et non 0.66 : l'ancienne valeur tombait à 2,85:1 sur --muted, sous
-     le seuil de 3:1 de WCAG 1.4.11.
-     Recalculé : fond 3,11 · carte 3,30 · muted 3,02. */
-  --bordure-interactive: oklch(0.645 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+     Au-dessus du seuil de 3:1 que demande WCAG 1.4.11 pour délimiter un
+     composant d'interface. --border n'atteint que ~1,26:1, ce qui le rend
+     inutilisable pour un bouton. */
+  /* Mesuré contre les trois surfaces : fond 3,17 · carte 3,36 · muted 3,06.
+     C'est --muted, la plus sombre, qui commande la valeur. */
+  --bordure-interactive: oklch(0.64 0.02 258);
+  --input: oklch(0.92 0.008 255);
+  --ring: oklch(0.62 0.16 262);
+  --chart-1: oklch(0.5 0.2 262);
+  --chart-2: oklch(0.6 0.13 185);
+  --chart-3: oklch(0.7 0.15 75);
+  --chart-4: oklch(0.58 0.19 300);
+  --chart-5: oklch(0.62 0.2 20);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar: oklch(0.985 0.003 255);
+  --sidebar-foreground: oklch(0.21 0.03 264);
+  --sidebar-primary: oklch(0.5 0.2 262);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.967 0.007 255);
+  --sidebar-accent-foreground: oklch(0.25 0.03 264);
+  --sidebar-border: oklch(0.92 0.008 255);
+  --sidebar-ring: oklch(0.62 0.16 262);
 }
 
 .dark {
@@ -130,43 +138,47 @@
      dialogues étaient trop proches — les blocs ne se détachaient pas.
      L'écart entre les trois est maintenant explicite : un dialogue se lit
      AU-DESSUS d'une carte, qui se lit au-dessus du fond. */
-  --background: oklch(0.185 0 0);
+  --background: oklch(0.185 0.012 262);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.235 0 0);
+  --card: oklch(0.235 0.014 262);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.25 0 0);
+  --popover: oklch(0.25 0.015 262);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.3 0 0);
+  --primary: oklch(0.74 0.13 255);
+  --primary-foreground: oklch(0.17 0.03 264);
+  --secondary: oklch(0.3 0.016 262);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.3 0 0);
-  --muted-foreground: oklch(0.72 0 0);
-  --accent: oklch(0.3 0 0);
+  --muted: oklch(0.3 0.016 262);
+  --muted-foreground: oklch(0.74 0.02 260);
+  --accent: oklch(0.3 0.016 262);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  /* Mesuré sur un aplat à 12 % posé sur --muted : succès 5,97 · alerte 6,13 ·
+     primaire 4,75. */
+  --succes: oklch(0.8 0.15 155);
+  --alerte: oklch(0.83 0.13 80);
   --border: oklch(1 0 0 / 12%);
   /* Valeur PLEINE et non un blanc transparent : une transparence donne un
      contraste différent selon qu'elle est posée sur le fond, une carte ou un
-     dialogue — impossible à garantir. Mesuré : 3,68:1 sur le fond, 3,29:1 sur
-     une carte, 3,16:1 sur un dialogue. C'est cette dernière surface, la plus
-     claire, qui commande la valeur : oklch(0.52) n'y atteignait que 2,90:1. */
-  --bordure-interactive: oklch(0.54 0 0);
+     dialogue — impossible à garantir. Mesuré : 4,01:1 sur le fond, 3,59:1 sur
+     une carte, 3,44:1 sur un dialogue. C'est cette dernière surface, la plus
+     claire, qui commande la valeur. */
+  --bordure-interactive: oklch(0.56 0.02 258);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --ring: oklch(0.6 0.13 255);
+  --chart-1: oklch(0.74 0.13 255);
+  --chart-2: oklch(0.75 0.12 185);
+  --chart-3: oklch(0.82 0.13 80);
+  --chart-4: oklch(0.72 0.15 300);
+  --chart-5: oklch(0.72 0.17 20);
+  --sidebar: oklch(0.205 0.013 262);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-primary: oklch(0.74 0.13 255);
+  --sidebar-primary-foreground: oklch(0.17 0.03 264);
+  --sidebar-accent: oklch(0.3 0.016 262);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.6 0.13 255);
 }
 
 @layer base {

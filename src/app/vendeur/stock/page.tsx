@@ -1,5 +1,8 @@
+import { BoxesIcon } from "lucide-react";
 import Link from "next/link";
 
+import { EtatVide } from "@/components/etat-vide";
+import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -33,16 +36,17 @@ export default async function PageStock() {
   const total = stock.reduce((s, l) => s + l.quantite, 0);
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-xl font-semibold">Mon stock</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-muted-foreground text-sm tabular-nums">
+    <div className="w-full space-y-6">
+      <EntetePage
+        titre="Mon stock"
+        badge={
+          <Badge variant="info" className="tabular-nums">
             {total} unité(s)
-          </span>
-          <FormulairePrelevement stock={stock} tarifs={tarifs} />
-        </div>
-      </div>
+          </Badge>
+        }
+      >
+        <FormulairePrelevement stock={stock} tarifs={tarifs} />
+      </EntetePage>
 
       {error && (
         <Alert variant="destructive">
@@ -51,11 +55,14 @@ export default async function PageStock() {
       )}
 
       {stock.length === 0 ? (
-        <Alert>
-          <AlertDescription>
-            Aucun produit au catalogue pour le moment.
-          </AlertDescription>
-        </Alert>
+        <Card>
+          <CardContent>
+            <EtatVide
+              icone={BoxesIcon}
+              titre="Aucun produit au catalogue pour le moment."
+            />
+          </CardContent>
+        </Card>
       ) : (
         // Tuiles plutôt qu'une liste : une liste en pleine largeur mettrait le
         // nom du produit à un bout de l'écran et sa quantité à l'autre. Le
@@ -66,7 +73,7 @@ export default async function PageStock() {
             return (
               <li key={l.produit_id}>
                 <Card className="h-full">
-                  <CardContent className="flex h-full flex-col gap-2 pt-5">
+                  <CardContent className="flex h-full flex-col gap-2">
                     <p className="line-clamp-2 text-sm font-medium">
                       {l.produit}
                     </p>
@@ -78,7 +85,7 @@ export default async function PageStock() {
                         <Badge variant="destructive">épuisé</Badge>
                       )}
                       {niveau === "bas" && (
-                        <Badge variant="secondary">bas</Badge>
+                        <Badge variant="alerte">bas</Badge>
                       )}
                     </div>
                     <p className="text-muted-foreground text-xs">

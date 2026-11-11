@@ -1,8 +1,10 @@
 "use client";
 
+import { UserPlusIcon } from "lucide-react";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -46,6 +47,7 @@ export function FormulaireCreationGerant() {
     <>
     <DialogueAction
       libelle="Créer un compte gérant"
+      icone={UserPlusIcon}
       variante="default"
       // Se ferme au succès : le résultat a son propre dialogue.
       jeton={etat.jeton}
@@ -87,12 +89,12 @@ export function FormulaireCreationGerant() {
 
 
 
-        <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
+        <PiedFormulaire className="sm:col-span-2">
           <DialogClose render={<Button variant="outline">Fermer</Button>} />
           <Button type="submit" disabled={enCours}>
             {enCours ? "Création…" : "Créer le compte gérant"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
       <DialogueCompteCree etat={etat} />
@@ -144,7 +146,7 @@ export function LigneRole({
               : "Il accédera au bilan, aux marges, aux achats et aux créances de tous les vendeurs. Ses propres ventes passées restent dans l'historique, mais il n'apparaîtra plus dans les créances : un gérant n'est pas censé vendre."}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <form action={action}>
             <input type="hidden" name="compte_id" value={compteId} />
@@ -153,7 +155,7 @@ export function LigneRole({
               {enCours ? "Modification…" : "Confirmer"}
             </Button>
           </form>
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );
@@ -207,7 +209,7 @@ export function BoutonStockLie({
               : "Ses ventes puiseront directement dans l'entrepôt, sans qu'il ait à se transférer du stock au préalable. Le transfert reste écrit dans le journal, il disparaît seulement de son écran. À n'activer que pour qui détient physiquement l'entrepôt."}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <form action={action}>
             <input type="hidden" name="compte_id" value={compteId} />
@@ -216,7 +218,7 @@ export function BoutonStockLie({
               {enCours ? "Modification…" : "Confirmer"}
             </Button>
           </form>
-        </DialogFooter>
+        </PiedFormulaire>
       </DialogContent>
     </Dialog>
   );

@@ -1,8 +1,10 @@
 "use client";
 
+import { TruckIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -45,6 +47,7 @@ export function FormulaireRestock({
   return (
     <DialogueAction
       libelle="Demander un réassort"
+      icone={TruckIcon}
       variante="default"
       classeBouton={classeBouton}
       // `large` : la grille des produits de l'entrepôt tient mal dans le
@@ -87,7 +90,7 @@ function ChampsRestock({
   return (
     <>
       <Card>
-        <CardContent className="space-y-4 pt-5">
+        <CardContent className="space-y-4">
           <p className="text-muted-foreground text-sm">
             Indiquer les quantités souhaitées. L&apos;administrateur peut
             accorder tout, une partie seulement, ou refuser.
@@ -170,7 +173,7 @@ function ChampsRestock({
 
       {/* Même taille que « Annuler », comme dans tous les dialogues du projet :
           la hauteur de 56 px appartient au déclencheur, pas au pied de page. */}
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <PiedFormulaire>
         <DialogClose render={<Button variant="outline">Annuler</Button>} />
         <Button type="submit" disabled={enCours || nbDemandes === 0}>
           {enCours
@@ -179,7 +182,7 @@ function ChampsRestock({
               ? "Saisir au moins une quantité"
               : `Envoyer la demande (${nbDemandes} produit${nbDemandes > 1 ? "s" : ""})`}
         </Button>
-      </div>
+      </PiedFormulaire>
     </>
   );
 }

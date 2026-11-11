@@ -1,8 +1,10 @@
 "use client";
 
+import { PackageMinusIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -58,6 +60,7 @@ export function FormulairePrelevement({
   return (
     <DialogueAction
       libelle="Prélever pour moi"
+      icone={PackageMinusIcon}
       variante="outline"
       classeBouton={classeBouton}
       titre="Prélever pour moi"
@@ -124,12 +127,12 @@ export function FormulairePrelevement({
           </div>
         )}
 
-        <div className="flex justify-end gap-2">
+        <PiedFormulaire>
           <DialogClose render={<Button variant="outline">Annuler</Button>} />
           <Button type="submit" disabled={enCours || !produitId || trop}>
             {enCours ? "Enregistrement…" : "Prélever"}
           </Button>
-        </div>
+        </PiedFormulaire>
       </form>
     </DialogueAction>
   );

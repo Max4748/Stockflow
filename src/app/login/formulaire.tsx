@@ -24,7 +24,7 @@ export function FormulaireConnexion({
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent>
         {/* Hors du <form> : il survit à une soumission, alors qu'`etat.erreur`
             est remis à zéro à chaque tentative. */}
         {avertissement && (
@@ -65,14 +65,14 @@ export function FormulaireConnexion({
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={enCours}>
+          <Button type="submit" size="lg" className="w-full" disabled={enCours}>
             {enCours ? "Connexion…" : "Se connecter"}
           </Button>
 
-          <p className="text-muted-foreground text-center text-xs">
+          <p className="text-center text-sm">
             <Link
               href="/mot-de-passe-oublie"
-              className="hover:text-foreground underline"
+              className="text-primary underline-offset-4 hover:underline"
             >
               Mot de passe oublié ?
             </Link>

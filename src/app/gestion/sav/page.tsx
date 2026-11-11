@@ -1,9 +1,11 @@
+import { EntetePage } from "@/components/entete-page";
 import { FormulaireSav } from "@/components/formulaire-sav";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VARIANTE_STATUT } from "@/lib/statuts";
 import { exigerAdmin } from "@/lib/auth";
 import { date, euros, LIBELLES_STATUT_SAV, quantite } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -19,16 +21,6 @@ import {
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SAV — StockFlow" };
 
-const VARIANTE: Record<
-  string,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  valide: "default",
-  en_attente: "secondary",
-  refuse: "destructive",
-  annule: "outline",
-};
-
 const COLONNES: Colonne<DossierSav>[] = [
   {
     cle: "date",
@@ -37,7 +29,7 @@ const COLONNES: Colonne<DossierSav>[] = [
     valeur: (l) => (
       <span className="flex items-center gap-2">
         {date(l.date)}
-        <Badge variant={VARIANTE[l.statut] ?? "outline"}>
+        <Badge variant={VARIANTE_STATUT[l.statut] ?? "outline"}>
           {LIBELLES_STATUT_SAV[l.statut] ?? l.statut}
         </Badge>
       </span>
@@ -119,8 +111,7 @@ export default async function PageSav() {
           affichés : voir le commentaire du composant. */}
       <MarquerSavGestionVu actif={nonVus > 0} borne={borneVue(dossiers)} />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">Service après-vente</h1>
+      <EntetePage titre="Service après-vente">
         {/* Seul bouton de l'en-tête : il doit dire ce qu'il fait. « SAV » ne
             se comprend que sur l'écran Stock, parmi trois autres. */}
         <FormulaireSav
@@ -128,7 +119,7 @@ export default async function PageSav() {
           contexte="gestion"
           libelle="Déclarer un SAV"
         />
-      </div>
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
