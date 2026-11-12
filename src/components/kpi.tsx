@@ -1,4 +1,9 @@
-import { ChevronRightIcon, type LucideIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  TrendingDownIcon,
+  TrendingUpIcon,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -29,6 +34,12 @@ import { cn } from "@/lib/utils";
  *     se lire sans lire le libellé. `succes` ne colore que la pastille : un
  *     chiffre vert partout ne dirait plus rien.
  *
+ * `evolution` compare le chiffre à la période précédente. La flèche et le
+ * signe disent le sens ; la COULEUR ne s'en mêle que si le sens a une valeur
+ * (`favorable`). Une marge qui monte est une bonne nouvelle, des achats qui
+ * montent ne sont ni bons ni mauvais : les peindre en vert ou en rouge
+ * porterait un jugement que l'écran n'a pas à porter.
+ *
  * `href` rend la carte ENTIÈRE cliquable : un indicateur mène à l'écran qui le
  * détaille (« À récupérer » → Vendeurs). Le chevron dit qu'elle l'est ; sans
  * lui, rien ne distingue une carte qui mène quelque part d'une carte inerte.
@@ -53,6 +64,7 @@ export function Kpi({
   ton = "neutre",
   className,
   href,
+  evolution,
   children,
 }: {
   libelle: string;
@@ -65,6 +77,8 @@ export function Kpi({
   className?: string;
   /** Écran qui détaille ce chiffre. */
   href?: string;
+  /** Écart en % avec la période précédente. `favorable` : une hausse est bonne. */
+  evolution?: { pourcent: number; favorable?: boolean } | null;
   /** Détail libre sous le chiffre (décomposition, lien…). */
   children?: ReactNode;
 }) {
@@ -106,15 +120,42 @@ export function Kpi({
             </span>
           )}
         </div>
-        <p
-          className={cn(
-            "mt-2 font-semibold leading-none tabular-nums",
-            accent ? "text-3xl sm:text-4xl" : "text-2xl",
-            !accent && TONS[ton].valeur,
+        <div className="mt-2 flex flex-wrap items-end gap-x-2.5 gap-y-1.5">
+          <p
+            className={cn(
+              "font-semibold leading-none tabular-nums",
+              accent ? "text-3xl sm:text-4xl" : "text-2xl",
+              !accent && TONS[ton].valeur,
+            )}
+          >
+            {valeur}
+          </p>
+          {evolution && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",
+                accent
+                  ? // Sur l'aplat primaire, vert et ambre ne passeraient pas le
+                    // contraste : la pastille reprend la couleur du texte.
+                    "bg-primary-foreground/15 dark:bg-foreground/10"
+                  : !evolution.favorable || evolution.pourcent === 0
+                    ? "bg-muted text-muted-foreground"
+                    : evolution.pourcent > 0
+                      ? "bg-succes/12 text-succes"
+                      : "bg-alerte/12 text-alerte",
+              )}
+            >
+              {evolution.pourcent > 0 ? (
+                <TrendingUpIcon className="size-3" aria-hidden />
+              ) : evolution.pourcent < 0 ? (
+                <TrendingDownIcon className="size-3" aria-hidden />
+              ) : null}
+              {evolution.pourcent > 0 ? "+" : evolution.pourcent < 0 ? "−" : ""}
+              {Math.abs(evolution.pourcent)} %
+              <span className="sr-only"> par rapport à la période précédente</span>
+            </span>
           )}
-        >
-          {valeur}
-        </p>
+        </div>
         {(precision || href) && (
           <p
             className={cn(

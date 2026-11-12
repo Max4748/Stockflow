@@ -174,6 +174,8 @@ grant execute on function stock_detenteurs(uuid)            to authenticated;
 
 grant execute on function bilan_global(date, date)           to authenticated;
 grant execute on function ca_par_jour(date, date)            to authenticated;
+grant execute on function ventes_par_produit(date, date)     to authenticated;
+grant execute on function suggestions_reassort(int)          to authenticated;
 
 grant execute on function revenus_vendeurs(date, date)       to authenticated;
 
@@ -277,6 +279,8 @@ grant execute on function ma_dette() to authenticated;
 grant execute on function bilan_global(date, date) to authenticated;
 
 grant execute on function ca_par_jour(date, date) to authenticated;
+grant execute on function ventes_par_produit(date, date) to authenticated;
+grant execute on function suggestions_reassort(int) to authenticated;
 
 grant execute on function revenus_vendeurs(date, date) to authenticated;
 
@@ -304,6 +308,8 @@ revoke all on v_comptes_vendeurs from authenticated, anon;
 grant execute on function bilan_global(date, date) to authenticated;
 
 grant execute on function ca_par_jour(date, date) to authenticated;
+grant execute on function ventes_par_produit(date, date) to authenticated;
+grant execute on function suggestions_reassort(int) to authenticated;
 
 grant execute on function revenus_vendeurs(date, date) to authenticated;
 

@@ -9,7 +9,7 @@ Tailwind 4, shadcn/ui, PostgreSQL via Supabase. Projet personnel.
 
 | Décision | Conséquence concrète | Détail |
 | --- | --- | --- |
-| Logique métier en SQL | 20 tables, 83 fonctions, 28 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
+| Logique métier en SQL | 20 tables, 86 fonctions, 28 politiques RLS. Aucun total, coût, marge ni dette n'est calculé en TypeScript | [donnees.md](docs/donnees.md) |
 | Autorisation en base, sur quatre couches | RLS, GRANT/REVOKE, garde en tête de fonction, garde applicative. Le front-end peut disparaître sans ouvrir de faille | [securite.md](docs/securite.md) |
 | Stock dérivé, jamais stocké | Somme d'un registre de mouvements signés : une incohérence devient visible au lieu d'être écrasée | [donnees.md](docs/donnees.md) |
 | Aucune clé Supabase côté navigateur | Variables sans préfixe `NEXT_PUBLIC_`, lues à l'exécution, image Docker sans build-arg | [architecture.md](docs/architecture.md) |
@@ -75,6 +75,7 @@ diagnostic et sauvegardes : [docs/exploitation.md](docs/exploitation.md).
 | [docs/interface.md](docs/interface.md) | Les composants partagés, la mise en page adaptative |
 | [docs/theme.md](docs/theme.md) | Le mode sombre et ses deux corrections de contraste |
 | [docs/exploitation.md](docs/exploitation.md) | Démarrer, créer les comptes, tester, diagnostiquer, sauvegarder |
+| [docs/tests.md](docs/tests.md) | Les quatre familles de tests, et ce que les tests de bout en bout ne prouvent pas |
 | [supabase/tests/](supabase/tests/README.md) | Ce que les tests SQL couvrent, et comment en écrire un |
 
 ## Vérifier
@@ -101,12 +102,22 @@ commandes à chaque push : la section ci-dessus n'est pas une promesse, c'est ce
 qui tourne.
 
 Les tests sont en **pgTAP**, pas en TypeScript : c'est en SQL que vit la logique
-métier, donc c'est là que porte la couverture. 233 assertions, portant sur les règles
+métier, donc c'est là que porte la couverture. 260 assertions, portant sur les règles
 qu'on ne peut ni annuler ni deviner en lisant l'interface : la
 hiérarchie des rôles, le calcul de la dette, la borne anti-surversement, les
 deux régimes du SAV et la révocation d'un échange.
 Chaque fichier tourne dans une transaction annulée : rien n'est écrit, aucune
 base de test à maintenir. Détail : [supabase/tests/](supabase/tests/README.md).
+
+L'interface a ses propres tests, dans un vrai navigateur, contre un faux
+Supabase :
+
+```bash
+npm run build && npm run test:e2e
+```
+
+Ils disent qu'un écran s'affiche et qu'un vendeur est refoulé de la gestion,
+pas qu'un calcul est juste. Détail et limites : [docs/tests.md](docs/tests.md).
 
 Deux contrôles complètent le typage :
 `verifier_coherence_stock()` vérifie les trois invariants qu'aucune contrainte

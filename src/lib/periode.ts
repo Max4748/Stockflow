@@ -76,3 +76,43 @@ export function argsPeriode(p: Periode): { p_du?: string; p_au?: string } {
     ...(p.au ? { p_au: p.au } : {}),
   };
 }
+
+/**
+ * La période de MÊME DURÉE qui précède immédiatement : du 1er au 12 novembre
+ * se compare aux douze jours d'avant, pas à tout octobre. Comparer un mois
+ * entamé à un mois entier donnerait toujours une baisse.
+ *
+ * `null` quand une borne manque (« Tout l'historique ») : il n'y a alors pas
+ * d'« avant » auquel se comparer.
+ *
+ * En UTC : ce sont des dates comptables sans heure.
+ */
+export function periodePrecedente(
+  p: Pick<Periode, "du" | "au">,
+): { du: string; au: string } | null {
+  if (!p.du || !p.au) return null;
+  const jour = 86_400_000;
+  const utc = (iso: string) => {
+    const [a, m, j] = iso.split("-").map(Number);
+    return Date.UTC(a, m - 1, j);
+  };
+  const du = utc(p.du);
+  const au = utc(p.au);
+  if (!Number.isFinite(du) || !Number.isFinite(au) || au < du) return null;
+  const versIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return { du: versIso(du - (au - du) - jour), au: versIso(du - jour) };
+}
+
+/**
+ * Écart en pourcentage entre deux périodes, arrondi à l'unité. `null` quand
+ * la période précédente est nulle ou négative : « + ∞ % » n'apprend rien, et
+ * un pourcentage calculé sur une base négative change de signe.
+ */
+export function evolution(
+  actuel: number | null | undefined,
+  precedent: number | null | undefined,
+): number | null {
+  const avant = Number(precedent ?? 0);
+  if (!(avant > 0)) return null;
+  return Math.round(((Number(actuel ?? 0) - avant) / avant) * 100);
+}

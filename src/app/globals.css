@@ -192,3 +192,23 @@
     @apply font-sans;
   }
 }
+
+/* Impression (reçu de versement). La navigation porte `print:hidden` ; ici on
+   retire ce qui n'a de sens qu'à l'écran : le fond teinté, qui boirait de
+   l'encre, et le thème sombre, qui imprimerait du texte clair sur du blanc. */
+@media print {
+  :root,
+  .dark {
+    color-scheme: light;
+    --background: oklch(1 0 0);
+    --card: oklch(1 0 0);
+    --foreground: oklch(0.2 0 0);
+    --card-foreground: oklch(0.2 0 0);
+    --muted-foreground: oklch(0.4 0 0);
+    --muted: oklch(0.96 0 0);
+    --border: oklch(0.85 0 0);
+  }
+  main {
+    padding: 0 !important;
+  }
+}

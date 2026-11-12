@@ -516,3 +516,27 @@ export type TarifPreleve = {
   personnalise: boolean;
   nb_parfums: number;
 };
+
+/** rpc('ventes_par_produit') — mêmes définitions que le bilan, par produit. */
+export type VenteProduit = {
+  produit_id: string;
+  produit: string;
+  modele: string;
+  unites: number;
+  /** Net des remboursements SAV de la période. */
+  ca: number;
+  /** Net des remboursements ET du coût des unités échangées. */
+  marge: number;
+};
+
+/** rpc('suggestions_reassort') — vendu sur la période + seuil − stock total. */
+export type SuggestionReassort = {
+  produit_id: string;
+  produit: string;
+  modele: string;
+  stock_entrepot: number;
+  stock_total: number;
+  seuil_parfum: number;
+  vendues: number;
+  a_commander: number;
+};

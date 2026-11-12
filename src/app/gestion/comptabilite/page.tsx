@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { BoutonExport } from "@/components/bouton-export";
 import { EntetePage } from "@/components/entete-page";
+import { Pagination } from "@/components/pagination";
 import { FiltrePeriode } from "@/components/filtre-periode";
 import { Kpi } from "@/components/kpi";
 import { ChampSelect } from "@/components/champ-select";
@@ -164,20 +165,11 @@ export default async function PageComptabilite({
     },
   ];
 
-  function lienPage(n: number) {
-    const p = new URLSearchParams();
-    if (periode.cle !== "tout") p.set("periode", periode.cle);
-    if (periode.cle === "libre") {
-      if (periode.du) p.set("du", periode.du);
-      if (periode.au) p.set("au", periode.au);
-    }
-    if (type) p.set("type", type);
-    if (vendeurId) p.set("vendeur", vendeurId);
-    if (recherche) p.set("q", recherche);
-    if (n > 1) p.set("page", String(n));
-    const q = p.toString();
-    return `/gestion/comptabilite${q ? `?${q}` : ""}`;
-  }
+  const filtresExport = new URLSearchParams(
+    Object.entries(params).filter(
+      (e): e is [string, string] => Boolean(e[1]) && e[0] !== "page",
+    ),
+  ).toString();
 
   return (
     <div className="w-full space-y-6">
@@ -188,10 +180,7 @@ export default async function PageComptabilite({
         {/* Mêmes filtres que l'écran, sans la pagination : l'export porte sur
             tout ce que les filtres retiennent, pas sur la page affichée. */}
         <BoutonExport
-          href={lienPage(1).replace(
-            "/gestion/comptabilite",
-            "/gestion/comptabilite/export",
-          )}
+          href={`/gestion/comptabilite/export${filtresExport ? `?${filtresExport}` : ""}`}
         />
       </EntetePage>
 
@@ -315,7 +304,7 @@ export default async function PageComptabilite({
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Transactions — page {page}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <Tableau
             colonnes={colonnes}
             lignes={journal}
@@ -335,31 +324,13 @@ export default async function PageComptabilite({
             }
           />
 
-          <div className="flex items-center justify-between gap-3 border-t pt-4">
-            {page > 1 ? (
-              <Link
-                href={lienPage(page - 1)}
-                className={cn(buttonVariants({ variant: "outline" }), "h-10")}
-              >
-                Page précédente
-              </Link>
-            ) : (
-              <span />
-            )}
-            <span className="text-muted-foreground text-sm">
-              {journal.length} ligne(s) affichée(s)
-            </span>
-            {journal.length === PAR_PAGE ? (
-              <Link
-                href={lienPage(page + 1)}
-                className={cn(buttonVariants({ variant: "outline" }), "h-10")}
-              >
-                Page suivante
-              </Link>
-            ) : (
-              <span />
-            )}
-          </div>
+          <Pagination
+            params={params}
+            chemin="/gestion/comptabilite"
+            page={page}
+            parPage={PAR_PAGE}
+            pleine={journal.length === PAR_PAGE}
+          />
         </CardContent>
       </Card>
     </div>

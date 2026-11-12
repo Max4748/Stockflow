@@ -1,3 +1,5 @@
+import { ChampRecherche } from "@/components/champ-recherche";
+import { filtrer } from "@/lib/tri";
 import { BoxesIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -18,8 +20,13 @@ import { FormulairePrelevement } from "./formulaire";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon stock — StockFlow" };
 
-export default async function PageStock() {
+export default async function PageStock({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const profil = await exigerProfil();
+  const { q } = await searchParams;
   const supabase = await creerClient();
 
   // stock_disponible() ne renvoie que le stock DÉTENU par l'appelant, et
@@ -34,6 +41,9 @@ export default async function PageStock() {
   const stock = (data as LigneStock[] | null) ?? [];
   const tarifs = (tarifsBruts as TarifPreleve[] | null) ?? [];
   const total = stock.reduce((s, l) => s + l.quantite, 0);
+  // La recherche ne filtre QUE les tuiles : le total de l'en-tête et le
+  // dialogue « Prélever pour moi » continuent de porter sur tout le stock.
+  const affiche = filtrer(stock, q, (l) => [l.produit]);
 
   return (
     <div className="w-full space-y-6">
@@ -63,12 +73,30 @@ export default async function PageStock() {
             />
           </CardContent>
         </Card>
+      ) : affiche.length === 0 ? (
+        <>
+          <ChampRecherche libelle="Rechercher un produit" className="sm:max-w-sm" />
+          <Card>
+            <CardContent>
+              <EtatVide
+                icone={BoxesIcon}
+                titre="Aucun produit ne correspond à cette recherche."
+              />
+            </CardContent>
+          </Card>
+        </>
       ) : (
-        // Tuiles plutôt qu'une liste : une liste en pleine largeur mettrait le
-        // nom du produit à un bout de l'écran et sa quantité à l'autre. Le
-        // nombre de colonnes suit la place disponible, jusqu'à 6.
+        <>
+        {/* Sous six produits, tout se voit d'un regard : un champ de recherche
+            ne ferait qu'occuper de la place. */}
+        {stock.length > 6 && (
+          <ChampRecherche libelle="Rechercher un produit" className="sm:max-w-sm" />
+        )}
+        {/* Tuiles plutôt qu'une liste : une liste en pleine largeur mettrait le
+            nom du produit à un bout de l'écran et sa quantité à l'autre. Le
+            nombre de colonnes suit la place disponible, jusqu'à 6. */}
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-          {stock.map((l) => {
+          {affiche.map((l) => {
             const niveau = niveauStock(l.quantite, l.seuil_parfum);
             return (
               <li key={l.produit_id}>
@@ -97,6 +125,7 @@ export default async function PageStock() {
             );
           })}
         </ul>
+        </>
       )}
 
       {/* Masqué pour un compte lié à l'entrepôt : il se demanderait du stock

@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/pagination";
+import { lirePage } from "@/lib/tri";
 import { EtatVide } from "@/components/etat-vide";
 import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,24 +16,41 @@ import { BoutonAnnuler, FormulaireRestock } from "./formulaire";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Réassort — StockFlow" };
 
-export default async function PageRestock() {
+// L'historique était coupé à 20 demandes ; il est paginé.
+const PAR_PAGE = 12;
+
+export default async function PageRestock({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const params = await searchParams;
+  const page = lirePage(params, PAR_PAGE);
   await exigerProfil();
   const supabase = await creerClient();
 
-  const [rEntrepot, rDemandes] = await Promise.all([
+  const [rEntrepot, rDemandes, rEnAttente] = await Promise.all([
     // Quantités de l'entrepôt, sans aucune valorisation : sans cette info le
     // vendeur demanderait des réassorts impossibles.
     supabase.rpc("stock_entrepot"),
     supabase
       .from("demandes_restock")
-      .select("*, demande_lignes(*, produits(nom))")
+      .select("*, demande_lignes(*, produits(nom))", { count: "exact" })
       .order("cree_le", { ascending: false })
-      .limit(20),
+      .range(page.de, page.a),
+    // La demande en attente est cherchée À PART : en page 2 de l'historique
+    // elle ne serait plus dans les lignes reçues, et le bouton « Nouvelle
+    // demande » réapparaîtrait à tort.
+    supabase
+      .from("demandes_restock")
+      .select("*, demande_lignes(*, produits(nom))")
+      .eq("statut", "en_attente")
+      .limit(1),
   ]);
 
   const entrepot = (rEntrepot.data as LigneStockEntrepot[] | null) ?? [];
   const demandes = (rDemandes.data as DemandeRestock[] | null) ?? [];
-  const enAttente = demandes.find((d) => d.statut === "en_attente");
+  const enAttente = (rEnAttente.data as DemandeRestock[] | null)?.[0];
 
   return (
     <div className="w-full space-y-6">
@@ -124,6 +143,13 @@ export default async function PageRestock() {
               ))}
             </ul>
           )}
+          <Pagination
+            params={params}
+            chemin="/vendeur/restock"
+            page={page.page}
+            parPage={PAR_PAGE}
+            total={rDemandes.count}
+          />
         </CardContent>
       </Card>
     </div>

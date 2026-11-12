@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { filtrer, lireTri, trier } from "./tri.ts";
+import { filtrer, lirePage, lireTri, motifIlike, triSql, trier } from "./tri.ts";
 
 const lignes = [
   { nom: "Yanis", du: 732 },
@@ -49,4 +49,34 @@ test("lireTri lit le sens, croissant par défaut", () => {
   assert.deepEqual(lireTri({ tri: "du" }), { cle: "du", ordre: "asc" });
   assert.deepEqual(lireTri({ tri: "du", ordre: "desc" }), { cle: "du", ordre: "desc" });
   assert.deepEqual(lireTri({ ctri: "nom" }, "c"), { cle: "nom", ordre: "asc" });
+});
+
+test("le motif de recherche traite % et _ comme des caractères", () => {
+  assert.equal(motifIlike("100% coton"), "%100\\% coton%");
+  assert.equal(motifIlike("a_b"), "%a\\_b%");
+  assert.equal(motifIlike("  "), null);
+  assert.equal(motifIlike(undefined), null);
+  // `*` est un joker pour PostgREST et ne s'échappe pas : il est retiré.
+  assert.equal(motifIlike("a*b"), "%ab%");
+});
+
+test("le tri en base n'accepte que les colonnes déclarées", () => {
+  const colonnes = [{ cle: "montant", colonneSql: "montant_total" }, { cle: "badge" }];
+  const defaut = { colonne: "cree_le", ascendant: false };
+  assert.deepEqual(triSql(colonnes, { cle: "montant", ordre: "desc" }, defaut), {
+    colonne: "montant_total",
+    ascendant: false,
+  });
+  assert.deepEqual(triSql(colonnes, { cle: "badge", ordre: "asc" }, defaut), defaut);
+  assert.deepEqual(triSql(colonnes, { cle: "mot_de_passe", ordre: "asc" }, defaut), defaut);
+  assert.deepEqual(triSql(colonnes, null, defaut), defaut);
+});
+
+test("la page lue dans l'URL donne des bornes inclusives", () => {
+  assert.deepEqual(lirePage({}, 20), { page: 1, de: 0, a: 19 });
+  assert.deepEqual(lirePage({ page: "3" }, 20), { page: 3, de: 40, a: 59 });
+  assert.deepEqual(lirePage({ vpage: "2" }, 10, "v"), { page: 2, de: 10, a: 19 });
+  // Une valeur farfelue retombe sur la première page au lieu de planter.
+  assert.deepEqual(lirePage({ page: "-4" }, 20).page, 1);
+  assert.deepEqual(lirePage({ page: "abc" }, 20).page, 1);
 });

@@ -16,12 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { exigerProfil } from "@/lib/auth";
+import { ordonnerParFrequence } from "@/lib/habitudes-vente";
 import { creerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { dateHeure, euros, niveauStock, quantite } from "@/lib/format";
 import { estEncadrement } from "@/lib/types";
 import type { LigneJournalVendeur, LigneStock, LigneStockEntrepot, MaDette } from "@/lib/types";
 
+import { lireHabitudes } from "./habitudes";
 import { FormulaireRestock } from "./restock/formulaire";
 import { FormulaireVente } from "./vente/formulaire";
 
@@ -36,7 +38,7 @@ export default async function PageVendeur() {
   // aux dialogues montés sur cette page : depuis que les formulaires sont des
   // dialogues, le geste part d'ici plutôt que d'un aller-retour vers un écran
   // qui reposerait le même bouton.
-  const [rDette, rStock, rJournal, rEntrepot, rDemandes] =
+  const [rDette, rStock, rJournal, rEntrepot, rDemandes, habitudes] =
     await Promise.all([
       supabase.rpc("ma_dette"),
       supabase.rpc("stock_disponible"),
@@ -47,6 +49,7 @@ export default async function PageVendeur() {
         .from("demandes_restock")
         .select("id", { count: "exact", head: true })
         .eq("statut", "en_attente"),
+      lireHabitudes(supabase),
     ]);
 
   // Les RPC exigent un cast : PostgREST ne peut pas typer un retour dynamique.
@@ -69,14 +72,19 @@ export default async function PageVendeur() {
   const prixConseille = new Map(
     stock.map((l) => [l.produit_id, Number(l.prix_vente_conseille)]),
   );
-  const vendables = stock
-    .filter((l) => l.quantite > 0)
-    .map((l) => ({
-      produit_id: l.produit_id,
-      produit: l.produit,
-      quantite: l.quantite,
-      prix_conseille: prixConseille.get(l.produit_id) ?? 0,
-    }));
+  // Ses produits les plus vendus d'abord : sur un téléphone, celui qu'il vend
+  // dix fois par jour ne doit pas être le neuvième de la liste déroulante.
+  const vendables = ordonnerParFrequence(
+    stock
+      .filter((l) => l.quantite > 0)
+      .map((l) => ({
+        produit_id: l.produit_id,
+        produit: l.produit,
+        quantite: l.quantite,
+        prix_conseille: prixConseille.get(l.produit_id) ?? 0,
+      })),
+    habitudes.recentes,
+  );
 
   // Un gérant vend comme les autres, mais encaisse pour la maison : sa dette
   // vaut zéro par construction (v_comptes_vendeurs). Lui
@@ -98,7 +106,12 @@ export default async function PageVendeur() {
             : "Aucun stock à vendre pour le moment."
         }
       >
-        {vendables.length > 0 && <FormulaireVente produits={vendables} />}
+        {vendables.length > 0 && (
+          <FormulaireVente
+            produits={vendables}
+            derniere={habitudes.derniere}
+          />
+        )}
       </EntetePage>
 
       {erreur && (

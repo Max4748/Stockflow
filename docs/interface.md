@@ -274,8 +274,33 @@ Deux tableaux triables sur un même écran se distinguent par `prefixe`. Sur
 téléphone, où les cartes n'ont pas d'en-têtes, le tri passe par une rangée de
 pastilles. La logique est dans `lib/tri.ts`, testée à part.
 
-**À ne pas gonfler davantage** : ni sélection ni pagination ici. Un écran aux
-exigences très différentes écrit son propre tableau.
+**À ne pas gonfler davantage** : pas de sélection ici, et la pagination est un
+composant à part. Un écran aux exigences très différentes écrit son propre
+tableau.
+
+### Listes paginées : tri, recherche et découpage en base
+
+Les ventes d'un vendeur, ses versements, les restocks, les ventes et les
+demandes dans l'espace vendeur étaient coupés aux 12 à 50 dernières lignes ; le
+reste de l'historique n'était visible nulle part. Ces listes sont paginées
+(`pagination.tsx`, « Page 2 sur 7 », `?page=` et un préfixe par liste).
+
+**Dès qu'une liste est paginée, tout se fait en base.** Trier ou chercher dans
+la page reçue mentirait : « le plus gros montant » serait celui des vingt lignes
+affichées. `lib/tri.ts` traduit donc les mêmes paramètres d'URL pour PostgREST :
+
+- `triSql()` → `.order()`. Seules les colonnes qui déclarent `colonneSql` sont
+  acceptées : la clé vient de l'URL, elle ne désigne pas une colonne arbitraire.
+  Le tableau reçoit `tri={{ …, dejaTrie: true }}` et ne retrie pas ;
+- `motifIlike()` → `.ilike()`, en échappant `%` et `_` ;
+- `lirePage()` → `.range()`, avec `{ count: "exact" }` pour le nombre de pages.
+
+Un second `.order()` sur une colonne unique départage toujours les égalités :
+sans lui, deux ventes du même jour changent de page d'un chargement à l'autre.
+
+Pour les deux listes servies par une fonction (`mes_ventes`, `ventes_vendeur`),
+`p_limite: null` lève le plafond interne et PostgREST trie, filtre et découpe
+le résultat de la fonction.
 
 ### `champ-recherche.tsx` : la recherche, elle aussi dans l'URL
 
@@ -283,11 +308,11 @@ Un formulaire GET (`?q=`), qui reconduit les autres paramètres et repart de la
 première page. La recherche part à la validation, pas à chaque frappe : chaque
 frappe serait un aller-retour serveur.
 
-- Sur une liste **entière en mémoire** (créances, stock, catalogue, ventes d'un
-  vendeur), la page filtre avec `filtrer()` de `lib/tri.ts`, qui ignore la casse
+- Sur une liste **entière en mémoire** (créances, stock, catalogue), la page
+  filtre avec `filtrer()` de `lib/tri.ts`, qui ignore la casse
   et les accents et exige tous les mots saisis.
-- Sur le **journal comptable**, qui est paginé, la recherche est faite **en
-  base** (`journal_transactions(p_recherche)`). Filtrer la page reçue ne
+- Sur une liste **paginée**, la recherche est faite **en base** (voir
+  ci-dessus ; le journal comptable passe par `journal_transactions(p_recherche)`). Filtrer la page reçue ne
   chercherait que dans ses cinquante lignes en laissant croire qu'on a cherché
   partout.
 
@@ -317,8 +342,8 @@ préchargerait l'export au survol.
 
 ### Graphiques du Bilan
 
-`graphiques/courbe-ca.tsx` et `graphiques/barres-vendeurs.tsx`, sans
-dépendance.
+`graphiques/courbe-ca.tsx` et `graphiques/barres-classement.tsx` (vendeurs par
+chiffre d'affaires, produits par unités vendues), sans dépendance.
 
 - **Une seule couleur par graphique** : chacun porte une seule mesure. Colorer
   chaque vendeur ferait chercher un sens à des teintes qui n'en ont pas.
@@ -333,6 +358,72 @@ dépendance.
   JavaScript, et le texte n'est pas déformé.
 - La courbe se lit au survol, au doigt et **au clavier** (flèches), et un
   tableau replié donne les mêmes chiffres.
+- **La période précédente** (`periodePrecedente()` : même durée, juste avant)
+  est superposée en trait gris pointillé, sans aire : c'est un repère, pas une
+  seconde mesure. Les deux séries sont alignées par rang, pas par date. Sur
+  « Tout », il n'y a pas d'avant et rien n'est comparé.
+- **Les indicateurs de période portent leur écart** (« +12 % »). La couleur ne
+  s'en mêle que si le sens a une valeur : une marge qui monte est verte, des
+  achats qui montent restent gris. Les soldes (à récupérer, valeur du stock)
+  n'ont pas d'écart : ils ne dépendent pas de la période.
+- **Le classement des produits et le tableau de marge** lisent
+  `ventes_par_produit()`, dont les sommes retombent sur le chiffre d'affaires
+  et la marge du haut de l'écran. Les barres classent par unités, le tableau
+  se trie par marge : ce qui part le plus n'est pas toujours ce qui rapporte
+  le plus.
+
+### Suggestion de réassort
+
+Sur l'État du stock, la carte « À commander » lit `suggestions_reassort()` :
+vendu sur la période + seuil du parfum − stock total. La période (30, 60 ou
+90 jours) vit dans l'URL. « Préparer le restock » ouvre le dialogue d'achat
+habituel, pré-rempli des quantités proposées ; tout reste modifiable, et le
+prix reste à saisir, puisque c'est la facture qui le donne. La carte disparaît
+quand il n'y a rien à commander.
+
+### `recherche-globale.tsx` : Ctrl+K
+
+Dans l'en-tête de l'espace gestion : taper un nom d'écran, de vendeur ou de
+produit, et y aller. Elle ne remplace pas la navigation, elle la
+court-circuite : ouvrir la fiche d'un vendeur demandait trois clics.
+
+- Ouverte par **Ctrl+K** (⌘K) ou par le bouton loupe, seul accès sur
+  téléphone.
+- Les **écrans** sont ceux de la barre latérale (`ECRANS_GESTION`, droits
+  compris), filtrés sur place. Les **vendeurs** et les **produits** sont
+  cherchés en base par `/gestion/recherche`, 200 ms après la dernière frappe,
+  six résultats par groupe.
+- Flèches, Entrée, Échap. Le focus reste dans le champ ;
+  `aria-activedescendant` désigne la ligne visée.
+- Un produit mène à l'État du stock filtré sur lui : c'est là qu'on voit où il
+  est et combien il en reste.
+
+### Saisie de vente : les habitudes du vendeur
+
+`lib/habitudes-vente.ts`, alimenté par `vendeur/habitudes.ts` :
+
+- les produits du sélecteur sont classés par **fréquence de vente** de ce
+  vendeur, le plus vendu en premier (et donc pré-sélectionné) ;
+- **« Reprendre la dernière vente »** recharge ses lignes, aux prix alors
+  pratiqués. Une quantité supérieure au stock détenu est ramenée à ce qu'il
+  reste, un produit épuisé est retiré, et les deux cas sont **écrits** au-dessus
+  des lignes : pré-remplir en silence une vente différente de celle annoncée
+  serait le meilleur moyen de la valider sans la relire.
+
+C'est de la présentation (un ordre de liste, un pré-remplissage) : rien n'y
+décide d'un montant, `enregistrer_vente()` recontrôle tout.
+
+### Reçu de versement
+
+`/gestion/vendeurs/[id]/recu/[versement]`, depuis le lien « Reçu » de chaque
+versement. Une page ordinaire, que le navigateur imprime ou enregistre en PDF :
+la navigation porte `print:hidden` et `globals.css` force un fond blanc et le
+thème clair à l'impression.
+
+Le reçu sépare **le versement** (un fait daté) de **la situation du compte**,
+datée du moment de l'impression : réimprimé un mois plus tard, le même reçu
+affiche un autre reste à verser, et il le dit. C'est la seule page qui borne sa
+largeur : c'est une feuille, pas un écran de données.
 
 ### `squelette-page.tsx` et les `loading.tsx`
 

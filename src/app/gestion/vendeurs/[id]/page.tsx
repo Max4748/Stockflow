@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { ChampRecherche } from "@/components/champ-recherche";
 import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
+import { Pagination } from "@/components/pagination";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { filtrer } from "@/lib/tri";
+import { lirePage, lireTri, motifIlike, triSql } from "@/lib/tri";
 import { exigerAdmin } from "@/lib/auth";
 import { date, euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -27,6 +28,12 @@ import { BarreActions, ListeVersements } from "./formulaire";
 
 export const dynamic = "force-dynamic";
 
+// Les ventes et les versements sont PAGINÉS : un vendeur actif depuis un an
+// en a des centaines, et l'ancienne coupe à 50 lignes rendait le reste
+// invisible. Tri et recherche sont donc faits en base, sur tout l'historique.
+const VENTES_PAR_PAGE = 20;
+const VERSEMENTS_PAR_PAGE = 10;
+
 type Versement = {
   id: string;
   date: string;
@@ -37,7 +44,7 @@ type Versement = {
 const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
   {
     cle: "date",
-    tri: (l) => l.date,
+    colonneSql: "date",
     entete: "Date",
     principale: true,
     valeur: (l) => (
@@ -56,17 +63,17 @@ const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
       </span>
     ),
   },
-  { cle: "client", tri: (l) => l.client, entete: "Client", valeur: (l) => l.client },
+  { cle: "client", colonneSql: "client", entete: "Client", valeur: (l) => l.client },
   {
     cle: "qte",
-    tri: (l) => l.quantite_totale,
+    colonneSql: "quantite_totale",
     entete: "Unités",
     alignement: "droite",
     valeur: (l) => l.quantite_totale,
   },
   {
     cle: "montant",
-    tri: (l) => Number(l.montant_total),
+    colonneSql: "montant_total",
     entete: "Montant",
     alignement: "droite",
     valeur: (l) => euros(l.montant_total),
@@ -117,22 +124,42 @@ export default async function PageFicheVendeur({
   const chemin = `/gestion/vendeurs/${id}`;
   const supabase = await creerClient();
 
+  const pageVentes = lirePage(requete, VENTES_PAR_PAGE);
+  const pageVersements = lirePage(requete, VERSEMENTS_PAR_PAGE, "v");
+  // Sans tri choisi : les plus récentes d'abord, comme avant.
+  const ordre = triSql(COLONNES_VENTES, lireTri(requete), {
+    colonne: "cree_le",
+    ascendant: false,
+  });
+  const motif = motifIlike(requete.q);
+
+  // RPC plutôt que la table : elle agrège le SAV de chaque vente, qu'un
+  // simple select sur `ventes` ne porte pas. `p_limite: null` lève son
+  // plafond ; c'est PostgREST qui trie, cherche et découpe son résultat.
+  let lectureVentes = supabase
+    .rpc("ventes_vendeur", { p_vendeur_id: id, p_limite: null }, { count: "exact" })
+    .order(ordre.colonne, { ascending: ordre.ascendant })
+    // Départage stable : sans lui, deux ventes du même jour peuvent changer
+    // de page d'un chargement à l'autre.
+    .order("id")
+    .range(pageVentes.de, pageVentes.a);
+  if (motif) lectureVentes = lectureVentes.ilike("client", motif);
+
   const [rProfil, rCreances, rStock, rVentes, rPrelevements, rTarifs, rVersements] =
     await Promise.all([
     supabase.from("profils").select("*").eq("id", id).maybeSingle(),
     supabase.rpc("creances"),
     supabase.rpc("stock_detenteurs", { p_vendeur_id: id }),
-    // RPC plutôt que la table : elle agrège le SAV de chaque vente, qu'un
-    // simple select sur `ventes` ne porte pas.
-    supabase.rpc("ventes_vendeur", { p_vendeur_id: id, p_limite: 50 }),
+    lectureVentes,
     supabase.rpc("prelevements_vendeur", { p_vendeur_id: id, p_limite: 50 }),
     supabase.rpc("tarifs_preleves", { p_vendeur_id: id }),
     supabase
       .from("versements")
-      .select("id, date, montant, note")
+      .select("id, date, montant, note", { count: "exact" })
       .eq("vendeur_id", id)
       .order("date", { ascending: false })
-      .limit(50),
+      .order("id")
+      .range(pageVersements.de, pageVersements.a),
   ]);
 
   const profil = rProfil.data as Profil | null;
@@ -142,11 +169,7 @@ export default async function PageFicheVendeur({
     (rCreances.data as Creance[] | null)?.find((c) => c.vendeur_id === id) ??
     null;
   const stock = (rStock.data as StockDetenteur[] | null) ?? [];
-  const ventes = filtrer(
-    (rVentes.data as VenteVendeur[] | null) ?? [],
-    requete.q,
-    (v) => [v.client, v.date],
-  );
+  const ventes = (rVentes.data as VenteVendeur[] | null) ?? [];
   const versements = (rVersements.data as Versement[] | null) ?? [];
   const prelevements = (rPrelevements.data as LignePrelevement[] | null) ?? [];
   const tarifs = (rTarifs.data as TarifPreleve[] | null) ?? [];
@@ -233,7 +256,15 @@ export default async function PageFicheVendeur({
             <CardTitle className="text-sm">Versements reçus</CardTitle>
           </CardHeader>
           <CardContent>
-            <ListeVersements versements={versements} />
+            <ListeVersements versements={versements} vendeurId={id} />
+            <Pagination
+              params={requete}
+              chemin={chemin}
+              prefixe="v"
+              page={pageVersements.page}
+              parPage={VERSEMENTS_PAR_PAGE}
+              total={rVersements.count}
+            />
           </CardContent>
         </Card>
       </div>
@@ -251,12 +282,19 @@ export default async function PageFicheVendeur({
             colonnes={COLONNES_VENTES}
             lignes={ventes}
             cle={(l) => l.id}
-            tri={{ params: requete, chemin }}
+            tri={{ params: requete, chemin, dejaTrie: true }}
             vide={
               requete.q
                 ? "Aucune vente ne correspond à cette recherche."
                 : "Aucune vente enregistrée."
             }
+          />
+          <Pagination
+            params={requete}
+            chemin={chemin}
+            page={pageVentes.page}
+            parPage={VENTES_PAR_PAGE}
+            total={rVentes.count}
           />
         </CardContent>
       </Card>

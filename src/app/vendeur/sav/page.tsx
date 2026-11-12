@@ -1,3 +1,5 @@
+import { ChampRecherche } from "@/components/champ-recherche";
+import { filtrer } from "@/lib/tri";
 import { EtatVide } from "@/components/etat-vide";
 import { EntetePage } from "@/components/entete-page";
 import { FormulaireSav } from "@/components/formulaire-sav";
@@ -15,8 +17,13 @@ import { DemandeSavEnAttente, MarquerSavVu } from "./formulaire";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SAV — StockFlow" };
 
-export default async function PageSavVendeur() {
+export default async function PageSavVendeur({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   await exigerProfil();
+  const { q } = await searchParams;
   const supabase = await creerClient();
 
   const [rDossiers, rSavables, rNonVus] = await Promise.all([
@@ -36,7 +43,10 @@ export default async function PageSavVendeur() {
   const erreur = rDossiers.error ?? rSavables.error;
 
   const enAttente = dossiers.filter((d) => d.statut === "en_attente");
-  const traites = dossiers.filter((d) => d.statut !== "en_attente");
+  const tousTraites = dossiers.filter((d) => d.statut !== "en_attente");
+  // La recherche ne porte que sur les dossiers TRAITÉS : ceux en attente
+  // restent tous visibles, ce sont eux qui demandent une action.
+  const traites = filtrer(tousTraites, q, (d) => [d.produit, d.client, d.motif]);
 
   return (
     <div className="w-full space-y-6">
@@ -82,8 +92,20 @@ export default async function PageSavVendeur() {
           </p>
         </CardHeader>
         <CardContent>
+          {tousTraites.length > 6 && (
+            <ChampRecherche
+              libelle="Rechercher un produit ou un client"
+              className="mb-4 sm:max-w-sm"
+            />
+          )}
           {traites.length === 0 ? (
-            <EtatVide titre="Aucun dossier traité pour le moment." />
+            <EtatVide
+              titre={
+                q
+                  ? "Aucun dossier ne correspond à cette recherche."
+                  : "Aucun dossier traité pour le moment."
+              }
+            />
           ) : (
             // Grille de cartes plutôt qu'une liste pleine largeur : sur un
             // grand écran, un libellé à un bout et sa valeur à l'autre serait

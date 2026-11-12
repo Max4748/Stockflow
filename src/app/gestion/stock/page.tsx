@@ -1,4 +1,12 @@
-import { BoxesIcon, TriangleAlertIcon, UsersIcon, WalletIcon, WarehouseIcon } from "lucide-react";
+import {
+  BoxesIcon,
+  TriangleAlertIcon,
+  UsersIcon,
+  WalletIcon,
+  WarehouseIcon,
+} from "lucide-react";
+import Link from "next/link";
+
 import { ChampRecherche } from "@/components/champ-recherche";
 import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
@@ -7,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { filtrer } from "@/lib/tri";
+import { cn } from "@/lib/utils";
 import { exigerAdmin } from "@/lib/auth";
 import { euros, niveauStock } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -14,6 +23,7 @@ import type {
   ProduitAvecModele,
   StockDetenteur,
   StockValorise,
+  SuggestionReassort,
   TotauxStock,
 } from "@/lib/types";
 
@@ -85,6 +95,51 @@ const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
   },
 ];
 
+// Fenêtres d'observation proposées pour la suggestion de réassort. Le choix
+// vit dans l'URL (`?jours=`), comme la période du Bilan.
+const FENETRES = [30, 60, 90] as const;
+
+const COLONNES_REASSORT: Colonne<SuggestionReassort>[] = [
+  {
+    cle: "produit",
+    tri: (l) => `${l.modele} ${l.produit}`,
+    entete: "Produit",
+    principale: true,
+    valeur: (l) =>
+      l.modele === l.produit ? l.produit : `${l.modele} · ${l.produit}`,
+  },
+  {
+    cle: "vendues",
+    tri: (l) => l.vendues,
+    entete: "Vendues",
+    alignement: "droite",
+    valeur: (l) => l.vendues,
+  },
+  {
+    cle: "total",
+    tri: (l) => l.stock_total,
+    entete: "En stock",
+    alignement: "droite",
+    valeur: (l) => (
+      <span title={`dont ${l.stock_entrepot} en entrepôt`}>{l.stock_total}</span>
+    ),
+  },
+  {
+    cle: "seuil",
+    entete: "Seuil",
+    alignement: "droite",
+    masquerEnCarte: true,
+    valeur: (l) => l.seuil_parfum,
+  },
+  {
+    cle: "commander",
+    tri: (l) => l.a_commander,
+    entete: "À commander",
+    alignement: "droite",
+    valeur: (l) => <span className="font-semibold">{l.a_commander}</span>,
+  },
+];
+
 const COLONNES_DETENTEUR: Colonne<StockDetenteur>[] = [
   {
     cle: "detenteur",
@@ -119,8 +174,11 @@ export default async function PageStock({
   const params = await searchParams;
   const supabase = await creerClient();
 
-  const [rStock, rDetenteurs, rProfils, rProduits, rTotaux] = await Promise.all(
-    [
+  const jours =
+    FENETRES.find((f) => String(f) === params.jours) ?? FENETRES[0];
+
+  const [rStock, rDetenteurs, rProfils, rProduits, rTotaux, rReassort] =
+    await Promise.all([
       supabase.rpc("stock_valorise"),
       supabase.rpc("stock_detenteurs"),
       // AUCUN filtre de rôle : un gérant vend aussi, il détient donc du stock
@@ -137,8 +195,10 @@ export default async function PageStock({
       // des valeurs déjà arrondies au centime faisait diverger cet écran du
       // Bilan d'un centime. Voir `totaux_stock`.
       supabase.rpc("totaux_stock"),
-    ],
-  );
+      // La règle est en SQL (vendu sur la période + seuil − stock total) :
+      // c'est un calcul métier, il n'a pas à être refait ici.
+      supabase.rpc("suggestions_reassort", { p_jours: jours }),
+    ]);
 
   const stock = (rStock.data as StockValorise[] | null) ?? [];
   const detenteurs = (rDetenteurs.data as StockDetenteur[] | null) ?? [];
@@ -177,7 +237,10 @@ export default async function PageStock({
   // lui, doit rester possible sur le stock resté chez un compte désactivé.
   const comptesActifs = comptes.filter((c) => c.actif);
   const totaux = (rTotaux.data as TotauxStock[] | null)?.[0] ?? null;
-  const erreur = rStock.error ?? rDetenteurs.error ?? rProfils.error;
+  const reassort = (rReassort.data as SuggestionReassort[] | null) ?? [];
+  const unitesACommander = reassort.reduce((s, l) => s + l.a_commander, 0);
+  const erreur =
+    rStock.error ?? rDetenteurs.error ?? rProfils.error ?? rReassort.error;
 
   const alertes = stock.filter(
     (l) => l.actif && niveauStock(l.stock_entrepot, l.seuil_parfum) !== "ok",
@@ -249,6 +312,74 @@ export default async function PageStock({
             .
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Masquée quand il n'y a rien à commander : une carte vide intitulée
+          « À commander » ferait chercher ce qui manque. */}
+      {reassort.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-wrap items-start justify-between gap-3 pb-3">
+            <div>
+              <CardTitle className="text-sm">
+                À commander ({unitesACommander} u)
+              </CardTitle>
+              <p className="text-muted-foreground text-xs">
+                De quoi tenir {jours} jours de plus au rythme des {jours}{" "}
+                derniers, en gardant le seuil d&apos;alerte en réserve : vendues
+                + seuil − stock total, vendeurs compris.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                role="group"
+                aria-label="Période observée"
+                className="flex gap-1"
+              >
+                {FENETRES.map((f) => {
+                  const p = new URLSearchParams();
+                  for (const [k, v] of Object.entries(params)) {
+                    if (v && k !== "jours") p.set(k, v);
+                  }
+                  if (f !== FENETRES[0]) p.set("jours", String(f));
+                  const q = p.toString();
+                  return (
+                    <Link
+                      key={f}
+                      href={q ? `/gestion/stock?${q}` : "/gestion/stock"}
+                      scroll={false}
+                      aria-current={f === jours ? "true" : undefined}
+                      className={cn(
+                        "inline-flex h-10 items-center rounded-lg border px-3 text-sm font-medium tabular-nums",
+                        f === jours
+                          ? "border-primary/30 bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {f} j
+                    </Link>
+                  );
+                })}
+              </div>
+              <FormulaireAchat
+                produits={produits}
+                // `key` : changer de période change les quantités proposées,
+                // et l'état du formulaire ne se réinitialise qu'au remontage.
+                key={`reassort-${jours}`}
+                quantitesSuggerees={Object.fromEntries(
+                  reassort.map((l) => [l.produit_id, String(l.a_commander)]),
+                )}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tableau
+              colonnes={COLONNES_REASSORT}
+              lignes={reassort}
+              cle={(l) => l.produit_id}
+              tri={{ params, chemin: "/gestion/stock", prefixe: "a" }}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <ChampRecherche
