@@ -20,31 +20,36 @@ export const metadata = { title: "Restock — StockFlow" };
 const COLONNES: Colonne<Restock>[] = [
   {
     cle: "ref",
+    tri: (l) => l.reference,
     entete: "Référence",
     principale: true,
     valeur: (l) => l.reference ?? "(sans référence)",
   },
-  { cle: "date", entete: "Date", valeur: (l) => date(l.date) },
+  { cle: "date", tri: (l) => l.date, entete: "Date", valeur: (l) => date(l.date) },
   {
     cle: "qte",
+    tri: (l) => l.quantite_totale,
     entete: "Unités",
     alignement: "droite",
     valeur: (l) => l.quantite_totale,
   },
   {
     cle: "base",
+    tri: (l) => Number(l.prix_achat_base),
     entete: "Marchandise",
     alignement: "droite",
     valeur: (l) => euros(l.prix_achat_base),
   },
   {
     cle: "port",
+    tri: (l) => Number(l.frais_port),
     entete: "Frais de port",
     alignement: "droite",
     valeur: (l) => euros(l.frais_port),
   },
   {
     cle: "unitaire",
+    tri: (l) => Number(l.prix_achat_unitaire),
     entete: "Coût unitaire",
     alignement: "droite",
     // 4 décimales : une division par 250 unités ne tombe pas juste au centime,
@@ -53,8 +58,13 @@ const COLONNES: Colonne<Restock>[] = [
   },
 ];
 
-export default async function PageAchats() {
+export default async function PageAchats({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   await exigerAdmin();
+  const params = await searchParams;
   const supabase = await creerClient();
 
   const [rProduits, rAchats, rLignes] = await Promise.all([
@@ -129,6 +139,7 @@ export default async function PageAchats() {
             colonnes={COLONNES}
             lignes={achats}
             cle={(l) => l.id}
+            tri={{ params, chemin: "/gestion/achats" }}
             vide="Aucun achat enregistré."
             action={(a) => (
               <span className="flex shrink-0 gap-2">

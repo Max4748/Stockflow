@@ -1,12 +1,14 @@
 import { BoxesIcon, CoinsIcon, HandCoinsIcon, ReceiptIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { ChampRecherche } from "@/components/champ-recherche";
 import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { filtrer } from "@/lib/tri";
 import { exigerAdmin } from "@/lib/auth";
 import { date, euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -35,6 +37,7 @@ type Versement = {
 const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
   {
     cle: "date",
+    tri: (l) => l.date,
     entete: "Date",
     principale: true,
     valeur: (l) => (
@@ -53,15 +56,17 @@ const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
       </span>
     ),
   },
-  { cle: "client", entete: "Client", valeur: (l) => l.client },
+  { cle: "client", tri: (l) => l.client, entete: "Client", valeur: (l) => l.client },
   {
     cle: "qte",
+    tri: (l) => l.quantite_totale,
     entete: "Unités",
     alignement: "droite",
     valeur: (l) => l.quantite_totale,
   },
   {
     cle: "montant",
+    tri: (l) => Number(l.montant_total),
     entete: "Montant",
     alignement: "droite",
     valeur: (l) => euros(l.montant_total),
@@ -78,18 +83,21 @@ const COLONNES_VENTES: Colonne<VenteVendeur>[] = [
 const COLONNES_STOCK: Colonne<StockDetenteur>[] = [
   {
     cle: "produit",
+    tri: (l) => l.produit,
     entete: "Produit",
     principale: true,
     valeur: (l) => l.produit,
   },
   {
     cle: "qte",
+    tri: (l) => l.quantite,
     entete: "Quantité détenue",
     alignement: "droite",
     valeur: (l) => l.quantite,
   },
   {
     cle: "valeur",
+    tri: (l) => Number(l.valeur),
     entete: "Valeur",
     alignement: "droite",
     valeur: (l) => euros(l.valeur),
@@ -98,11 +106,15 @@ const COLONNES_STOCK: Colonne<StockDetenteur>[] = [
 
 export default async function PageFicheVendeur({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   await exigerAdmin();
   const { id } = await params;
+  const requete = await searchParams;
+  const chemin = `/gestion/vendeurs/${id}`;
   const supabase = await creerClient();
 
   const [rProfil, rCreances, rStock, rVentes, rPrelevements, rTarifs, rVersements] =
@@ -130,7 +142,11 @@ export default async function PageFicheVendeur({
     (rCreances.data as Creance[] | null)?.find((c) => c.vendeur_id === id) ??
     null;
   const stock = (rStock.data as StockDetenteur[] | null) ?? [];
-  const ventes = (rVentes.data as VenteVendeur[] | null) ?? [];
+  const ventes = filtrer(
+    (rVentes.data as VenteVendeur[] | null) ?? [],
+    requete.q,
+    (v) => [v.client, v.date],
+  );
   const versements = (rVersements.data as Versement[] | null) ?? [];
   const prelevements = (rPrelevements.data as LignePrelevement[] | null) ?? [];
   const tarifs = (rTarifs.data as TarifPreleve[] | null) ?? [];
@@ -206,6 +222,7 @@ export default async function PageFicheVendeur({
               colonnes={COLONNES_STOCK}
               lignes={stock}
               cle={(l) => l.produit_id}
+              tri={{ params: requete, chemin, prefixe: "s" }}
               vide="Ce vendeur ne détient aucun stock."
             />
           </CardContent>
@@ -226,11 +243,20 @@ export default async function PageFicheVendeur({
           <CardTitle className="text-sm">Ses ventes</CardTitle>
         </CardHeader>
         <CardContent>
+          <ChampRecherche
+            libelle="Rechercher un client"
+            className="mb-4 sm:max-w-xs"
+          />
           <Tableau
             colonnes={COLONNES_VENTES}
             lignes={ventes}
             cle={(l) => l.id}
-            vide="Aucune vente enregistrée."
+            tri={{ params: requete, chemin }}
+            vide={
+              requete.q
+                ? "Aucune vente ne correspond à cette recherche."
+                : "Aucune vente enregistrée."
+            }
           />
         </CardContent>
       </Card>

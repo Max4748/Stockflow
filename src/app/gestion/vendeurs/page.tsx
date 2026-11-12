@@ -1,11 +1,14 @@
 import Link from "next/link";
 
+import { ChampRecherche } from "@/components/champ-recherche";
+import { BoutonExport } from "@/components/bouton-export";
 import { EntetePage } from "@/components/entete-page";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { filtrer } from "@/lib/tri";
 import { exigerAdmin } from "@/lib/auth";
 import { euros } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -23,6 +26,7 @@ export const metadata = { title: "Vendeurs — StockFlow" };
 const COLONNES: Colonne<Creance>[] = [
   {
     cle: "nom",
+    tri: (l) => l.nom,
     entete: "Vendeur",
     principale: true,
     valeur: (l) => (
@@ -46,30 +50,35 @@ const COLONNES: Colonne<Creance>[] = [
   },
   {
     cle: "nb",
+    tri: (l) => l.nb_ventes,
     entete: "Ventes",
     alignement: "droite",
     valeur: (l) => l.nb_ventes,
   },
   {
     cle: "ca",
+    tri: (l) => Number(l.ca),
     entete: "Encaissé",
     alignement: "droite",
     valeur: (l) => euros(l.ca),
   },
   {
     cle: "com",
+    tri: (l) => Number(l.commissions),
     entete: "Sa commission",
     alignement: "droite",
     valeur: (l) => euros(l.commissions),
   },
   {
     cle: "verse",
+    tri: (l) => Number(l.verse),
     entete: "Reversé",
     alignement: "droite",
     valeur: (l) => euros(l.verse),
   },
   {
     cle: "rembourse",
+    tri: (l) => Number(l.rembourse),
     entete: "Remboursé (SAV)",
     alignement: "droite",
     // Sans cette colonne, un « reste à verser » qui baisse sans versement
@@ -78,6 +87,7 @@ const COLONNES: Colonne<Creance>[] = [
   },
   {
     cle: "du",
+    tri: (l) => Number(l.reste_a_verser),
     entete: "Reste à verser",
     alignement: "droite",
     valeur: (l) => (
@@ -91,12 +101,13 @@ const COLONNES: Colonne<Creance>[] = [
 export default async function PageVendeurs({
   searchParams,
 }: {
-  searchParams: Promise<{ retire?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   await exigerAdmin();
   // `?retire=` : posé par `retirerCompte` quand le compte a été SUPPRIMÉ, donc
   // quand la redirection depuis sa fiche a empêché le toast d'arriver.
-  const { retire } = await searchParams;
+  const params = await searchParams;
+  const { retire } = params;
   const supabase = await creerClient();
 
   const [rCreances, rInvitations] = await Promise.all([
@@ -108,13 +119,15 @@ export default async function PageVendeurs({
       .order("cree_le", { ascending: false }),
   ]);
 
-  const creances = (rCreances.data as Creance[] | null) ?? [];
+  const toutes = (rCreances.data as Creance[] | null) ?? [];
+  const creances = filtrer(toutes, params.q, (c) => [c.nom]);
   const invitations = (rInvitations.data as Invitation[] | null) ?? [];
   const erreur = rCreances.error ?? rInvitations.error;
 
   return (
     <div className="w-full space-y-6">
       <EntetePage titre="Vendeurs">
+        <BoutonExport href="/gestion/vendeurs/export" />
         <FormulaireCreationVendeur />
       </EntetePage>
 
@@ -164,11 +177,20 @@ export default async function PageVendeurs({
           </p>
         </CardHeader>
         <CardContent>
+          <ChampRecherche
+            libelle="Rechercher un vendeur"
+            className="mb-4 sm:max-w-xs"
+          />
           <Tableau
             colonnes={COLONNES}
             lignes={creances}
             cle={(l) => l.vendeur_id}
-            vide="Aucun vendeur enregistré."
+            tri={{ params, chemin: "/gestion/vendeurs" }}
+            vide={
+              params.q
+                ? "Aucun vendeur ne correspond à cette recherche."
+                : "Aucun vendeur enregistré."
+            }
             action={(l) => (
               <Link
                 href={`/gestion/vendeurs/${l.vendeur_id}`}

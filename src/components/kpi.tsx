@@ -1,4 +1,5 @@
-import type { LucideIcon } from "lucide-react";
+import { ChevronRightIcon, type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,10 @@ import { cn } from "@/lib/utils";
  *     `alerte` et `danger`, parce qu'un montant à réclamer ou une perte doit
  *     se lire sans lire le libellé. `succes` ne colore que la pastille : un
  *     chiffre vert partout ne dirait plus rien.
+ *
+ * `href` rend la carte ENTIÈRE cliquable : un indicateur mène à l'écran qui le
+ * détaille (« À récupérer » → Vendeurs). Le chevron dit qu'elle l'est ; sans
+ * lui, rien ne distingue une carte qui mène quelque part d'une carte inerte.
  */
 
 const TONS = {
@@ -47,6 +52,7 @@ export function Kpi({
   icone: Icone,
   ton = "neutre",
   className,
+  href,
   children,
 }: {
   libelle: string;
@@ -57,18 +63,22 @@ export function Kpi({
   icone?: LucideIcon;
   ton?: keyof typeof TONS;
   className?: string;
+  /** Écran qui détaille ce chiffre. */
+  href?: string;
   /** Détail libre sous le chiffre (décomposition, lien…). */
   children?: ReactNode;
 }) {
-  return (
+  const carte = (
     <Card
       className={cn(
+        href &&
+          "group-hover/kpi:ring-primary/40 h-full transition-shadow group-hover/kpi:shadow-md",
         accent &&
           // En sombre, un aplat primaire plein serait la surface la plus
           // lumineuse de l'écran : on garde la teinte, diluée, et le texte
           // ordinaire. C'est le thème qu'on choisit pour reposer ses yeux.
           "bg-primary text-primary-foreground ring-primary dark:bg-primary/14 dark:text-foreground dark:ring-primary/45 shadow-md dark:shadow-none",
-        className,
+        !href && className,
       )}
     >
       <CardContent>
@@ -105,20 +115,37 @@ export function Kpi({
         >
           {valeur}
         </p>
-        {precision && (
+        {(precision || href) && (
           <p
             className={cn(
-              "mt-2 text-xs leading-snug",
+              "mt-2 flex items-end justify-between gap-2 text-xs leading-snug",
               accent
                 ? "text-primary-foreground/85 dark:text-muted-foreground"
                 : "text-muted-foreground",
             )}
           >
-            {precision}
+            <span>{precision}</span>
+            {href && (
+              <ChevronRightIcon className="size-4 shrink-0 transition-transform group-hover/kpi:translate-x-0.5" />
+            )}
           </p>
         )}
         {children}
       </CardContent>
     </Card>
+  );
+
+  if (!href) return carte;
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group/kpi focus-visible:ring-ring/50 block rounded-xl outline-none focus-visible:ring-3",
+        className,
+      )}
+    >
+      {carte}
+    </Link>
   );
 }
