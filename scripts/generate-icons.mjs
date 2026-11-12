@@ -10,7 +10,7 @@
  * l'application garderont les anciennes icônes.
  */
 import sharp from "sharp";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -20,7 +20,7 @@ const SOURCE = readFileSync(join(DIR, "icon-source.svg"));
 
 // Fond du SVG source. Repris ici pour que le rembourrage des icônes
 // « maskable » soit du même noir, et non transparent.
-const FOND = "#1b1b1b";
+const FOND = "#1957d2";
 
 async function standard(nom, taille) {
   await sharp(SOURCE).resize(taille, taille).png().toFile(join(OUT, nom));
@@ -49,5 +49,27 @@ await standard("favicon-32.png", 32);
 console.log("Icônes maskable :");
 await maskable("icon-maskable-192.png", 192);
 await maskable("icon-maskable-512.png", 512);
+
+// `src/app/favicon.ico` : Next le sert d'office à la racine, et c'est lui que
+// demandent les navigateurs qui ignorent `<link rel="icon">`. Il restait celui
+// du gabarit Next. Un .ico est un petit conteneur qui accepte un PNG tel quel
+// (depuis Windows Vista) : six octets d'en-tête, seize de répertoire, puis
+// l'image. Pas besoin d'un encodeur.
+async function favicon() {
+  const png = await sharp(SOURCE).resize(48, 48).png().toBuffer();
+  const entete = Buffer.alloc(22);
+  entete.writeUInt16LE(1, 2); // type : icône
+  entete.writeUInt16LE(1, 4); // une image
+  entete.writeUInt8(48, 6); // largeur
+  entete.writeUInt8(48, 7); // hauteur
+  entete.writeUInt16LE(1, 10); // plans
+  entete.writeUInt16LE(32, 12); // bits par pixel
+  entete.writeUInt32LE(png.length, 14);
+  entete.writeUInt32LE(22, 18); // décalage de l'image
+  writeFileSync(join(DIR, "..", "src", "app", "favicon.ico"), Buffer.concat([entete, png]));
+  console.log("  src/app/favicon.ico (48×48)");
+}
+console.log("Favicon :");
+await favicon();
 
 console.log("terminé");

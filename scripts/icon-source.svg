@@ -1,10 +1,13 @@
 <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-  <!-- Fond : la variable background du thème sombre, oklch(0.185 0 0). -->
-  <path fill="#1b1b1b" d="M0 0h500v500H0z"/>
+  <!-- Fond : la couleur primaire du thème clair, oklch(0.5 0.2 262). C'est
+       celle du carré de la marque dans l'application (components/logo.tsx) :
+       l'icône posée sur l'écran d'accueil et le logo de l'en-tête sont le même
+       dessin. Elle était noire et grise du temps de la palette achromatique. -->
+  <path fill="#1957d2" d="M0 0h500v500H0z"/>
   <!--
     Le motif dit ce que fait l'application : du stock qui se déplace.
     Un carton, et une flèche qui en sort vers un détenteur. Pas de texte,
-    pas de dégradé : à 32 px un aplat blanc sur fond sombre reste lisible,
+    pas de dégradé : à 32 px un aplat clair sur fond coloré reste lisible,
     un dégradé devient une tache.
   -->
   <g fill="none" stroke="#fafafa" stroke-width="26" stroke-linejoin="round" stroke-linecap="round">
@@ -12,9 +15,9 @@
     <path d="M104 214 152 150h84l48 64"/>
     <path d="M194 150v64"/>
   </g>
-  <!-- La flèche de sortie porte le mouvement. En gris pour ne pas
-       concurrencer le carton, qui reste la forme reconnaissable. -->
-  <g fill="none" stroke="#8f8f8f" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+  <!-- La flèche de sortie porte le mouvement. Plus pâle que le carton, pour
+       ne pas concurrencer la forme reconnaissable. -->
+  <g fill="none" stroke="#a9c8f7" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
     <path d="M316 306h74"/>
     <path d="M356 262l52 44-52 44"/>
   </g>

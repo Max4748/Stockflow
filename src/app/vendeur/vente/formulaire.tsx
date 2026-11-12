@@ -161,7 +161,7 @@ function ChampsVente({
           return (
             <li
               key={ligne.cle}
-              className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_7rem_2.25rem]"
+              className="grid grid-cols-[minmax(0,1fr)_2.75rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_7rem_2.25rem]"
             >
               {/* Pleine largeur sur mobile, première colonne dès `sm`. */}
               <ChampSelect
@@ -179,34 +179,52 @@ function ChampsVente({
 
               {/* `sm:contents` : à partir de `sm` ce conteneur s'efface et ses
                   deux champs deviennent des cellules de la grille parente. */}
+              {/* Sous `sm`, l'en-tête de colonnes est masqué : chaque champ
+                  porte alors son libellé VISIBLE. Deux cases « 1 » et « 20 »
+                  sans rien au-dessus ne disaient pas laquelle est la quantité.
+                  Les deux champs se partagent la ligne, à 44 px.
+
+                  Dès `sm`, les `<label>` s'effacent (`sm:contents`), leur
+                  texte est masqué, et les champs redeviennent des cellules de
+                  la grille parente sous l'en-tête de colonnes. */}
               <div className="flex gap-2 sm:contents">
-                <Input
-                  aria-label={`Quantité du produit ${index + 1}`}
-                  name="quantite"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={produit?.quantite}
-                  step={1}
-                  value={ligne.quantite}
-                  onChange={(e) =>
-                    modifier(ligne.cle, "quantite", e.target.value)
-                  }
-                  className="h-10 w-16 text-center text-base sm:w-full"
-                  required
-                />
-                <Input
-                  aria-label={`Prix unitaire du produit ${index + 1}`}
-                  name="prix_vente_unitaire"
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={ligne.prix}
-                  onChange={(e) => modifier(ligne.cle, "prix", e.target.value)}
-                  className="h-10 w-24 text-right text-base sm:w-full"
-                  required
-                />
+                <label className="flex-1 space-y-1 sm:contents">
+                  <span className="text-muted-foreground block text-xs sm:hidden">
+                    Quantité
+                  </span>
+                  <Input
+                    aria-label={`Quantité du produit ${index + 1}`}
+                    name="quantite"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={produit?.quantite}
+                    step={1}
+                    value={ligne.quantite}
+                    onChange={(e) =>
+                      modifier(ligne.cle, "quantite", e.target.value)
+                    }
+                    className="h-11 w-full text-center text-base sm:h-10"
+                    required
+                  />
+                </label>
+                <label className="flex-1 space-y-1 sm:contents">
+                  <span className="text-muted-foreground block text-xs sm:hidden">
+                    Prix unitaire (€)
+                  </span>
+                  <Input
+                    aria-label={`Prix unitaire du produit ${index + 1}`}
+                    name="prix_vente_unitaire"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.01"
+                    value={ligne.prix}
+                    onChange={(e) => modifier(ligne.cle, "prix", e.target.value)}
+                    className="h-11 w-full text-right text-base sm:h-10"
+                    required
+                  />
+                </label>
               </div>
 
               {/* Emplacement réservé même sur la première ligne : sans lui, les
@@ -216,13 +234,15 @@ function ChampsVente({
                   type="button"
                   variant="ghost"
                   aria-label={`Retirer le produit ${index + 1}`}
-                  className="size-9 shrink-0 p-0 text-base"
+                  // `max-sm:self-end` : sur téléphone les champs portent un libellé
+                  // au-dessus d'eux ; centré, le bouton tomberait entre les deux.
+                  className="size-11 shrink-0 p-0 text-base max-sm:self-end sm:size-9"
                   onClick={() => retirerLigne(ligne.cle)}
                 >
                   ×
                 </Button>
               ) : (
-                <span className="size-9" />
+                <span className="size-11 sm:size-9" />
               )}
             </li>
           );

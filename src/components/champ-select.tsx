@@ -46,6 +46,7 @@ export function ChampSelect({
   required,
   disabled,
   className,
+  placeholder,
   "aria-label": ariaLabel,
 }: {
   options: OptionSelect[];
@@ -57,6 +58,8 @@ export function ChampSelect({
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Affiché tant que rien n'est choisi. */
+  placeholder?: string;
   "aria-label"?: string;
 }) {
   return (
@@ -74,7 +77,10 @@ export function ChampSelect({
         aria-label={ariaLabel}
         className={cn("h-11 w-full text-base", className)}
       >
-        <SelectValue />
+        <SelectValue
+          placeholder={placeholder}
+          className="data-placeholder:text-muted-foreground"
+        />
       </SelectTrigger>
 
       {/* `alignItemWithTrigger={false}` : la liste se déploie SOUS le champ au

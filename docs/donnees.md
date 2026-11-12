@@ -288,6 +288,13 @@ la marchandise). Toute évolution de `bilan_global()` doit reconduire cette
 égalité : quatre indicateurs qui ne se recoupent plus sont pires que faux, ils
 sont invérifiables.
 
+**`ca_par_jour()` est liée à cette définition.** Elle alimente la courbe du
+Bilan et renvoie, jour par jour, le montant des ventes moins les remboursements
+SAV validés ce jour-là : exactement le chiffre d'affaires de `bilan_global()`,
+découpé. Toute évolution de l'une doit être reportée dans l'autre ;
+`supabase/tests/17_ca_par_jour.sql` vérifie que la somme de la courbe retombe
+sur l'indicateur.
+
 Le SAV est daté de **son** jour, pas de celui de la vente : un remboursement de
 janvier sur une vente de décembre appartient à janvier.
 
