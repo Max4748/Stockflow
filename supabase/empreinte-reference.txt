@@ -2011,7 +2011,12 @@ begin
      where a.vendeur_id = auth.uid()
 
      order by cree_le desc
-     limit least(greatest(coalesce(p_limite, 20), 1), 100);
+     -- `p_limite` NULL = pas de plafond (`limit null`). C'est ce que demandent
+     -- les écrans paginés : ils laissent PostgREST trier, chercher et découper
+     -- le résultat (`order`, `ilike`, `range`), ce qui n'a de sens que sur
+     -- l'historique entier. Omis, le paramètre garde son défaut de 20.
+     limit case when p_limite is null then null
+                else least(greatest(p_limite, 1), 100) end;
 end $function$
 
 FONCTION  modifier_compte(uuid,text,numeric)
@@ -3024,6 +3029,40 @@ begin
      order by s.modele, s.nom;
 end $function$
 
+FONCTION  suggestions_reassort(integer)
+CREATE OR REPLACE FUNCTION public.suggestions_reassort(p_jours integer DEFAULT 30)
+ RETURNS TABLE(produit_id uuid, produit text, modele text, stock_entrepot integer, stock_total integer, seuil_parfum integer, vendues integer, a_commander integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  -- Bornée : une fenêtre d'un jour ne dit rien, une de dix ans non plus.
+  v_jours int := least(greatest(coalesce(p_jours, 30), 7), 365);
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with vendu as (
+    select vl.produit_id as pid, sum(vl.quantite) as qte
+      from vente_lignes vl
+      join ventes v on v.id = vl.vente_id
+     where v.date > current_date - v_jours
+     group by vl.produit_id
+  )
+  select s.produit_id, s.nom, s.modele,
+         s.stock_entrepot, s.stock_total, s.seuil_parfum,
+         coalesce(vd.qte, 0)::int,
+         (coalesce(vd.qte, 0) + s.seuil_parfum - s.stock_total)::int
+    from v_stock_produit s
+    left join vendu vd on vd.pid = s.produit_id
+   where s.actif
+     and coalesce(vd.qte, 0) + s.seuil_parfum - s.stock_total > 0
+   order by 8 desc, s.modele, s.nom;
+end $function$
+
 FONCTION  supprimer_prelevement(uuid)
 CREATE OR REPLACE FUNCTION public.supprimer_prelevement(p_id uuid)
  RETURNS void
@@ -3578,6 +3617,63 @@ begin
    where id = p_sav_id;
 end $function$
 
+FONCTION  ventes_par_produit(date,date)
+CREATE OR REPLACE FUNCTION public.ventes_par_produit(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date)
+ RETURNS TABLE(produit_id uuid, produit text, modele text, unites integer, ca numeric, marge numeric)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  agg as (
+    select vl.produit_id as pid,
+           sum(vl.quantite)                          as qte,
+           sum(vl.quantite * vl.prix_vente_unitaire) as brut,
+           sum(vl.quantite * (vl.prix_vente_unitaire - vl.cout_unitaire
+                              - vl.commission_unitaire)) as marge_brute
+      from vente_lignes vl
+      join ventes v on v.id = vl.vente_id
+      cross join bornes b
+     where v.date between b.du and b.au
+     group by vl.produit_id
+  ),
+  sv as (
+    select s.produit_id as pid,
+           sum(s.montant_rembourse) as rembourse,
+           sum(case when s.resolution = 'echange'
+                    then s.quantite * vl.cout_unitaire else 0 end) as cout_echanges
+      from sav s
+      join vente_lignes vl
+        on vl.vente_id = s.vente_id and vl.produit_id = s.produit_id
+      cross join bornes b
+     where s.date between b.du and b.au
+       and s.statut = 'valide'
+     group by s.produit_id
+  )
+  select p.id,
+         p.nom,
+         mo.nom,
+         coalesce(a.qte, 0)::int,
+         (coalesce(a.brut, 0) - coalesce(sv.rembourse, 0))::numeric(12,2),
+         (coalesce(a.marge_brute, 0) - coalesce(sv.rembourse, 0)
+          - coalesce(sv.cout_echanges, 0))::numeric(12,2)
+    from produits p
+    join modeles mo on mo.id = p.modele_id
+    left join agg a on a.pid  = p.id
+    left join sv    on sv.pid = p.id
+   where a.pid is not null or sv.pid is not null
+   order by coalesce(a.qte, 0) desc, mo.nom, p.nom;
+end $function$
+
 FONCTION  ventes_savables(integer,boolean)
 CREATE OR REPLACE FUNCTION public.ventes_savables(p_limite integer DEFAULT 100, p_les_miennes boolean DEFAULT false)
  RETURNS TABLE(vente_id uuid, date date, cree_le timestamp with time zone, client text, vendeur text, vendeur_id uuid, produit_id uuid, produit text, quantite integer, deja_en_sav integer, restant integer, prix_unitaire numeric)
@@ -3651,7 +3747,9 @@ begin
      where a.vendeur_id = p_vendeur_id
 
      order by cree_le desc
-     limit least(greatest(coalesce(p_limite, 20), 1), 200);
+     -- NULL = pas de plafond, pour la même raison que `mes_ventes`.
+     limit case when p_limite is null then null
+                else least(greatest(p_limite, 1), 200) end;
 end $function$
 
 FONCTION  verifier_coherence_stock()
@@ -3913,6 +4011,7 @@ DROIT-FN  stock_detenu(uuid,uuid)  postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_disponible()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_entrepot()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  stock_valorise()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  suggestions_reassort(integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_prelevement(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_restock(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  supprimer_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
@@ -3925,6 +4024,7 @@ DROIT-FN  tracer_operation(text,uuid,text,text,integer,numeric,jsonb)  postgres=
 DROIT-FN  traiter_demande_restock(uuid,text,jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  transferer_stock(uuid,jsonb,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  valider_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ventes_par_produit(date,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  ventes_savables(integer,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  ventes_vendeur(uuid,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  verifier_coherence_stock()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres

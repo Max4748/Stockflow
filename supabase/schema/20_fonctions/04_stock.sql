@@ -552,3 +552,59 @@ begin
     having v.montant_total <> coalesce(sum(vl.quantite * vl.prix_vente_unitaire), 0)
         or v.quantite_totale <> coalesce(sum(vl.quantite), 0);
 end $$;
+
+-- ------------------------------------------------------------
+-- Suggestion de réassort (admin) : quoi commander, et combien.
+-- ------------------------------------------------------------
+-- La règle, volontairement simple pour rester vérifiable de tête :
+--
+--   à commander = vendu sur les N derniers jours + seuil du parfum − stock total
+--
+-- Autrement dit : de quoi tenir N jours de plus au rythme constaté, en
+-- gardant le seuil d'alerte en réserve. Le stock TOTAL est retranché, pas
+-- celui de l'entrepôt seul : ce que les vendeurs détiennent se vendra aussi,
+-- et le racheter immobiliserait de l'argent deux fois.
+--
+-- Les unités rendues en SAV ne sont pas déduites des ventes : elles disent ce
+-- que les clients ont demandé, ce qui est la grandeur utile pour commander.
+--
+-- Seuls les produits ACTIFS dont le calcul est positif sont renvoyés : un
+-- parfum retiré du catalogue ne se recommande pas.
+create or replace function suggestions_reassort(p_jours int default 30)
+returns table (
+  produit_id     uuid,
+  produit        text,
+  modele         text,
+  stock_entrepot int,
+  stock_total    int,
+  seuil_parfum   int,
+  vendues        int,
+  a_commander    int
+)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+declare
+  -- Bornée : une fenêtre d'un jour ne dit rien, une de dix ans non plus.
+  v_jours int := least(greatest(coalesce(p_jours, 30), 7), 365);
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with vendu as (
+    select vl.produit_id as pid, sum(vl.quantite) as qte
+      from vente_lignes vl
+      join ventes v on v.id = vl.vente_id
+     where v.date > current_date - v_jours
+     group by vl.produit_id
+  )
+  select s.produit_id, s.nom, s.modele,
+         s.stock_entrepot, s.stock_total, s.seuil_parfum,
+         coalesce(vd.qte, 0)::int,
+         (coalesce(vd.qte, 0) + s.seuil_parfum - s.stock_total)::int
+    from v_stock_produit s
+    left join vendu vd on vd.pid = s.produit_id
+   where s.actif
+     and coalesce(vd.qte, 0) + s.seuil_parfum - s.stock_total > 0
+   order by 8 desc, s.modele, s.nom;
+end $$;

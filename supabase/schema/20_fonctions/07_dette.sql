@@ -339,3 +339,77 @@ begin
    group by m.j
    order by m.j;
 end $$;
+
+-- ------------------------------------------------------------
+-- Ventes et marge PAR PRODUIT, pour le classement du Bilan.
+-- ------------------------------------------------------------
+-- MÊMES DÉFINITIONS que `bilan_global`, produit par produit : le chiffre
+-- d'affaires est net des remboursements SAV validés, la marge est nette des
+-- remboursements ET du coût des unités échangées. Les sommes de cette fonction
+-- retombent donc sur les indicateurs affichés au-dessus du classement.
+--
+-- Un SAV est imputé au produit qu'il concerne et compté à SA date, comme dans
+-- le bilan. Un produit peut ainsi apparaître sans aucune vente sur la période
+-- (0 unité, chiffre négatif) : on a remboursé ce mois-ci une vente du mois
+-- dernier. C'est juste, et le masquer ferait diverger les totaux.
+create or replace function ventes_par_produit(
+  p_du date default null,
+  p_au date default null
+) returns table (
+  produit_id uuid,
+  produit    text,
+  modele     text,
+  unites     int,
+  ca         numeric(12,2),
+  marge      numeric(12,2)
+)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  agg as (
+    select vl.produit_id as pid,
+           sum(vl.quantite)                          as qte,
+           sum(vl.quantite * vl.prix_vente_unitaire) as brut,
+           sum(vl.quantite * (vl.prix_vente_unitaire - vl.cout_unitaire
+                              - vl.commission_unitaire)) as marge_brute
+      from vente_lignes vl
+      join ventes v on v.id = vl.vente_id
+      cross join bornes b
+     where v.date between b.du and b.au
+     group by vl.produit_id
+  ),
+  sv as (
+    select s.produit_id as pid,
+           sum(s.montant_rembourse) as rembourse,
+           sum(case when s.resolution = 'echange'
+                    then s.quantite * vl.cout_unitaire else 0 end) as cout_echanges
+      from sav s
+      join vente_lignes vl
+        on vl.vente_id = s.vente_id and vl.produit_id = s.produit_id
+      cross join bornes b
+     where s.date between b.du and b.au
+       and s.statut = 'valide'
+     group by s.produit_id
+  )
+  select p.id,
+         p.nom,
+         mo.nom,
+         coalesce(a.qte, 0)::int,
+         (coalesce(a.brut, 0) - coalesce(sv.rembourse, 0))::numeric(12,2),
+         (coalesce(a.marge_brute, 0) - coalesce(sv.rembourse, 0)
+          - coalesce(sv.cout_echanges, 0))::numeric(12,2)
+    from produits p
+    join modeles mo on mo.id = p.modele_id
+    left join agg a on a.pid  = p.id
+    left join sv    on sv.pid = p.id
+   where a.pid is not null or sv.pid is not null
+   order by coalesce(a.qte, 0) desc, mo.nom, p.nom;
+end $$;

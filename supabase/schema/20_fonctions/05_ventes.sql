@@ -404,7 +404,12 @@ begin
      where a.vendeur_id = auth.uid()
 
      order by cree_le desc
-     limit least(greatest(coalesce(p_limite, 20), 1), 100);
+     -- `p_limite` NULL = pas de plafond (`limit null`). C'est ce que demandent
+     -- les écrans paginés : ils laissent PostgREST trier, chercher et découper
+     -- le résultat (`order`, `ilike`, `range`), ce qui n'a de sens que sur
+     -- l'historique entier. Omis, le paramètre garde son défaut de 20.
+     limit case when p_limite is null then null
+                else least(greatest(p_limite, 1), 100) end;
 end $$;
 
 create or replace function ventes_vendeur(
@@ -452,7 +457,9 @@ begin
      where a.vendeur_id = p_vendeur_id
 
      order by cree_le desc
-     limit least(greatest(coalesce(p_limite, 20), 1), 200);
+     -- NULL = pas de plafond, pour la même raison que `mes_ventes`.
+     limit case when p_limite is null then null
+                else least(greatest(p_limite, 1), 200) end;
 end $$;
 
 create or replace function mon_journal(p_limite int default 50)
