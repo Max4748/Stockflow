@@ -5,6 +5,7 @@ import { lirePage, motifIlike } from "@/lib/tri";
 import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { exigerProfil } from "@/lib/auth";
+import { ordonnerParFrequence } from "@/lib/habitudes-vente";
 import { creerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
@@ -16,6 +17,7 @@ import { date, dateHeure, euros } from "@/lib/format";
 import { FormulaireSav } from "@/components/formulaire-sav";
 import type { LigneStock, MaVente, VenteSavable } from "@/lib/types";
 
+import { lireHabitudes } from "../habitudes";
 import { FormulaireVente } from "./formulaire";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +50,7 @@ export default async function PageVente({
     .range(page.de, page.a);
   if (motif) lectureVentes = lectureVentes.ilike("client", motif);
 
-  const [rStock, rVentes, rSavables] = await Promise.all([
+  const [rStock, rVentes, rSavables, habitudes] = await Promise.all([
     supabase.rpc("stock_disponible"),
     // `corrigeable` est calculé en SQL, pas ici : la fenêtre de 48 h ne doit
     // pas dépendre de l'horloge du téléphone.
@@ -57,6 +59,7 @@ export default async function PageVente({
     // sur SES ventes, comme n'importe quel vendeur. Le suivi
     // des dossiers, lui, a son écran : /vendeur/sav.
     supabase.rpc("ventes_savables", { p_les_miennes: true }),
+    lireHabitudes(supabase),
   ]);
 
   const stock = (rStock.data as LigneStock[] | null) ?? [];
@@ -72,14 +75,19 @@ export default async function PageVente({
   // On ne propose que ce que le vendeur détient réellement. Le contrôle qui
   // compte reste celui du SQL (verrou + vérification), mais proposer un
   // produit épuisé ne mènerait qu'à un refus.
-  const vendables = stock
-    .filter((l) => l.quantite > 0)
-    .map((l) => ({
-      produit_id: l.produit_id,
-      produit: l.produit,
-      quantite: l.quantite,
-      prix_conseille: prixConseille.get(l.produit_id) ?? 0,
-    }));
+  // Ses produits les plus vendus d'abord : sur un téléphone, celui qu'il vend
+  // dix fois par jour ne doit pas être le neuvième de la liste déroulante.
+  const vendables = ordonnerParFrequence(
+    stock
+      .filter((l) => l.quantite > 0)
+      .map((l) => ({
+        produit_id: l.produit_id,
+        produit: l.produit,
+        quantite: l.quantite,
+        prix_conseille: prixConseille.get(l.produit_id) ?? 0,
+      })),
+    habitudes.recentes,
+  );
 
   return (
     // Pleine largeur. Les champs ne sont pas étirés pour autant : les cartes
@@ -90,7 +98,12 @@ export default async function PageVente({
           le bouton ouvre le geste. Sans stock, pas de bouton — un formulaire de
           vente qu'aucune ligne ne peut remplir ne rend service à personne. */}
       <EntetePage titre="Mes ventes">
-        {vendables.length > 0 && <FormulaireVente produits={vendables} />}
+        {vendables.length > 0 && (
+          <FormulaireVente
+            produits={vendables}
+            derniere={habitudes.derniere}
+          />
+        )}
       </EntetePage>
 
       {rStock.error && (

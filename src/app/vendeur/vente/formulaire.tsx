@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCartIcon } from "lucide-react";
+import { RotateCcwIcon, ShoppingCartIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { aujourdHui, euros } from "@/lib/format";
+import { reprendreVente, type LigneVendue } from "@/lib/habitudes-vente";
 import type { EtatAction } from "@/lib/types";
 
 import { enregistrerVente } from "../actions";
@@ -42,7 +43,15 @@ type Ligne = {
  * `tailleBouton="lg"` : c'est l'action principale de l'espace vendeur, saisie
  * debout sur un téléphone. Elle garde les 56 px du bouton qu'elle remplace.
  */
-export function FormulaireVente({ produits }: { produits: ProduitVendable[] }) {
+export function FormulaireVente({
+  produits,
+  derniere = [],
+}: {
+  /** Déjà classés : les plus vendus par ce vendeur en premier. */
+  produits: ProduitVendable[];
+  /** Lignes de sa dernière vente, pour le bouton « Reprendre ». */
+  derniere?: (LigneVendue & { produit?: string })[];
+}) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(
     enregistrerVente,
     {},
@@ -73,6 +82,7 @@ export function FormulaireVente({ produits }: { produits: ProduitVendable[] }) {
         <ChampsVente
           key={etat.jeton ?? "initial"}
           produits={produits}
+          derniere={derniere}
           erreur={etat.erreur}
           enCours={enCours}
         />
@@ -83,10 +93,12 @@ export function FormulaireVente({ produits }: { produits: ProduitVendable[] }) {
 
 function ChampsVente({
   produits,
+  derniere,
   erreur,
   enCours,
 }: {
   produits: ProduitVendable[];
+  derniere: (LigneVendue & { produit?: string })[];
   erreur?: string;
   enCours: boolean;
 }) {
@@ -102,6 +114,24 @@ function ChampsVente({
   }
 
   const [lignes, setLignes] = useState<Ligne[]>(() => [ligneNeuve()]);
+  // Ce qui n'a pas pu être repris tel quel de la dernière vente.
+  const [ajustements, setAjustements] = useState<string[] | null>(null);
+
+  // Calculée d'avance : le bouton n'est proposé que s'il reste quelque chose
+  // à reprendre. Une dernière vente dont tout est épuisé n'en donne aucun.
+  const reprise = reprendreVente(derniere, produits);
+
+  function reprendre() {
+    setLignes(
+      reprise.lignes.map((l, i) => ({
+        cle: Date.now() + i,
+        produit_id: l.produit_id,
+        quantite: String(l.quantite),
+        prix: String(l.prix),
+      })),
+    );
+    setAjustements(reprise.ajustements);
+  }
 
   function modifier(cle: number, champ: keyof Ligne, valeur: string) {
     setLignes((actuelles) =>
@@ -145,6 +175,29 @@ function ChampsVente({
           figure déjà dans l'option choisie (« Produit B — 10 en stock »), et le
           prix conseillé est la valeur PRÉ-REMPLIE du champ. Les libellés
           passent en `aria-label` plus un en-tête de colonnes affiché une fois. */}
+      {/* Beaucoup de ventes se ressemblent : le même client du marché, le même
+          lot. Un bouton recharge la précédente, aux prix alors pratiqués, et
+          tout reste modifiable avant de valider. */}
+      {reprise.lignes.length > 0 && (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full sm:h-10 sm:w-auto"
+          onClick={reprendre}
+        >
+          <RotateCcwIcon />
+          Reprendre la dernière vente
+        </Button>
+      )}
+      {ajustements && ajustements.length > 0 && (
+        <Alert variant="alerte">
+          <AlertDescription>
+            La dernière vente n&apos;a pas pu être reprise à l&apos;identique :{" "}
+            {ajustements.join(" ; ")}.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="text-muted-foreground hidden gap-2 px-1 text-xs sm:grid sm:grid-cols-[minmax(0,1fr)_5rem_7rem_2.25rem]">
         <span>Produit</span>
         <span className="text-center">Qté</span>

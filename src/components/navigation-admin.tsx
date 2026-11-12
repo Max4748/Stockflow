@@ -51,7 +51,12 @@ type Entree = { href: string; libelle: string; icone: LucideIcon };
  * n'a rien à faire sous les yeux d'un gérant, et la gestion des comptes
  * d'encadrement ne le concerne pas.
  */
-const GROUPES: { titre: string; niveauMinimum?: number; entrees: Entree[] }[] =
+/** Exportée pour la recherche globale, qui propose les mêmes écrans. */
+export const ECRANS_GESTION: {
+  titre: string;
+  niveauMinimum?: number;
+  entrees: Entree[];
+}[] =
   [
     {
       titre: "Pilotage",
@@ -113,7 +118,7 @@ function Liens({
   // Masquer une entrée n'est PAS une mesure de sécurité : chaque page réservée
   // appelle exigerDev(), et chaque RPC vérifie le niveau en base. Ici on évite
   // seulement de montrer au gérant des écrans qui le laisseraient perplexe.
-  const groupes = GROUPES.filter((g) => niveau >= (g.niveauMinimum ?? 0));
+  const groupes = ECRANS_GESTION.filter((g) => niveau >= (g.niveauMinimum ?? 0));
 
   return (
     <nav aria-label="Navigation de gestion" className="space-y-6">
@@ -184,7 +189,7 @@ export function BarreLaterale({
   const chemin = usePathname();
 
   return (
-    <aside className="bg-sidebar hidden w-60 shrink-0 border-r lg:block">
+    <aside className="bg-sidebar hidden w-60 shrink-0 border-r lg:block print:hidden">
       <div className="sticky top-0 max-h-dvh overflow-y-auto px-2 pb-4">
         {/* La marque vit ICI à partir de `lg`, et dans l'en-tête en dessous :
             elle est toujours dans le coin haut gauche de l'écran, là où l'œil

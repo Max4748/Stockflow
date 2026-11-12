@@ -4,6 +4,7 @@ import { BasculeEspace } from "@/components/bascule-espace";
 import { BarreLaterale, TiroirNavigation } from "@/components/navigation-admin";
 import { Logo } from "@/components/logo";
 import { MenuCompte } from "@/components/menu-compte";
+import { RechercheGlobale } from "@/components/recherche-globale";
 import { exigerAdmin } from "@/lib/auth";
 import { creerClient } from "@/lib/supabase/server";
 import { NIVEAUX } from "@/lib/types";
@@ -55,7 +56,7 @@ export default async function LayoutAdmin({
         {/* `sticky`, comme la barre latérale qui l'est déjà : en dessous
             de `lg` c'est le bouton Menu de cet en-tête qui EST la
             navigation, et il défilait hors de vue sur une page longue. */}
-        <header className="bg-background/95 sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b px-4 backdrop-blur md:px-6">
+        <header className="bg-background/95 sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b px-4 backdrop-blur md:px-6 print:hidden">
           <div className="flex min-w-0 items-center gap-2">
             <TiroirNavigation compteurs={compteurs} niveau={niveau} />
             {/* Sous `lg` la barre latérale est masquée : la marque passe ici.
@@ -71,6 +72,7 @@ export default async function LayoutAdmin({
           </div>
 
           <div className="flex items-center gap-2">
+            <RechercheGlobale niveau={niveau} />
             {/* Un gérant vend aussi : l'espace vendeur est à un clic, et le
                 choix est mémorisé pour la prochaine connexion. Le bouton reste
                 visible dès `sm` ; en dessous, la même bascule est dans le menu

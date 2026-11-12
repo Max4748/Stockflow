@@ -97,3 +97,13 @@ jobs:
       # "use server", dont seul `next build` valide les exports.
       - name: Build
         run: npx next build
+
+      # Après le build, qu'ils réutilisent (`next start`). L'interface y est
+      # servie contre un FAUX Supabase : ces tests disent qu'un écran s'affiche
+      # et qu'un vendeur est refoulé de la gestion, pas qu'un calcul est juste —
+      # cela, ce sont les tests pgTAP plus haut. Voir docs/tests.md.
+      - name: Navigateur des tests de bout en bout
+        run: npx playwright install --with-deps chromium
+
+      - name: Interface (bout en bout)
+        run: npm run test:e2e

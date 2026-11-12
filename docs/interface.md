@@ -381,6 +381,50 @@ habituel, pré-rempli des quantités proposées ; tout reste modifiable, et le
 prix reste à saisir, puisque c'est la facture qui le donne. La carte disparaît
 quand il n'y a rien à commander.
 
+### `recherche-globale.tsx` : Ctrl+K
+
+Dans l'en-tête de l'espace gestion : taper un nom d'écran, de vendeur ou de
+produit, et y aller. Elle ne remplace pas la navigation, elle la
+court-circuite : ouvrir la fiche d'un vendeur demandait trois clics.
+
+- Ouverte par **Ctrl+K** (⌘K) ou par le bouton loupe, seul accès sur
+  téléphone.
+- Les **écrans** sont ceux de la barre latérale (`ECRANS_GESTION`, droits
+  compris), filtrés sur place. Les **vendeurs** et les **produits** sont
+  cherchés en base par `/gestion/recherche`, 200 ms après la dernière frappe,
+  six résultats par groupe.
+- Flèches, Entrée, Échap. Le focus reste dans le champ ;
+  `aria-activedescendant` désigne la ligne visée.
+- Un produit mène à l'État du stock filtré sur lui : c'est là qu'on voit où il
+  est et combien il en reste.
+
+### Saisie de vente : les habitudes du vendeur
+
+`lib/habitudes-vente.ts`, alimenté par `vendeur/habitudes.ts` :
+
+- les produits du sélecteur sont classés par **fréquence de vente** de ce
+  vendeur, le plus vendu en premier (et donc pré-sélectionné) ;
+- **« Reprendre la dernière vente »** recharge ses lignes, aux prix alors
+  pratiqués. Une quantité supérieure au stock détenu est ramenée à ce qu'il
+  reste, un produit épuisé est retiré, et les deux cas sont **écrits** au-dessus
+  des lignes : pré-remplir en silence une vente différente de celle annoncée
+  serait le meilleur moyen de la valider sans la relire.
+
+C'est de la présentation (un ordre de liste, un pré-remplissage) : rien n'y
+décide d'un montant, `enregistrer_vente()` recontrôle tout.
+
+### Reçu de versement
+
+`/gestion/vendeurs/[id]/recu/[versement]`, depuis le lien « Reçu » de chaque
+versement. Une page ordinaire, que le navigateur imprime ou enregistre en PDF :
+la navigation porte `print:hidden` et `globals.css` force un fond blanc et le
+thème clair à l'impression.
+
+Le reçu sépare **le versement** (un fait daté) de **la situation du compte**,
+datée du moment de l'impression : réimprimé un mois plus tard, le même reçu
+affiche un autre reste à verser, et il le dit. C'est la seule page qui borne sa
+largeur : c'est une feuille, pas un écran de données.
+
 ### `squelette-page.tsx` et les `loading.tsx`
 
 Toutes les pages lisent la base à chaque visite : sans écran de chargement, un

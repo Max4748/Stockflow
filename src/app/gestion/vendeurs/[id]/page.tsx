@@ -256,7 +256,7 @@ export default async function PageFicheVendeur({
             <CardTitle className="text-sm">Versements reçus</CardTitle>
           </CardHeader>
           <CardContent>
-            <ListeVersements versements={versements} />
+            <ListeVersements versements={versements} vendeurId={id} />
             <Pagination
               params={requete}
               chemin={chemin}

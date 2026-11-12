@@ -2,13 +2,14 @@
 
 import { BanknoteIcon, SettingsIcon, UndoIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { EtatVide } from "@/components/etat-vide";
 import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -631,7 +632,13 @@ function ChampsRetour({
 // Historique des versements — de l'INFORMATION, donc elle reste sur la page
 // ---------------------------------------------------------------------------
 
-export function ListeVersements({ versements }: { versements: Versement[] }) {
+export function ListeVersements({
+  versements,
+  vendeurId,
+}: {
+  versements: Versement[];
+  vendeurId: string;
+}) {
   if (versements.length === 0) {
     return (
       <EtatVide titre="Aucun versement reçu." />
@@ -649,7 +656,17 @@ export function ListeVersements({ versements }: { versements: Versement[] }) {
               {v.note && ` · ${v.note}`}
             </p>
           </div>
-          <BoutonSupprimerVersement versement={v} />
+          <div className="flex shrink-0 items-center gap-1">
+            {/* Le reçu est un écran à part, imprimable : un lien, pas un
+                dialogue. */}
+            <Link
+              href={`/gestion/vendeurs/${vendeurId}/recu/${v.id}`}
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              Reçu
+            </Link>
+            <BoutonSupprimerVersement versement={v} />
+          </div>
         </li>
       ))}
     </ul>
