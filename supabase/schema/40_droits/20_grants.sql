@@ -173,10 +173,11 @@ grant execute on function stock_valorise()                  to authenticated;
 grant execute on function stock_detenteurs(uuid)            to authenticated;
 
 grant execute on function bilan_global(date, date)           to authenticated;
+grant execute on function ca_par_jour(date, date)            to authenticated;
 
 grant execute on function revenus_vendeurs(date, date)       to authenticated;
 
-grant execute on function journal_transactions(date, date, text, uuid, int, int) to authenticated;
+grant execute on function journal_transactions(date, date, text, uuid, int, int, text) to authenticated;
 
 grant execute on function mon_journal(int)                   to authenticated;
 
@@ -275,11 +276,13 @@ grant execute on function ma_dette() to authenticated;
 
 grant execute on function bilan_global(date, date) to authenticated;
 
+grant execute on function ca_par_jour(date, date) to authenticated;
+
 grant execute on function revenus_vendeurs(date, date) to authenticated;
 
 grant execute on function creances() to authenticated;
 
-grant execute on function journal_transactions(date, date, text, uuid, int, int)
+grant execute on function journal_transactions(date, date, text, uuid, int, int, text)
   to authenticated;
 
 grant execute on function mes_ventes(int) to authenticated;
@@ -300,9 +303,11 @@ revoke all on v_comptes_vendeurs from authenticated, anon;
 
 grant execute on function bilan_global(date, date) to authenticated;
 
+grant execute on function ca_par_jour(date, date) to authenticated;
+
 grant execute on function revenus_vendeurs(date, date) to authenticated;
 
-grant execute on function journal_transactions(date, date, text, uuid, int, int)
+grant execute on function journal_transactions(date, date, text, uuid, int, int, text)
   to authenticated;
 
 grant execute on function mes_ventes(int) to authenticated;

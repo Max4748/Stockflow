@@ -289,3 +289,53 @@ begin
       where r.date between b2.du and b2.au)::numeric(12,2)
   from l;
 end $$;
+
+-- ------------------------------------------------------------
+-- Chiffre d'affaires jour par jour, pour la courbe du Bilan.
+-- ------------------------------------------------------------
+-- MÊME DÉFINITION que `bilan_global().ca`, et c'est toute la contrainte : le
+-- montant des ventes du jour, MOINS les remboursements SAV validés ce jour-là.
+-- Une courbe dont la somme ne retomberait pas sur l'indicateur « Chiffre
+-- d'affaires » affiché au-dessus d'elle ferait douter des deux.
+--
+-- Un remboursement est donc compté à SA date, pas à celle de la vente : c'est
+-- ce que fait le bilan, et un jour peut ressortir négatif (on a rendu plus
+-- qu'on n'a vendu). C'est juste, et la courbe le montre.
+--
+-- Seuls les jours qui ont bougé sont renvoyés. Combler les trous et regrouper
+-- par semaine ou par mois est de la présentation : l'application s'en charge.
+create or replace function ca_par_jour(
+  p_du date default null,
+  p_au date default null
+) returns table (
+  jour      date,
+  ca        numeric(12,2),
+  nb_ventes int
+)
+language plpgsql stable security definer set search_path = public, pg_temp as $$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  mouvements as (
+    select v.date as j, v.montant_total as montant, 1 as vente
+      from ventes v cross join bornes b
+     where v.date between b.du and b.au
+    union all
+    select sv.date, -sv.montant_rembourse, 0
+      from sav sv cross join bornes b
+     where sv.date between b.du and b.au
+       and sv.statut = 'valide'
+       and sv.montant_rembourse <> 0
+  )
+  select m.j, sum(m.montant)::numeric(12,2), sum(m.vente)::int
+    from mouvements m
+   group by m.j
+   order by m.j;
+end $$;
