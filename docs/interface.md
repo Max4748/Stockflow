@@ -97,9 +97,10 @@ quelque chose que le vendeur n'a **pas fait lui-même** depuis sa dernière
 visite. Elle s'éteint à l'ouverture de l'écran, via un composant client
 `MarquerSavVu` monté sur la page.
 
-**Pourquoi côté client et pas pendant le rendu** : la route est `force-dynamic`
-et le projet n'a aucun `loading.tsx`, donc un préchargement de lien peut faire
-rendre la page côté serveur sans que le vendeur l'ait vue. La pastille
+**Pourquoi côté client et pas pendant le rendu** : la route est `force-dynamic`,
+donc un préchargement de lien peut faire rendre la page côté serveur sans que
+le vendeur l'ait vue. Les `loading.tsx` ajoutés depuis n'y changent rien : ils
+montrent une silhouette pendant le rendu, ils ne l'empêchent pas. La pastille
 s'éteindrait sur une information jamais reçue. L'effet est conditionné à
 `actif={nonVus > 0}` : rien à éteindre, aucun appel, donc aucune boucle avec le
 `revalidatePath` que l'action déclenche pour rafraîchir le compteur du layout.
@@ -140,6 +141,11 @@ compte, l'en-tête d'un téléphone n'ayant pas la place d'un bouton à libellé
 espaces, qui ouvre un menu portant **tout ce qui concerne le compte** : nom et
 rôle, bascule d'espace et sécurité (encadrement seulement), changement de mot
 de passe, thème (Clair / Sombre / Système), déconnexion.
+
+**La déconnexion se confirme.** Elle est à un doigt du choix du thème : la
+toucher par erreur renvoyait à l'écran de connexion au milieu d'une vente. Le
+dialogue de confirmation est rendu à côté du menu, qui se referme en
+l'ouvrant : jamais deux calques empilés.
 
 Les deux en-têtes alignaient auparavant trois contrôles séparés (bascule,
 thème, « Déconnexion » en toutes lettres) qui se serraient sur téléphone, et
@@ -250,9 +256,91 @@ type Colonne<T> = {
 };
 ```
 
-**À ne pas gonfler** (tri, filtres, sélection) tant qu'un écran n'en a pas
-réellement besoin. Un écran aux exigences très différentes écrit son propre
-tableau plutôt que d'ajouter des options ici.
+**Le tri** est arrivé quand les listes sont devenues longues. Une colonne est
+triable dès qu'elle déclare `tri` (la valeur BRUTE à comparer, un nombre ou un
+texte, pas le rendu), et le tableau dès qu'il reçoit `tri` :
+
+```tsx
+{ cle: "du", entete: "Reste à verser", tri: (l) => Number(l.reste_a_verser), … }
+
+<Tableau … tri={{ params, chemin: "/gestion/vendeurs" }} />
+```
+
+Il est **piloté par l'URL** (`?tri=du&ordre=desc`) et appliqué côté serveur,
+pour une raison de structure et pas seulement de goût : les colonnes portent
+des fonctions, qui ne traversent pas la frontière serveur → client. Un tableau
+trié dans le navigateur obligerait chaque écran à devenir un composant client.
+Deux tableaux triables sur un même écran se distinguent par `prefixe`. Sur
+téléphone, où les cartes n'ont pas d'en-têtes, le tri passe par une rangée de
+pastilles. La logique est dans `lib/tri.ts`, testée à part.
+
+**À ne pas gonfler davantage** : ni sélection ni pagination ici. Un écran aux
+exigences très différentes écrit son propre tableau.
+
+### `champ-recherche.tsx` : la recherche, elle aussi dans l'URL
+
+Un formulaire GET (`?q=`), qui reconduit les autres paramètres et repart de la
+première page. La recherche part à la validation, pas à chaque frappe : chaque
+frappe serait un aller-retour serveur.
+
+- Sur une liste **entière en mémoire** (créances, stock, catalogue, ventes d'un
+  vendeur), la page filtre avec `filtrer()` de `lib/tri.ts`, qui ignore la casse
+  et les accents et exige tous les mots saisis.
+- Sur le **journal comptable**, qui est paginé, la recherche est faite **en
+  base** (`journal_transactions(p_recherche)`). Filtrer la page reçue ne
+  chercherait que dans ses cinquante lignes en laissant croire qu'on a cherché
+  partout.
+
+> La recherche ne filtre que ce qu'on REGARDE. Sur l'État du stock, les alertes
+> de seuil et les dialogues continuent de recevoir la liste complète : chercher
+> « vanille » ne doit ni cacher une rupture, ni retirer des produits du
+> formulaire de distribution.
+
+### Exports CSV
+
+`bouton-export.tsx` + un Route Handler par export
+(`gestion/comptabilite/export`, `gestion/vendeurs/export`). Trois points qui ne
+se devinent pas en lisant le fichier produit :
+
+- **la garde est rappelée dans la route** (`exigerAdmin()`), comme dans toute
+  Server Action : le layout ne protège que le rendu des pages ;
+- **le journal est lu par pages jusqu'à épuisement** : la fonction plafonne à
+  1 000 lignes par appel et PostgREST tronque au même seuil en silence. Un
+  seul appel donnerait un export incomplet sans la moindre erreur ;
+- **les cellules qui commencent comme une formule sont neutralisées**
+  (`lib/csv.ts`). Un nom de client ou un motif de SAV est une saisie libre,
+  ouverte ensuite dans un tableur : `=…`, `+…`, `-…`, `@…` y seraient exécutés.
+
+Le format vise un Excel réglé en français : séparateur `;`, décimales à
+virgule, BOM UTF-8. Le bouton est un `<a>` et non un `<Link>`, qui
+préchargerait l'export au survol.
+
+### Graphiques du Bilan
+
+`graphiques/courbe-ca.tsx` et `graphiques/barres-vendeurs.tsx`, sans
+dépendance.
+
+- **Une seule couleur par graphique** : chacun porte une seule mesure. Colorer
+  chaque vendeur ferait chercher un sens à des teintes qui n'en ont pas.
+- **La courbe retombe sur l'indicateur.** `ca_par_jour()` reprend la définition
+  de `bilan_global().ca` (net des remboursements SAV, comptés à leur date) ; un
+  test pgTAP vérifie que la somme de l'une égale l'autre.
+- **Les jours sans vente valent zéro** au lieu d'être sautés, et la période est
+  regroupée par semaine au-delà de deux mois, par mois au-delà de treize
+  (`lib/serie.ts`).
+- **Le tracé est en SVG étiré, tout le texte est en HTML** placé en pourcentage
+  sur la même zone : le graphique suit la largeur de l'écran sans mesure ni
+  JavaScript, et le texte n'est pas déformé.
+- La courbe se lit au survol, au doigt et **au clavier** (flèches), et un
+  tableau replié donne les mêmes chiffres.
+
+### `squelette-page.tsx` et les `loading.tsx`
+
+Toutes les pages lisent la base à chaque visite : sans écran de chargement, un
+clic dans la navigation ne produisait rien jusqu'à la réponse du serveur. Les
+`loading.tsx` montrent la silhouette de l'écran attendu (indicateurs, tableau
+ou tuiles, aux mêmes paliers de colonnes), ce qui évite le saut de mise en page
+à l'arrivée des données. L'en-tête et la navigation ne bougent pas.
 
 ### L'écran État du stock porte les trois gestes du stock
 
@@ -391,8 +479,10 @@ filtre est **partageable par lien** et survit au rechargement.
 `Kpi` donne la même forme à tous les chiffres clés de l'application. La
 couleur y porte un sens : `accent` désigne LE chiffre de l'écran (un seul par
 page, aplat primaire en clair, teinte diluée en sombre), `ton` colore la
-pastille de l'icône et, pour `alerte` et `danger`, le chiffre lui-même. Le
-bouton de thème est détaillé dans [theme.md](theme.md).
+pastille de l'icône et, pour `alerte` et `danger`, le chiffre lui-même. `href`
+rend la carte entière cliquable vers l'écran qui détaille le chiffre, avec un
+chevron pour le dire. Le bouton de thème est détaillé dans
+[theme.md](theme.md).
 
 ## Motif de formulaire : jeton + remontage par `key`
 
@@ -467,6 +557,9 @@ L'espace vendeur est pensé pour une saisie **debout, sur un téléphone** :
   déjà dans l'option choisie, et le prix conseillé est la valeur pré-remplie.
   `sm:contents` fait disparaître le conteneur mobile pour que ses champs
   deviennent des cellules de la grille parente ;
+- sur téléphone, où l'en-tête de colonnes est masqué, quantité et prix portent
+  chacun un **libellé visible** au-dessus du champ : deux cases « 1 » et « 20 »
+  ne disaient pas laquelle est la quantité ;
 - barre de total **collante**, qui remonte au-dessus de la barre d'onglets sur
   mobile et se détache en bas de fenêtre sur bureau ;
 - `viewport` du layout racine fixé à `width: device-width, initialScale: 1`.

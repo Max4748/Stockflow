@@ -583,6 +583,40 @@ begin
     jsonb_build_object('ip', p_ip, 'motif', trim(p_motif)));
 end $function$
 
+FONCTION  ca_par_jour(date,date)
+CREATE OR REPLACE FUNCTION public.ca_par_jour(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date)
+ RETURNS TABLE(jour date, ca numeric, nb_ventes integer)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if not est_admin() then
+    raise exception 'Réservé à l''administrateur.' using errcode = '42501';
+  end if;
+
+  return query
+  with bornes as (
+    select coalesce(p_du, '-infinity'::date) as du,
+           coalesce(p_au, 'infinity'::date)  as au
+  ),
+  mouvements as (
+    select v.date as j, v.montant_total as montant, 1 as vente
+      from ventes v cross join bornes b
+     where v.date between b.du and b.au
+    union all
+    select sv.date, -sv.montant_rembourse, 0
+      from sav sv cross join bornes b
+     where sv.date between b.du and b.au
+       and sv.statut = 'valide'
+       and sv.montant_rembourse <> 0
+  )
+  select m.j, sum(m.montant)::numeric(12,2), sum(m.vente)::int
+    from mouvements m
+   group by m.j
+   order by m.j;
+end $function$
+
 FONCTION  changer_actif(uuid,boolean)
 CREATE OR REPLACE FUNCTION public.changer_actif(p_id uuid, p_actif boolean)
  RETURNS void
@@ -1676,8 +1710,8 @@ begin
     offset greatest(coalesce(p_offset, 0), 0);
 end $function$
 
-FONCTION  journal_transactions(date,date,text,uuid,integer,integer)
-CREATE OR REPLACE FUNCTION public.journal_transactions(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date, p_type text DEFAULT NULL::text, p_vendeur_id uuid DEFAULT NULL::uuid, p_limite integer DEFAULT 100, p_offset integer DEFAULT 0)
+FONCTION  journal_transactions(date,date,text,uuid,integer,integer,text)
+CREATE OR REPLACE FUNCTION public.journal_transactions(p_du date DEFAULT NULL::date, p_au date DEFAULT NULL::date, p_type text DEFAULT NULL::text, p_vendeur_id uuid DEFAULT NULL::uuid, p_limite integer DEFAULT 100, p_offset integer DEFAULT 0, p_recherche text DEFAULT NULL::text)
  RETURNS TABLE(horodatage timestamp with time zone, date_compta date, type text, libelle text, vendeur text, quantite integer, montant numeric, reference uuid)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
@@ -1685,6 +1719,14 @@ CREATE OR REPLACE FUNCTION public.journal_transactions(p_du date DEFAULT NULL::d
 AS $function$
 declare
   v_limite int := least(greatest(coalesce(p_limite, 100), 1), 1000);
+  -- NULL quand il n'y a rien à chercher : une chaîne vide ou faite d'espaces
+  -- ne doit pas devenir un filtre `ilike '%%'`, qui écarterait les lignes
+  -- sans compte (un achat n'a pas de vendeur).
+  v_motif  text := case
+    when nullif(trim(p_recherche), '') is null then null
+    else '%' || replace(replace(replace(trim(p_recherche),
+                 '\', '\\'), '%', '\%'), '_', '\_') || '%'
+  end;
 begin
   if not est_admin() then
     raise exception 'Réservé à l''administrateur.' using errcode = '42501';
@@ -1776,6 +1818,9 @@ begin
      and (p_type is null or t.tp = p_type)
      and (p_vendeur_id is null
           or t.vd = (select nom from profils where id = p_vendeur_id))
+     and (v_motif is null
+          or t.lib ilike v_motif escape '\'
+          or t.vd  ilike v_motif escape '\')
    order by t.cree_le desc
    limit v_limite offset greatest(coalesce(p_offset, 0), 0);
 end $function$
@@ -3807,6 +3852,7 @@ DROIT-FN  annuler_sav(uuid)  =X/postgres | anon=X/postgres | authenticated=X/pos
 DROIT-FN  bilan_global(date,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  bloquer_ip(text,text)  postgres=X/postgres | service_role=X/postgres
 DROIT-FN  bloquer_ip_definitivement(text,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  ca_par_jour(date,date)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  changer_actif(uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  changer_role(uuid,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  changer_stock_lie(uuid,boolean)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
@@ -3834,7 +3880,7 @@ DROIT-FN  inviter_utilisateur(text,text,text,numeric)  =X/postgres | anon=X/post
 DROIT-FN  ip_bloquees_actives()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  ip_est_bloquee(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  journal_admin(date,date,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
-DROIT-FN  journal_transactions(date,date,text,uuid,integer,integer)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
+DROIT-FN  journal_transactions(date,date,text,uuid,integer,integer,text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  lever_blocage_ip(text)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  lien_invitation(uuid)  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres
 DROIT-FN  ma_dette()  =X/postgres | anon=X/postgres | authenticated=X/postgres | postgres=X/postgres | service_role=X/postgres

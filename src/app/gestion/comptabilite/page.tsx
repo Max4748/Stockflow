@@ -1,6 +1,7 @@
 import { CoinsIcon, PackageIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
 import Link from "next/link";
 
+import { BoutonExport } from "@/components/bouton-export";
 import { EntetePage } from "@/components/entete-page";
 import { FiltrePeriode } from "@/components/filtre-periode";
 import { Kpi } from "@/components/kpi";
@@ -10,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { exigerAdmin } from "@/lib/auth";
 import { date, dateHeure, euros } from "@/lib/format";
 import { argsPeriode, lirePeriode } from "@/lib/periode";
@@ -87,6 +89,7 @@ export default async function PageComptabilite({
 
   const type = params.type ?? "";
   const vendeurId = params.vendeur ?? "";
+  const recherche = (params.q ?? "").trim();
   const page = Math.max(1, Number(params.page ?? 1) || 1);
 
   const supabase = await creerClient();
@@ -95,6 +98,9 @@ export default async function PageComptabilite({
       ...args,
       p_type: type || null,
       p_vendeur_id: vendeurId || null,
+      // La recherche est faite EN BASE : filtrer la page reçue ne chercherait
+      // que dans ses cinquante lignes.
+      p_recherche: recherche || null,
       // Pagination EXPLICITE : PostgREST tronque à 1000 lignes en silence, un
       // journal reconstitué côté client depuis une réponse tronquée serait
       // faux sans aucune erreur.
@@ -167,6 +173,7 @@ export default async function PageComptabilite({
     }
     if (type) p.set("type", type);
     if (vendeurId) p.set("vendeur", vendeurId);
+    if (recherche) p.set("q", recherche);
     if (n > 1) p.set("page", String(n));
     const q = p.toString();
     return `/gestion/comptabilite${q ? `?${q}` : ""}`;
@@ -177,7 +184,16 @@ export default async function PageComptabilite({
       <EntetePage
         titre="Journal comptable"
         filtres={<FiltrePeriode actif={periode.cle} />}
-      />
+      >
+        {/* Mêmes filtres que l'écran, sans la pagination : l'export porte sur
+            tout ce que les filtres retiennent, pas sur la page affichée. */}
+        <BoutonExport
+          href={lienPage(1).replace(
+            "/gestion/comptabilite",
+            "/gestion/comptabilite/export",
+          )}
+        />
+      </EntetePage>
 
       {erreur && (
         <Alert variant="destructive">
@@ -222,6 +238,20 @@ export default async function PageComptabilite({
             )}
 
             <div className="space-y-2">
+              <label htmlFor="f-recherche" className="text-sm font-medium">
+                Recherche
+              </label>
+              <Input
+                id="f-recherche"
+                name="q"
+                type="search"
+                defaultValue={recherche}
+                placeholder="Client, référence, motif…"
+                className="h-11 text-base"
+              />
+            </div>
+
+            <div className="space-y-2">
               <label htmlFor="f-type" className="text-sm font-medium">
                 Type d&apos;opération
               </label>
@@ -264,7 +294,7 @@ export default async function PageComptabilite({
               >
                 Appliquer
               </button>
-              {(type || vendeurId) && (
+              {(type || vendeurId || recherche) && (
                 <Link
                   href={
                     periode.cle === "tout"

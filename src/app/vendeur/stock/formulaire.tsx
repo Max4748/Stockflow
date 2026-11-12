@@ -4,6 +4,7 @@ import { PackageMinusIcon } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ChampSelect } from "@/components/champ-select";
 import { PiedFormulaire } from "@/components/pied-formulaire";
 import { DialogueAction } from "@/components/dialogue-action";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -76,21 +77,22 @@ export function FormulairePrelevement({
 
         <div className="space-y-2">
           <Label htmlFor="produit_id">Produit</Label>
-          <select
+          {/* `ChampSelect` comme partout ailleurs. C'était la dernière liste
+              déroulante du système : elle ignorait le thème, et sa liste
+              ouverte restait blanche en mode sombre. La soumission ne change
+              pas, le composant rend un champ caché qui porte le `name`. */}
+          <ChampSelect
             id="produit_id"
             name="produit_id"
             required
             value={produitId}
-            onChange={(e) => setProduitId(e.target.value)}
-            className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-          >
-            <option value="">Choisir…</option>
-            {disponibles.map((l) => (
-              <option key={l.produit_id} value={l.produit_id}>
-                {l.modele} · {l.produit} — {l.quantite} en stock
-              </option>
-            ))}
-          </select>
+            onValueChange={setProduitId}
+            placeholder="Choisir…"
+            options={disponibles.map((l) => ({
+              valeur: l.produit_id,
+              libelle: `${l.modele} · ${l.produit} — ${l.quantite} en stock`,
+            }))}
+          />
         </div>
 
         <div className="space-y-2">

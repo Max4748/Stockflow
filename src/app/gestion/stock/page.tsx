@@ -1,10 +1,12 @@
 import { BoxesIcon, TriangleAlertIcon, UsersIcon, WalletIcon, WarehouseIcon } from "lucide-react";
+import { ChampRecherche } from "@/components/champ-recherche";
 import { EntetePage } from "@/components/entete-page";
 import { Kpi } from "@/components/kpi";
 import { Tableau, type Colonne } from "@/components/tableau";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { filtrer } from "@/lib/tri";
 import { exigerAdmin } from "@/lib/auth";
 import { euros, niveauStock } from "@/lib/format";
 import { creerClient } from "@/lib/supabase/server";
@@ -29,6 +31,7 @@ export const metadata = { title: "État du stock — StockFlow" };
 const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
   {
     cle: "produit",
+    tri: (l) => l.produit,
     entete: "Produit",
     principale: true,
     valeur: (l) => {
@@ -47,30 +50,35 @@ const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
   },
   {
     cle: "entrepot",
+    tri: (l) => l.stock_entrepot,
     entete: "Entrepôt",
     alignement: "droite",
     valeur: (l) => l.stock_entrepot,
   },
   {
     cle: "distribue",
+    tri: (l) => l.stock_distribue,
     entete: "Chez les vendeurs",
     alignement: "droite",
     valeur: (l) => l.stock_distribue,
   },
   {
     cle: "total",
+    tri: (l) => l.stock_total,
     entete: "Total",
     alignement: "droite",
     valeur: (l) => <span className="font-semibold">{l.stock_total}</span>,
   },
   {
     cle: "cout",
+    tri: (l) => Number(l.cout_unitaire),
     entete: "Coût unitaire",
     alignement: "droite",
     valeur: (l) => euros(l.cout_unitaire),
   },
   {
     cle: "valeur",
+    tri: (l) => Number(l.valeur_totale),
     entete: "Valeur",
     alignement: "droite",
     valeur: (l) => euros(l.valeur_totale),
@@ -80,27 +88,35 @@ const COLONNES_PRODUIT: Colonne<StockValorise>[] = [
 const COLONNES_DETENTEUR: Colonne<StockDetenteur>[] = [
   {
     cle: "detenteur",
+    tri: (l) => l.detenteur,
     entete: "Détenteur",
     principale: true,
     valeur: (l) => l.detenteur,
   },
-  { cle: "produit", entete: "Produit", valeur: (l) => l.produit },
+  { cle: "produit", tri: (l) => l.produit, entete: "Produit", valeur: (l) => l.produit },
   {
     cle: "qte",
+    tri: (l) => l.quantite,
     entete: "Quantité",
     alignement: "droite",
     valeur: (l) => l.quantite,
   },
   {
     cle: "valeur",
+    tri: (l) => Number(l.valeur),
     entete: "Valeur",
     alignement: "droite",
     valeur: (l) => euros(l.valeur),
   },
 ];
 
-export default async function PageStock() {
+export default async function PageStock({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   await exigerAdmin();
+  const params = await searchParams;
   const supabase = await creerClient();
 
   const [rStock, rDetenteurs, rProfils, rProduits, rTotaux] = await Promise.all(
@@ -126,6 +142,16 @@ export default async function PageStock() {
 
   const stock = (rStock.data as StockValorise[] | null) ?? [];
   const detenteurs = (rDetenteurs.data as StockDetenteur[] | null) ?? [];
+
+  // La recherche ne filtre QUE les deux tableaux. `stock` et `detenteurs`
+  // complets continuent d'alimenter les alertes de seuil et les dialogues :
+  // chercher « vanille » ne doit ni cacher une rupture, ni retirer des
+  // produits du formulaire de distribution.
+  const stockAffiche = filtrer(stock, params.q, (l) => [l.produit, l.modele]);
+  const detenteursAffiches = filtrer(detenteurs, params.q, (l) => [
+    l.produit,
+    l.detenteur,
+  ]);
   const produits = ((rProduits.data as ProduitAvecModele[] | null) ?? [])
     .filter((p) => p.modeles?.actif)
     .sort((a, b) =>
@@ -225,6 +251,11 @@ export default async function PageStock() {
         </Alert>
       )}
 
+      <ChampRecherche
+        libelle="Rechercher un produit ou un détenteur"
+        className="sm:max-w-sm"
+      />
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Par produit</CardTitle>
@@ -232,9 +263,14 @@ export default async function PageStock() {
         <CardContent>
           <Tableau
             colonnes={COLONNES_PRODUIT}
-            lignes={stock}
+            lignes={stockAffiche}
             cle={(l) => l.produit_id}
-            vide="Aucun produit au catalogue."
+            tri={{ params, chemin: "/gestion/stock" }}
+            vide={
+              params.q
+                ? "Aucun produit ne correspond à cette recherche."
+                : "Aucun produit au catalogue."
+            }
           />
         </CardContent>
       </Card>
@@ -246,9 +282,14 @@ export default async function PageStock() {
         <CardContent>
           <Tableau
             colonnes={COLONNES_DETENTEUR}
-            lignes={detenteurs}
+            lignes={detenteursAffiches}
             cle={(l) => `${l.detenteur_id ?? "entrepot"}-${l.produit_id}`}
-            vide="Aucun stock en circulation."
+            tri={{ params, chemin: "/gestion/stock", prefixe: "d" }}
+            vide={
+              params.q
+                ? "Aucun stock ne correspond à cette recherche."
+                : "Aucun stock en circulation."
+            }
           />
         </CardContent>
       </Card>

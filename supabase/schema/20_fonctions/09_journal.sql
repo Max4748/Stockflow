@@ -106,13 +106,29 @@ end $$;
 -- fonction ne peut pas lire une table créée après elle à l'installation.
 -- ------------------------------------------------------------
 
+-- `p_recherche` : la recherche texte de l'écran. Elle est faite ICI et non
+-- dans l'application, parce que le journal est paginé : filtrer la page reçue
+-- ne chercherait que dans cinquante lignes en laissant croire qu'on a cherché
+-- partout. Elle porte sur le libellé et sur le nom du compte, sans tenir
+-- compte de la casse.
+--
+-- Les jokers de LIKE (`%`, `_`) saisis par l'utilisateur sont neutralisés : un
+-- client nommé « 100% coton » doit se trouver en tapant « 100% », et non
+-- faire correspondre tout ce qui commence par « 100 ».
+--
+-- L'ancienne signature est retirée : avec un paramètre de plus et des valeurs
+-- par défaut partout, les deux versions cohabiteraient et un appel sans
+-- argument deviendrait ambigu.
+drop function if exists journal_transactions(date, date, text, uuid, int, int);
+
 create or replace function journal_transactions(
   p_du         date default null,
   p_au         date default null,
   p_type       text default null,
   p_vendeur_id uuid default null,
   p_limite     int  default 100,
-  p_offset     int  default 0
+  p_offset     int  default 0,
+  p_recherche  text default null
 ) returns table (
   horodatage  timestamptz,
   date_compta date,
@@ -126,6 +142,14 @@ create or replace function journal_transactions(
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare
   v_limite int := least(greatest(coalesce(p_limite, 100), 1), 1000);
+  -- NULL quand il n'y a rien à chercher : une chaîne vide ou faite d'espaces
+  -- ne doit pas devenir un filtre `ilike '%%'`, qui écarterait les lignes
+  -- sans compte (un achat n'a pas de vendeur).
+  v_motif  text := case
+    when nullif(trim(p_recherche), '') is null then null
+    else '%' || replace(replace(replace(trim(p_recherche),
+                 '\', '\\'), '%', '\%'), '_', '\_') || '%'
+  end;
 begin
   if not est_admin() then
     raise exception 'Réservé à l''administrateur.' using errcode = '42501';
@@ -217,6 +241,9 @@ begin
      and (p_type is null or t.tp = p_type)
      and (p_vendeur_id is null
           or t.vd = (select nom from profils where id = p_vendeur_id))
+     and (v_motif is null
+          or t.lib ilike v_motif escape '\'
+          or t.vd  ilike v_motif escape '\')
    order by t.cree_le desc
    limit v_limite offset greatest(coalesce(p_offset, 0), 0);
 end $$;
