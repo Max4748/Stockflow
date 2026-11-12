@@ -87,3 +87,49 @@ export function filtrer<T>(
     return mots.every((mot) => cible.includes(mot));
   });
 }
+
+/**
+ * TRI, RECHERCHE ET PAGINATION FAITS EN BASE.
+ *
+ * Tout ce qui précède travaille sur des lignes déjà chargées, ce qui ne vaut
+ * que pour une liste entière. Dès qu'une liste est PAGINÉE, trier ou chercher
+ * dans la page reçue mentirait : « le plus gros montant » serait celui des
+ * vingt lignes affichées. Ces trois fonctions traduisent donc les mêmes
+ * paramètres d'URL en arguments pour PostgREST (`order`, `ilike`, `range`).
+ */
+
+/**
+ * Motif `ilike` pour une recherche saisie, ou `null` s'il n'y a rien à
+ * chercher. `%` et `_` sont des jokers pour LIKE : saisis par l'utilisateur,
+ * ce sont des caractères (« 100% coton »). `*` est retiré : PostgREST le lit
+ * comme un autre nom de `%`, et il n'existe pas de façon de l'échapper.
+ */
+export function motifIlike(recherche: string | undefined): string | null {
+  const texte = (recherche ?? "").trim().replaceAll("*", "");
+  if (!texte) return null;
+  return `%${texte.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+/**
+ * Colonne SQL et sens à passer à `.order()`. Seules les colonnes qui déclarent
+ * `colonneSql` sont acceptées : la clé vient de l'URL, on ne la laisse pas
+ * désigner une colonne arbitraire.
+ */
+export function triSql(
+  colonnes: { cle: string; colonneSql?: string }[],
+  tri: Tri | null,
+  defaut: { colonne: string; ascendant: boolean },
+): { colonne: string; ascendant: boolean } {
+  const colonne = colonnes.find((c) => c.cle === tri?.cle)?.colonneSql;
+  return colonne ? { colonne, ascendant: tri!.ordre === "asc" } : defaut;
+}
+
+/** Page courante (à partir de 1) et bornes inclusives pour `.range()`. */
+export function lirePage(
+  params: Record<string, string | undefined>,
+  parPage: number,
+  prefixe = "",
+): { page: number; de: number; a: number } {
+  const page = Math.max(1, Math.floor(Number(params[`${prefixe}page`]) || 1));
+  return { page, de: (page - 1) * parPage, a: page * parPage - 1 };
+}

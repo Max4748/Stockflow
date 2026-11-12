@@ -12,6 +12,13 @@ import { cn } from "@/lib/utils";
  * UNE série, donc une seule couleur (la primaire) et pas de légende : le titre
  * de la carte dit ce qui est tracé.
  *
+ * `precedente` superpose la période d'avant, de même durée : un trait GRIS,
+ * fin et pointillé, sans aire. Ce n'est pas une seconde mesure mais un repère,
+ * et il ne doit pas disputer l'attention à la courbe ; le gris plutôt qu'une
+ * seconde teinte le dit. Une légende apparaît alors, puisqu'il y a deux traits.
+ * Les deux séries sont alignées par RANG (1er jour avec 1er jour), pas par
+ * date : c'est ce que veut dire « même moment de la période ».
+ *
  * LE TRACÉ EST EN SVG, TOUT LE TEXTE EST EN HTML. Le SVG est étiré à la taille
  * de la zone (`preserveAspectRatio="none"`, repère 0–100) : il suit la largeur
  * de l'écran sans mesure ni JavaScript. Un texte dans ce SVG serait étiré avec
@@ -47,10 +54,24 @@ const compact = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
-export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
+export function CourbeCa({
+  serie,
+  pas,
+  precedente,
+}: {
+  serie: PointSerie[];
+  pas: Pas;
+  /** Période précédente, de même durée. Absente : pas de comparaison. */
+  precedente?: PointSerie[];
+}) {
   const [survol, setSurvol] = useState<number | null>(null);
 
-  const valeurs = serie.map((p) => p.ca);
+  // Tronquée à la longueur de la série : un regroupement par semaine peut
+  // donner un intervalle de plus d'un côté que de l'autre.
+  const avant = (precedente ?? []).slice(0, serie.length);
+  const comparee = avant.length > 1;
+
+  const valeurs = [...serie, ...avant].map((p) => p.ca);
   const ticks = graduations(Math.min(...valeurs), Math.max(...valeurs));
   const bas = ticks[0];
   const haut = ticks[ticks.length - 1];
@@ -61,6 +82,9 @@ export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
 
   const trace = serie.map((p, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(p.ca)}`).join(" ");
   const aire = `${trace} L${x(serie.length - 1)},${y(0)} L${x(0)},${y(0)} Z`;
+  const traceAvant = avant
+    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(p.ca)}`)
+    .join(" ");
 
   // Cinq dates au plus sous l'axe : au-delà elles se chevauchent sur téléphone.
   const nbDates = Math.min(serie.length, 5);
@@ -80,6 +104,21 @@ export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
 
   return (
     <div>
+      {comparee && (
+        <ul className="text-muted-foreground mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden className="bg-primary h-0.5 w-4 rounded-full" />
+            Période affichée
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="border-muted-foreground w-4 border-t-2 border-dashed"
+            />
+            Période précédente
+          </li>
+        </ul>
+      )}
       <div className="flex gap-2">
         {/* Graduations : valeurs rondes, en gris, hors de la zone de tracé. */}
         <div className="text-muted-foreground relative h-52 w-10 shrink-0 text-right text-[0.6875rem] tabular-nums">
@@ -133,6 +172,17 @@ export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
             preserveAspectRatio="none"
             className="text-primary absolute inset-0 size-full overflow-visible"
           >
+            {comparee && (
+              <path
+                d={traceAvant}
+                fill="none"
+                className="stroke-muted-foreground"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
             {serie.length > 1 && (
               <>
                 <path d={aire} fill="currentColor" opacity={0.1} />
@@ -187,6 +237,11 @@ export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
               <p className="text-muted-foreground tabular-nums">
                 {point.nb_ventes} vente{point.nb_ventes > 1 ? "s" : ""}
               </p>
+              {comparee && avant[actif] && (
+                <p className="text-muted-foreground mt-1 border-t pt-1 tabular-nums">
+                  Période précédente : {euros(avant[actif].ca)}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -226,14 +281,22 @@ export function CourbeCa({ serie, pas }: { serie: PointSerie[]; pas: Pas }) {
                 </th>
                 <th className="py-1 text-right font-medium">Ventes</th>
                 <th className="py-1 text-right font-medium">Chiffre d&apos;affaires</th>
+                {comparee && (
+                  <th className="py-1 text-right font-medium">Période précédente</th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {serie.map((p) => (
+              {serie.map((p, i) => (
                 <tr key={p.debut} className="border-t">
                   <td className="py-1">{libelleDate(p.debut, pas)}</td>
                   <td className="py-1 text-right">{p.nb_ventes}</td>
                   <td className="py-1 text-right">{euros(p.ca)}</td>
+                  {comparee && (
+                    <td className="text-muted-foreground py-1 text-right">
+                      {avant[i] ? euros(avant[i].ca) : "—"}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

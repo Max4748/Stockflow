@@ -33,7 +33,8 @@ import { cn } from "@/lib/utils";
  * Une colonne est triable dès qu'elle déclare `tri`, et le tableau dès qu'il
  * reçoit `tri`. Sans l'un ou l'autre, rien ne change.
  *
- * À NE PAS gonfler davantage : pas de sélection ni de pagination ici. La
+ * À NE PAS gonfler davantage : pas de sélection ici, et la pagination est un
+ * composant à part (`pagination.tsx`) posé sous le tableau. La
  * recherche est un composant à part (`champ-recherche.tsx`), parce qu'elle
  * filtre les données AVANT le tableau. Un écran aux exigences très différentes
  * écrit son propre tableau plutôt que d'ajouter des options ici.
@@ -55,6 +56,12 @@ export type Colonne<T> = {
    * pas. Absente, la colonne n'est pas triable.
    */
   tri?: (ligne: T) => string | number | null | undefined;
+  /**
+   * Colonne SQL à passer à `order` quand le tri est fait EN BASE (liste
+   * paginée, voir `TriTableau.dejaTrie`). Rend la colonne triable au même
+   * titre que `tri`.
+   */
+  colonneSql?: string;
 };
 
 /**
@@ -66,13 +73,20 @@ export type TriTableau = {
   params: Record<string, string | undefined>;
   chemin: string;
   prefixe?: string;
+  /**
+   * Les lignes arrivent déjà triées par la requête. C'est le cas des listes
+   * PAGINÉES : trier ici ne trierait que la page affichée. Les en-têtes
+   * restent des liens, mais ce composant ne touche plus à l'ordre.
+   */
+  dejaTrie?: boolean;
 };
 
 function lienTri(tri: TriTableau, cle: string, actif: Tri | null): string {
   const prefixe = tri.prefixe ?? "";
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(tri.params)) {
-    if (v && k !== "page") p.set(k, v);
+    // Changer de tri repart de la première page de CE tableau.
+    if (v && k !== "page" && k !== `${prefixe}page`) p.set(k, v);
   }
   p.set(`${prefixe}tri`, cle);
   // Premier clic : croissant. Second clic sur la même colonne : décroissant.
@@ -102,11 +116,16 @@ export function Tableau<T>({
   tri,
 }: Props<T>) {
   const triActif = tri ? lireTri(tri.params, tri.prefixe) : null;
-  const colonneTriee = colonnes.find((c) => c.cle === triActif?.cle && c.tri);
-  const lignes = colonneTriee
-    ? trier(lignesRecues, colonneTriee.tri, triActif!.ordre)
-    : lignesRecues;
-  const triables = tri ? colonnes.filter((c) => c.tri) : [];
+  const triable = (c: Colonne<T>) =>
+    Boolean(tri && (tri.dejaTrie ? c.colonneSql : c.tri));
+  const colonneTriee = colonnes.find(
+    (c) => c.cle === triActif?.cle && triable(c),
+  );
+  const lignes =
+    colonneTriee && !tri?.dejaTrie
+      ? trier(lignesRecues, colonneTriee.tri, triActif!.ordre)
+      : lignesRecues;
+  const triables = colonnes.filter(triable);
 
   if (lignes.length === 0) {
     return <EtatVide titre={vide} />;
@@ -144,7 +163,7 @@ export function Tableau<T>({
                       : undefined
                   }
                 >
-                  {tri && c.tri ? (
+                  {tri && triable(c) ? (
                     <Link
                       href={lienTri(tri, c.cle, triActif)}
                       // `scroll={false}` : trier ne doit pas renvoyer en haut

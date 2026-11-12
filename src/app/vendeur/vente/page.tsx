@@ -1,3 +1,7 @@
+import { ChampRecherche } from "@/components/champ-recherche";
+import { EtatVide } from "@/components/etat-vide";
+import { Pagination } from "@/components/pagination";
+import { lirePage, motifIlike } from "@/lib/tri";
 import { EntetePage } from "@/components/entete-page";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { exigerProfil } from "@/lib/auth";
@@ -17,22 +21,38 @@ import { FormulaireVente } from "./formulaire";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes ventes — StockFlow" };
 
+const PAR_PAGE = 12;
+
 export default async function PageVente({
   searchParams,
 }: {
-  searchParams: Promise<{ annulee?: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const profil = await exigerProfil();
   // Posé par `annulerMaVente`, qui redirige ici après avoir supprimé la vente
   // depuis sa fiche : la redirection empêche le toast d'arriver.
-  const { annulee } = await searchParams;
+  const params = await searchParams;
+  const { annulee } = params;
   const supabase = await creerClient();
+
+  // Paginé : l'écran ne montrait que les 12 dernières ventes, sans moyen de
+  // retrouver celle d'un client rappelant trois semaines plus tard.
+  // `p_limite: null` lève le plafond de la fonction ; PostgREST cherche et
+  // découpe son résultat.
+  const page = lirePage(params, PAR_PAGE);
+  const motif = motifIlike(params.q);
+  let lectureVentes = supabase
+    .rpc("mes_ventes", { p_limite: null }, { count: "exact" })
+    .order("cree_le", { ascending: false })
+    .order("id")
+    .range(page.de, page.a);
+  if (motif) lectureVentes = lectureVentes.ilike("client", motif);
 
   const [rStock, rVentes, rSavables] = await Promise.all([
     supabase.rpc("stock_disponible"),
     // `corrigeable` est calculé en SQL, pas ici : la fenêtre de 48 h ne doit
     // pas dépendre de l'horloge du téléphone.
-    supabase.rpc("mes_ventes", { p_limite: 12 }),
+    lectureVentes,
     // `p_les_miennes` : dans l'espace vendeur, un gérant ne signale un SAV que
     // sur SES ventes, comme n'importe quel vendeur. Le suivi
     // des dossiers, lui, a son écran : /vendeur/sav.
@@ -103,7 +123,7 @@ export default async function PageVente({
       {/* État vide indispensable : sans lui, un compte qui n'a encore rien
           vendu voyait un titre, un bouton, et 600 px de vide — une page qui a
           l'air cassée. */}
-      {mesVentes.length === 0 ? (
+      {mesVentes.length === 0 && !params.q && page.page === 1 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <p className="text-sm font-medium">Aucune vente enregistrée.</p>
@@ -120,7 +140,7 @@ export default async function PageVente({
         <Card>
           <CardHeader className="flex-row items-start justify-between gap-3 pb-3">
             <div>
-              <CardTitle className="text-sm">Mes ventes récentes</CardTitle>
+              <CardTitle className="text-sm">Mes ventes</CardTitle>
               <p className="text-muted-foreground text-xs">
                 Modifiables ou annulables pendant 48 h. Au-delà, la correction
                 passe par le gérant.
@@ -131,6 +151,13 @@ export default async function PageVente({
             <FormulaireSav lignes={savables} contexte="vendeur" />
           </CardHeader>
           <CardContent>
+            <ChampRecherche
+              libelle="Rechercher un client"
+              className="mb-4 sm:max-w-xs"
+            />
+            {mesVentes.length === 0 && (
+              <EtatVide titre="Aucune vente ne correspond à cette recherche." />
+            )}
             <ul className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {mesVentes.map((v) => (
                 <li
@@ -195,6 +222,13 @@ export default async function PageVente({
                 </li>
               ))}
             </ul>
+            <Pagination
+              params={params}
+              chemin="/vendeur/vente"
+              page={page.page}
+              parPage={PAR_PAGE}
+              total={rVentes.count}
+            />
           </CardContent>
         </Card>
       )}

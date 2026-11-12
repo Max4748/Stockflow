@@ -295,6 +295,12 @@ découpé. Toute évolution de l'une doit être reportée dans l'autre ;
 `supabase/tests/17_ca_par_jour.sql` vérifie que la somme de la courbe retombe
 sur l'indicateur.
 
+**`ventes_par_produit()` l'est aussi.** Elle découpe par produit le chiffre
+d'affaires et la marge nette, avec les mêmes déductions (remboursements, coût
+des unités échangées), chaque SAV étant imputé au produit qu'il concerne.
+`supabase/tests/18_ventes_par_produit.sql` vérifie que ses deux sommes
+retombent sur `bilan_global()`.
+
 Le SAV est daté de **son** jour, pas de celui de la vente : un remboursement de
 janvier sur une vente de décembre appartient à janvier.
 
@@ -732,3 +738,20 @@ Concernés à ce jour : `creances()`, `ma_dette()`, la vue `v_comptes_vendeurs`,
 `revenus_vendeurs()`, `mes_ventes()`, `ventes_vendeur()`, `ventes_savables()`
 et `dossiers_sav()`. Le contrôle qui l'attrape est gratuit : **`npm run test:db`**,
 qui installe le schéma sur une base vide puis le rejoue deux fois.
+
+## La suggestion de réassort
+
+`suggestions_reassort(p_jours)` applique une règle volontairement simple, pour
+qu'elle se vérifie de tête :
+
+    à commander = vendu sur les N derniers jours + seuil du parfum − stock total
+
+De quoi tenir N jours de plus au rythme constaté, en gardant le seuil d'alerte
+en réserve. C'est le stock **total** qui est retranché, pas celui de l'entrepôt
+seul : ce que les vendeurs détiennent se vendra aussi. Les unités rendues en
+SAV ne sont pas déduites des ventes, parce que la grandeur utile pour commander
+est ce que les clients ont demandé. Un parfum désactivé n'est jamais proposé.
+
+Ce n'est pas une prévision : la règle ignore la saisonnalité et les délais du
+fournisseur. Elle donne un point de départ, que le dialogue d'achat laisse
+modifier ligne par ligne.

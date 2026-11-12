@@ -34,7 +34,18 @@ import {
  * exactement ce que fait un ajustement positif, réservé pour cette raison aux
  * écarts de comptage.
  */
-export function FormulaireAchat({ produits }: { produits: ProduitAvecModele[] }) {
+export function FormulaireAchat({
+  produits,
+  quantitesSuggerees,
+}: {
+  produits: ProduitAvecModele[];
+  /**
+   * Quantités proposées par la suggestion de réassort (écran Stock). Le
+   * dialogue s'ouvre alors pré-rempli, sous un autre libellé ; tout reste
+   * modifiable, et le prix reste à saisir : c'est la facture qui le donne.
+   */
+  quantitesSuggerees?: Record<string, string>;
+}) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(
     enregistrerAchat,
     {},
@@ -57,9 +68,9 @@ export function FormulaireAchat({ produits }: { produits: ProduitAvecModele[] })
 
   return (
     <DialogueAction
-      libelle="Nouveau Restock"
+      libelle={quantitesSuggerees ? "Préparer le restock" : "Nouveau Restock"}
       icone={PlusIcon}
-      variante="default"
+      variante={quantitesSuggerees ? "outline" : "default"}
       // `large` : la saisie d'un achat comporte une grille de produits et
       // quatre champs de montants — le gabarit standard serait à l'étroit.
       taille="large"
@@ -72,6 +83,15 @@ export function FormulaireAchat({ produits }: { produits: ProduitAvecModele[] })
           produits={produits}
           erreur={etat.erreur}
           enCours={enCours}
+          initial={
+            quantitesSuggerees && {
+              quantites: quantitesSuggerees,
+              prixBase: "",
+              fraisPort: "0",
+              reference: "",
+              date: aujourdHui(),
+            }
+          }
         />
       </form>
     </DialogueAction>

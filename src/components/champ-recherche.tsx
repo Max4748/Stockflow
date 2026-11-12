@@ -37,8 +37,10 @@ export function ChampRecherche({
   const params = useSearchParams();
   const valeur = params.get(nom) ?? "";
 
+  // Toutes les paginations de l'écran repartent de la première page (`page`,
+  // `vpage`…) : la page 3 d'avant la recherche n'existe peut-être plus.
   const autres = [...params.entries()].filter(
-    ([k]) => k !== nom && k !== "page",
+    ([k]) => k !== nom && !k.endsWith("page"),
   );
   const sansRecherche = new URLSearchParams(autres).toString();
 
